@@ -52,7 +52,7 @@ export function SettingsModal({ isOpen, onClose, nameListHook }: SettingsModalPr
           />
           <span>Allow Duplicates</span>
           <span className="text-xs text-gray-500 dark:text-gray-400">
-            — When unchecked, identical names from different lists won't appear twice in the pool
+            — When unchecked, duplicate names across lists are merged and no name can be assigned to more than one system
           </span>
         </label>
 
