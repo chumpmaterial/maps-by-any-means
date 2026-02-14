@@ -59,7 +59,16 @@ Opens at http://localhost:5173.
 
 ### Building the standalone executable
 
-Build a portable Windows .exe that serves the app locally (no Node.js required on the target machine):
+Build a portable Windows .exe that serves the app locally (no Node.js required on the target machine).
+
+From **cmd** or **PowerShell**:
+
+```
+cd build-tools
+build-exe.bat
+```
+
+From **Git Bash**:
 
 ```bash
 cd build-tools
