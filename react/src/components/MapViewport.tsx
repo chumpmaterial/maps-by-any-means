@@ -233,8 +233,9 @@ export function MapViewport({ mapState, generationLog = [], onClearLog }: MapVie
       )}
 
       {/* Hex coordinate display */}
-      <div className="absolute bottom-12 left-4 rounded bg-black/50 px-1.5 py-1 text-xs text-white">
-        {hoveredHex ? `Hex (${hoveredHex.q}, ${hoveredHex.r})` : 'Hex (\u2014, \u2014)'}
+      <div className="absolute bottom-12 left-4 flex items-center gap-3 rounded bg-black/50 px-1.5 py-1 text-xs text-white">
+        <span>{hoveredHex ? `Hex (${hoveredHex.q}, ${hoveredHex.r})` : 'Hex (\u2014, \u2014)'}</span>
+        <span>{map.systems.length} {map.systems.length === 1 ? 'system' : 'systems'}</span>
       </div>
 
       {/* Zoom controls */}
