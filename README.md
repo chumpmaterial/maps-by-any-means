@@ -86,6 +86,6 @@ react/           React app (TypeScript + Vite + Tailwind)
 build-tools/     Standalone exe build (Go static file server)
 ```
 
-## Roadmap
+## Coming Soon
 
 - **Game tracking** — manage and track VBAM game state directly within MBAM
