@@ -1,0 +1,593 @@
+{
+  "id": "6dppnk3yx",
+  "name": "Standard Tiny",
+  "systems": [
+    {
+      "id": "hub",
+      "name": "Persephone",
+      "type": "major",
+      "position": {
+        "q": 0,
+        "r": 0
+      },
+      "starType": "yellow",
+      "planetType": "garden",
+      "attributes": {
+        "capacity": 10,
+        "raw": 4,
+        "population": 6,
+        "morale": 5,
+        "intel": 5,
+        "fortification": 2
+      },
+      "traits": [
+        "mineral_rich",
+        "spy_satellites"
+      ]
+    },
+    {
+      "name": "Hestia",
+      "type": "minor",
+      "position": {
+        "q": 0,
+        "r": 1
+      },
+      "id": "u4m0m4ya1",
+      "starType": "white",
+      "planetType": "barren",
+      "attributes": {
+        "capacity": 6,
+        "raw": 2,
+        "population": 4,
+        "morale": 2,
+        "intel": 1,
+        "fortification": 0
+      },
+      "traits": [
+        "scattered_survivors"
+      ]
+    },
+    {
+      "name": "Demeter",
+      "type": "unimportant",
+      "position": {
+        "q": -1,
+        "r": 1
+      },
+      "id": "nsdj7jez5",
+      "starType": "dwarf",
+      "planetType": "dead",
+      "attributes": {
+        "capacity": 4,
+        "raw": 1,
+        "population": 2,
+        "morale": 2,
+        "intel": 0,
+        "fortification": 0
+      }
+    },
+    {
+      "name": "Cronus",
+      "type": "minor",
+      "position": {
+        "q": -1,
+        "r": 0
+      },
+      "id": "u12089oy0",
+      "starType": "red",
+      "planetType": "adaptable",
+      "attributes": {
+        "capacity": 8,
+        "raw": 3,
+        "population": 4,
+        "morale": 3,
+        "intel": 2,
+        "fortification": 1
+      },
+      "traits": [
+        "mineral_rich"
+      ]
+    },
+    {
+      "name": "Minerva",
+      "type": "minor",
+      "position": {
+        "q": 0,
+        "r": -1
+      },
+      "id": "td49ttgy2",
+      "starType": "orange",
+      "planetType": "adaptable",
+      "attributes": {
+        "capacity": 6,
+        "raw": 2,
+        "population": 4,
+        "morale": 3,
+        "intel": 2,
+        "fortification": 3
+      },
+      "traits": [
+        "automated_defenses",
+        "automated_defenses"
+      ]
+    },
+    {
+      "name": "Hermes",
+      "type": "unimportant",
+      "position": {
+        "q": 1,
+        "r": -1
+      },
+      "id": "xz8b6ut34",
+      "starType": "red",
+      "planetType": "dead",
+      "attributes": {
+        "capacity": 4,
+        "raw": 3,
+        "population": 2,
+        "morale": 2,
+        "intel": 0,
+        "fortification": 0
+      },
+      "traits": [
+        "strategic_resources"
+      ]
+    },
+    {
+      "name": "Ares",
+      "type": "unimportant",
+      "position": {
+        "q": 1,
+        "r": 0
+      },
+      "id": "3q240e5a5",
+      "starType": "red",
+      "planetType": "dead",
+      "attributes": {
+        "capacity": 4,
+        "raw": 2,
+        "population": 2,
+        "morale": 2,
+        "intel": 0,
+        "fortification": 0
+      },
+      "traits": [
+        "mineral_rich"
+      ]
+    },
+    {
+      "name": "Hera",
+      "type": "homeworld",
+      "position": {
+        "q": 0,
+        "r": -2
+      },
+      "id": "q7efwagod",
+      "starType": "yellow",
+      "planetType": "homeworld",
+      "attributes": {
+        "capacity": 12,
+        "raw": 5,
+        "population": 10,
+        "morale": 8,
+        "intel": 6,
+        "fortification": 4
+      },
+      "teamColor": "#1961f0"
+    },
+    {
+      "name": "Zeus",
+      "type": "homeworld",
+      "position": {
+        "q": 0,
+        "r": 2
+      },
+      "id": "iohi2mrqc",
+      "starType": "yellow",
+      "planetType": "homeworld",
+      "attributes": {
+        "capacity": 12,
+        "raw": 5,
+        "population": 10,
+        "morale": 8,
+        "intel": 6,
+        "fortification": 4
+      },
+      "teamColor": "#c12592"
+    },
+    {
+      "name": "Hades",
+      "type": "unimportant",
+      "position": {
+        "q": -1,
+        "r": 2
+      },
+      "id": "v82pm249v",
+      "starType": "red",
+      "planetType": "dead",
+      "attributes": {
+        "capacity": 4,
+        "raw": 2,
+        "population": 2,
+        "morale": 2,
+        "intel": 0,
+        "fortification": 0
+      },
+      "traits": [
+        "mineral_rich"
+      ]
+    },
+    {
+      "name": "Athena",
+      "type": "minor",
+      "position": {
+        "q": 1,
+        "r": 1
+      },
+      "id": "hp3fx6bif",
+      "starType": "orange",
+      "planetType": "adaptable",
+      "attributes": {
+        "capacity": 8,
+        "raw": 3,
+        "population": 4,
+        "morale": 3,
+        "intel": 2,
+        "fortification": 1
+      },
+      "traits": [
+        "mineral_rich",
+        "scattered_survivors"
+      ]
+    },
+    {
+      "name": "Gaia",
+      "type": "minor",
+      "position": {
+        "q": -2,
+        "r": 2
+      },
+      "id": "civsau0pf",
+      "starType": "orange",
+      "planetType": "barren",
+      "attributes": {
+        "capacity": 6,
+        "raw": 3,
+        "population": 3,
+        "morale": 2,
+        "intel": 1,
+        "fortification": 0
+      },
+      "traits": [
+        "mineral_rich"
+      ]
+    },
+    {
+      "name": "Rhea",
+      "type": "minor",
+      "position": {
+        "q": -2,
+        "r": 1
+      },
+      "id": "4b9lxd99o",
+      "starType": "yellow",
+      "planetType": "adaptable",
+      "attributes": {
+        "capacity": 8,
+        "raw": 2,
+        "population": 4,
+        "morale": 3,
+        "intel": 3,
+        "fortification": 1
+      },
+      "traits": [
+        "spy_satellites"
+      ]
+    },
+    {
+      "name": "Poseidon",
+      "type": "unimportant",
+      "position": {
+        "q": 2,
+        "r": 0
+      },
+      "id": "9zr7k914d",
+      "starType": "red",
+      "planetType": "extreme",
+      "attributes": {
+        "capacity": 2,
+        "raw": 1,
+        "population": 1,
+        "morale": 1,
+        "intel": 1,
+        "fortification": 0
+      },
+      "traits": [
+        "spy_satellites"
+      ]
+    },
+    {
+      "name": "Hephaestus",
+      "type": "minor",
+      "position": {
+        "q": 2,
+        "r": -1
+      },
+      "id": "38o27bjs5",
+      "starType": "blue",
+      "planetType": "barren",
+      "attributes": {
+        "capacity": 6,
+        "raw": 2,
+        "population": 3,
+        "morale": 2,
+        "intel": 2,
+        "fortification": 1
+      },
+      "traits": [
+        "automated_defenses",
+        "spy_satellites"
+      ]
+    },
+    {
+      "name": "Aphrodite",
+      "type": "minor",
+      "position": {
+        "q": 2,
+        "r": -2
+      },
+      "id": "tz8ajw35o",
+      "starType": "orange",
+      "planetType": "barren",
+      "attributes": {
+        "capacity": 6,
+        "raw": 2,
+        "population": 4,
+        "morale": 2,
+        "intel": 1,
+        "fortification": 1
+      },
+      "traits": [
+        "automated_defenses",
+        "scattered_survivors"
+      ]
+    },
+    {
+      "name": "Apollo",
+      "type": "minor",
+      "position": {
+        "q": 1,
+        "r": -2
+      },
+      "id": "640zecm94",
+      "starType": "red",
+      "planetType": "barren",
+      "attributes": {
+        "capacity": 8,
+        "raw": 3,
+        "population": 3,
+        "morale": 4,
+        "intel": 1,
+        "fortification": 0
+      },
+      "traits": [
+        "ancient_ruins",
+        "fair_biosphere"
+      ]
+    },
+    {
+      "name": "Artemis",
+      "type": "minor",
+      "position": {
+        "q": -1,
+        "r": -1
+      },
+      "id": "x0d0rn1xb",
+      "starType": "white",
+      "planetType": "barren",
+      "attributes": {
+        "capacity": 6,
+        "raw": 3,
+        "population": 3,
+        "morale": 3,
+        "intel": 1,
+        "fortification": 0
+      },
+      "traits": [
+        "ancient_ruins"
+      ]
+    },
+    {
+      "name": "Dionysus",
+      "type": "unimportant",
+      "position": {
+        "q": -2,
+        "r": 0
+      },
+      "id": "3ecv811se",
+      "starType": "red",
+      "planetType": "extreme",
+      "attributes": {
+        "capacity": 2,
+        "raw": 3,
+        "population": 1,
+        "morale": 1,
+        "intel": 0,
+        "fortification": 0
+      },
+      "traits": [
+        "strategic_resources"
+      ]
+    }
+  ],
+  "jumpLanes": [
+    {
+      "id": "teuwil0l0",
+      "from": "hub",
+      "to": "u4m0m4ya1",
+      "type": "unexplored"
+    },
+    {
+      "id": "zhygs2zux",
+      "from": "hub",
+      "to": "nsdj7jez5",
+      "type": "unexplored"
+    },
+    {
+      "id": "d8tc8f4bb",
+      "from": "hub",
+      "to": "u12089oy0",
+      "type": "unexplored"
+    },
+    {
+      "id": "hfrtuur5v",
+      "from": "hub",
+      "to": "td49ttgy2",
+      "type": "unexplored"
+    },
+    {
+      "id": "gjj8q348i",
+      "from": "hub",
+      "to": "xz8b6ut34",
+      "type": "unexplored"
+    },
+    {
+      "id": "h6umyvmsv",
+      "from": "hub",
+      "to": "3q240e5a5",
+      "type": "unexplored"
+    },
+    {
+      "id": "fepa6gkkk",
+      "from": "iohi2mrqc",
+      "to": "u4m0m4ya1",
+      "type": "unexplored"
+    },
+    {
+      "id": "8vmpkmj46",
+      "from": "q7efwagod",
+      "to": "td49ttgy2",
+      "type": "unexplored"
+    },
+    {
+      "id": "kge54s4yo",
+      "from": "hp3fx6bif",
+      "to": "iohi2mrqc",
+      "type": "unexplored"
+    },
+    {
+      "id": "6e273tsl2",
+      "from": "iohi2mrqc",
+      "to": "v82pm249v",
+      "type": "unexplored"
+    },
+    {
+      "id": "wj5tpmadv",
+      "from": "civsau0pf",
+      "to": "v82pm249v",
+      "type": "unexplored"
+    },
+    {
+      "id": "t5i08t1dm",
+      "from": "civsau0pf",
+      "to": "nsdj7jez5",
+      "type": "unexplored"
+    },
+    {
+      "id": "cerphpw0p",
+      "from": "4b9lxd99o",
+      "to": "nsdj7jez5",
+      "type": "unexplored"
+    },
+    {
+      "id": "15dj6fvl6",
+      "from": "v82pm249v",
+      "to": "u4m0m4ya1",
+      "type": "unexplored"
+    },
+    {
+      "id": "b2zhvnxvr",
+      "from": "v82pm249v",
+      "to": "nsdj7jez5",
+      "type": "unexplored"
+    },
+    {
+      "id": "ylyzei91x",
+      "from": "9zr7k914d",
+      "to": "3q240e5a5",
+      "type": "unexplored"
+    },
+    {
+      "id": "iv4mog7ly",
+      "from": "38o27bjs5",
+      "to": "9zr7k914d",
+      "type": "unexplored"
+    },
+    {
+      "id": "ho5glxawh",
+      "from": "38o27bjs5",
+      "to": "3q240e5a5",
+      "type": "unexplored"
+    },
+    {
+      "id": "icie2kw75",
+      "from": "tz8ajw35o",
+      "to": "38o27bjs5",
+      "type": "unexplored"
+    },
+    {
+      "id": "0ymppdhh8",
+      "from": "tz8ajw35o",
+      "to": "xz8b6ut34",
+      "type": "unexplored"
+    },
+    {
+      "id": "uc2jqj3dr",
+      "from": "640zecm94",
+      "to": "xz8b6ut34",
+      "type": "unexplored"
+    },
+    {
+      "id": "dmdohnbzu",
+      "from": "640zecm94",
+      "to": "td49ttgy2",
+      "type": "unexplored"
+    },
+    {
+      "id": "bp1fv6hnr",
+      "from": "640zecm94",
+      "to": "q7efwagod",
+      "type": "unexplored"
+    },
+    {
+      "id": "fdn0sgn6q",
+      "from": "x0d0rn1xb",
+      "to": "q7efwagod",
+      "type": "unexplored"
+    },
+    {
+      "id": "1jwiy231z",
+      "from": "3ecv811se",
+      "to": "4b9lxd99o",
+      "type": "unexplored"
+    },
+    {
+      "id": "u83hy0h05",
+      "from": "3ecv811se",
+      "to": "u12089oy0",
+      "type": "unexplored"
+    },
+    {
+      "id": "tz4pvnyad",
+      "from": "3ecv811se",
+      "to": "x0d0rn1xb",
+      "type": "unexplored"
+    },
+    {
+      "id": "c768ze7jc",
+      "from": "hp3fx6bif",
+      "to": "3q240e5a5",
+      "type": "unexplored"
+    }
+  ]
+}

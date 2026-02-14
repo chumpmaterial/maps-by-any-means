@@ -1,0 +1,154 @@
+import { useState } from 'react';
+import type { System } from '../types';
+import { hexToPixel, DEFAULT_HEX_SIZE } from '../utils/hexUtils';
+import { generateStrokeColor } from '../utils/colorUtils';
+
+interface SystemNodeProps {
+  system: System;
+  isSelected: boolean;
+  onClick: (e: React.MouseEvent) => void;
+  onHover?: (system: System | null) => void;
+  useTeamColors?: boolean;
+  getOwnerTeamColor?: (ownerId: string) => string | undefined;
+}
+
+// Size multipliers for different system types (relative to hex size)
+const sizeMultipliers: Record<System['type'], number> = {
+  homeworld: 0.45,
+  major: 0.38,
+  minor: 0.30,
+  unimportant: 0.22,
+};
+
+// Default colors matching the VBAM reference style
+const typeColors: Record<System['type'], { fill: string; stroke: string; starFill?: string }> = {
+  homeworld: { fill: '#f59e0b', stroke: '#d97706', starFill: '#78350f' },  // Orange with dark star
+  major: { fill: '#3b82f6', stroke: '#1d4ed8' },      // Blue
+  minor: { fill: '#22c55e', stroke: '#15803d' },      // Green
+  unimportant: { fill: '#6b7280', stroke: '#4b5563' }, // Gray
+};
+
+export function SystemNode({
+  system,
+  isSelected,
+  onClick,
+  onHover,
+  useTeamColors,
+  getOwnerTeamColor,
+}: SystemNodeProps) {
+  const [isHovered, setIsHovered] = useState(false);
+  const { x, y } = hexToPixel(system.position);
+  const radius = DEFAULT_HEX_SIZE * sizeMultipliers[system.type];
+  const defaultColors = typeColors[system.type];
+
+  // Determine fill color based on team colors setting
+  let fillColor = defaultColors.fill;
+  let strokeColor = defaultColors.stroke;
+
+  if (useTeamColors) {
+    if (system.type === 'homeworld' && system.teamColor) {
+      // Homeworld uses its own team color
+      fillColor = system.teamColor;
+      strokeColor = generateStrokeColor(system.teamColor);
+    } else if (system.owner && getOwnerTeamColor) {
+      // Non-homeworld with owner uses owner's team color
+      const ownerColor = getOwnerTeamColor(system.owner);
+      if (ownerColor) {
+        fillColor = ownerColor;
+        strokeColor = generateStrokeColor(ownerColor);
+      }
+    }
+    // Non-homeworld without owner keeps default colors
+  }
+
+  // For homeworld star icon, use a darker version of the fill color
+  const starFill = system.type === 'homeworld'
+    ? (useTeamColors && system.teamColor ? generateStrokeColor(system.teamColor) : defaultColors.starFill)
+    : undefined;
+
+  return (
+    <g
+      className="cursor-pointer"
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick(e);
+      }}
+      onMouseEnter={() => { setIsHovered(true); onHover?.(system); }}
+      onMouseLeave={() => { setIsHovered(false); onHover?.(null); }}
+    >
+      {/* Invisible hit-area to prevent flicker at ring gap */}
+      <circle
+        cx={x}
+        cy={y}
+        r={radius + 6}
+        fill="transparent"
+        stroke="none"
+      />
+
+      {/* Hover ring */}
+      {isHovered && !isSelected && (
+        <circle
+          cx={x}
+          cy={y}
+          r={radius + 4}
+          fill="none"
+          stroke="#60a5fa"
+          strokeWidth={2}
+          opacity={0.5}
+        />
+      )}
+
+      {/* Selection ring */}
+      {isSelected && (
+        <circle
+          cx={x}
+          cy={y}
+          r={radius + 6}
+          fill="none"
+          stroke="#ef4444"
+          strokeWidth={3}
+        />
+      )}
+
+      {/* Main circle */}
+      <circle
+        cx={x}
+        cy={y}
+        r={radius}
+        fill={fillColor}
+        stroke={strokeColor}
+        strokeWidth={2}
+      />
+
+      {/* Star icon for homeworlds */}
+      {system.type === 'homeworld' && (
+        <text
+          x={x}
+          y={y}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontSize={radius * 1.1}
+          fill={starFill || strokeColor}
+          className="pointer-events-none"
+          style={{ fontFamily: 'sans-serif' }}
+        >
+          ★
+        </text>
+      )}
+
+      {/* System name label with outline for readability */}
+      <text
+        x={x}
+        y={y + radius + 14}
+        textAnchor="middle"
+        fontSize={11}
+        fontWeight={system.type === 'homeworld' ? 'bold' : 'normal'}
+        className="pointer-events-none fill-gray-700 stroke-white dark:fill-gray-300 dark:stroke-gray-900"
+        strokeWidth={3}
+        paintOrder="stroke fill"
+      >
+        {system.name}
+      </text>
+    </g>
+  );
+}

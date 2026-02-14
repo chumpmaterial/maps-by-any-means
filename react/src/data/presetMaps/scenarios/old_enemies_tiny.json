@@ -1,0 +1,607 @@
+{
+  "id": "8sews1x8k",
+  "name": "Old Enemies Tiny",
+  "systems": [
+    {
+      "id": "hub",
+      "name": "Artemis",
+      "type": "minor",
+      "position": {
+        "q": 0,
+        "r": 0
+      },
+      "starType": "white",
+      "planetType": "barren",
+      "attributes": {
+        "capacity": 6,
+        "raw": 3,
+        "population": 3,
+        "morale": 3,
+        "intel": 1,
+        "fortification": 0
+      },
+      "traits": [
+        "ancient_ruins"
+      ]
+    },
+    {
+      "name": "Brunhilda",
+      "type": "minor",
+      "position": {
+        "q": 0,
+        "r": 1
+      },
+      "id": "atbtrgjus",
+      "owner": "yr3ojft80",
+      "starType": "white",
+      "planetType": "adaptable",
+      "attributes": {
+        "capacity": 8,
+        "raw": 3,
+        "population": 4,
+        "morale": 4,
+        "intel": 2,
+        "fortification": 2
+      },
+      "traits": [
+        "ancient_ruins",
+        "automated_defenses"
+      ]
+    },
+    {
+      "name": "Odin",
+      "type": "homeworld",
+      "position": {
+        "q": 0,
+        "r": 2
+      },
+      "id": "yr3ojft80",
+      "teamColor": "#3368e6",
+      "starType": "yellow",
+      "planetType": "homeworld",
+      "attributes": {
+        "capacity": 12,
+        "raw": 5,
+        "population": 10,
+        "morale": 8,
+        "intel": 6,
+        "fortification": 4
+      }
+    },
+    {
+      "name": "Dione",
+      "type": "unimportant",
+      "position": {
+        "q": 0,
+        "r": -1
+      },
+      "id": "wekqe9g9e",
+      "owner": "aexi6c3ot",
+      "starType": "orange",
+      "planetType": "extreme",
+      "attributes": {
+        "capacity": 2,
+        "raw": 2,
+        "population": 1,
+        "morale": 1,
+        "intel": 0,
+        "fortification": 0
+      },
+      "traits": [
+        "mineral_rich"
+      ]
+    },
+    {
+      "name": "Zeus",
+      "type": "homeworld",
+      "position": {
+        "q": 0,
+        "r": -2
+      },
+      "id": "aexi6c3ot",
+      "teamColor": "#f33939",
+      "starType": "yellow",
+      "planetType": "homeworld",
+      "attributes": {
+        "capacity": 12,
+        "raw": 5,
+        "population": 10,
+        "morale": 8,
+        "intel": 6,
+        "fortification": 4
+      }
+    },
+    {
+      "name": "Beowulf",
+      "type": "unimportant",
+      "position": {
+        "q": 1,
+        "r": 1
+      },
+      "id": "7k3rpnojp",
+      "owner": "yr3ojft80",
+      "starType": "orange",
+      "planetType": "dead",
+      "attributes": {
+        "capacity": 4,
+        "raw": 2,
+        "population": 2,
+        "morale": 2,
+        "intel": 1,
+        "fortification": 0
+      },
+      "traits": [
+        "mineral_rich",
+        "spy_satellites"
+      ]
+    },
+    {
+      "name": "Tyr",
+      "type": "minor",
+      "position": {
+        "q": 1,
+        "r": 0
+      },
+      "id": "y6ieeh4u2",
+      "owner": "yr3ojft80",
+      "starType": "dwarf",
+      "planetType": "barren",
+      "attributes": {
+        "capacity": 6,
+        "raw": 2,
+        "population": 4,
+        "morale": 2,
+        "intel": 2,
+        "fortification": 0
+      },
+      "traits": [
+        "scattered_survivors",
+        "spy_satellites"
+      ]
+    },
+    {
+      "name": "Epimetheus",
+      "type": "minor",
+      "position": {
+        "q": 1,
+        "r": -1
+      },
+      "id": "9cwfxfub9",
+      "owner": "aexi6c3ot",
+      "starType": "red",
+      "planetType": "adaptable",
+      "attributes": {
+        "capacity": 8,
+        "raw": 2,
+        "population": 5,
+        "morale": 3,
+        "intel": 2,
+        "fortification": 1
+      },
+      "traits": [
+        "scattered_survivors"
+      ]
+    },
+    {
+      "name": "Hephaestus",
+      "type": "minor",
+      "position": {
+        "q": 1,
+        "r": -2
+      },
+      "id": "n5oiqog6o",
+      "owner": "aexi6c3ot",
+      "starType": "blue",
+      "planetType": "barren",
+      "attributes": {
+        "capacity": 6,
+        "raw": 2,
+        "population": 3,
+        "morale": 2,
+        "intel": 2,
+        "fortification": 1
+      },
+      "traits": [
+        "automated_defenses",
+        "spy_satellites"
+      ]
+    },
+    {
+      "name": "Hrothgar",
+      "type": "minor",
+      "position": {
+        "q": -1,
+        "r": 2
+      },
+      "id": "lysyu2ode",
+      "owner": "yr3ojft80",
+      "starType": "red",
+      "planetType": "barren",
+      "attributes": {
+        "capacity": 6,
+        "raw": 4,
+        "population": 3,
+        "morale": 2,
+        "intel": 2,
+        "fortification": 0
+      },
+      "traits": [
+        "spy_satellites",
+        "strategic_resources"
+      ]
+    },
+    {
+      "name": "Vikar",
+      "type": "major",
+      "position": {
+        "q": -1,
+        "r": 1
+      },
+      "id": "gxb3q3rey",
+      "owner": "yr3ojft80",
+      "starType": "orange",
+      "planetType": "garden",
+      "attributes": {
+        "capacity": 10,
+        "raw": 3,
+        "population": 8,
+        "morale": 6,
+        "intel": 5,
+        "fortification": 2
+      },
+      "traits": [
+        "lost_colony",
+        "spy_satellites"
+      ]
+    },
+    {
+      "name": "Ulysses",
+      "type": "minor",
+      "position": {
+        "q": -1,
+        "r": 0
+      },
+      "id": "pcheq1wvv",
+      "owner": "aexi6c3ot",
+      "starType": "white",
+      "planetType": "adaptable",
+      "attributes": {
+        "capacity": 8,
+        "raw": 2,
+        "population": 3,
+        "morale": 2,
+        "intel": 3,
+        "fortification": 1
+      },
+      "traits": [
+        "spy_satellites",
+        "spy_satellites"
+      ]
+    },
+    {
+      "name": "Ajax",
+      "type": "minor",
+      "position": {
+        "q": -1,
+        "r": -1
+      },
+      "id": "yomfa49zu",
+      "owner": "aexi6c3ot",
+      "starType": "yellow",
+      "planetType": "barren",
+      "attributes": {
+        "capacity": 10,
+        "raw": 2,
+        "population": 3,
+        "morale": 4,
+        "intel": 1,
+        "fortification": 0
+      },
+      "traits": [
+        "fair_biosphere",
+        "fair_biosphere"
+      ]
+    },
+    {
+      "name": "Ragnar",
+      "type": "unimportant",
+      "position": {
+        "q": -2,
+        "r": 2
+      },
+      "id": "6ymno8hf6",
+      "owner": "yr3ojft80",
+      "starType": "dwarf",
+      "planetType": "dead",
+      "attributes": {
+        "capacity": 6,
+        "raw": 3,
+        "population": 2,
+        "morale": 3,
+        "intel": 0,
+        "fortification": 0
+      },
+      "traits": [
+        "strategic_resources"
+      ]
+    },
+    {
+      "name": "Frigga",
+      "type": "minor",
+      "position": {
+        "q": -2,
+        "r": 1
+      },
+      "id": "750xh1w0x",
+      "owner": "yr3ojft80",
+      "starType": "orange",
+      "planetType": "barren",
+      "attributes": {
+        "capacity": 6,
+        "raw": 3,
+        "population": 3,
+        "morale": 2,
+        "intel": 2,
+        "fortification": 0
+      },
+      "traits": [
+        "mineral_rich",
+        "spy_satellites"
+      ]
+    },
+    {
+      "name": "Themis",
+      "type": "major",
+      "position": {
+        "q": -2,
+        "r": 0
+      },
+      "id": "51gnwqypm",
+      "owner": "aexi6c3ot",
+      "starType": "orange",
+      "planetType": "garden",
+      "attributes": {
+        "capacity": 10,
+        "raw": 4,
+        "population": 6,
+        "morale": 6,
+        "intel": 4,
+        "fortification": 3
+      },
+      "traits": [
+        "ancient_ruins",
+        "automated_defenses"
+      ]
+    },
+    {
+      "name": "Idis",
+      "type": "unimportant",
+      "position": {
+        "q": 2,
+        "r": 0
+      },
+      "id": "30j4i5x5o",
+      "owner": "yr3ojft80",
+      "starType": "red",
+      "planetType": "dead",
+      "attributes": {
+        "capacity": 4,
+        "raw": 2,
+        "population": 2,
+        "morale": 3,
+        "intel": 0,
+        "fortification": 0
+      },
+      "traits": [
+        "ancient_ruins"
+      ]
+    },
+    {
+      "name": "Atlas",
+      "type": "minor",
+      "position": {
+        "q": 2,
+        "r": -1
+      },
+      "id": "tm7egjyey",
+      "owner": "aexi6c3ot",
+      "starType": "red",
+      "planetType": "adaptable",
+      "attributes": {
+        "capacity": 10,
+        "raw": 2,
+        "population": 4,
+        "morale": 4,
+        "intel": 2,
+        "fortification": 2
+      },
+      "traits": [
+        "fair_biosphere",
+        "automated_defenses"
+      ]
+    },
+    {
+      "name": "Heracles",
+      "type": "unimportant",
+      "position": {
+        "q": 2,
+        "r": -2
+      },
+      "id": "7ubqu8rv1",
+      "owner": "aexi6c3ot",
+      "starType": "orange",
+      "planetType": "dead",
+      "attributes": {
+        "capacity": 4,
+        "raw": 3,
+        "population": 2,
+        "morale": 2,
+        "intel": 0,
+        "fortification": 1
+      },
+      "traits": [
+        "automated_defenses",
+        "strategic_resources"
+      ]
+    }
+  ],
+  "jumpLanes": [
+    {
+      "id": "niso8nhq6",
+      "from": "yr3ojft80",
+      "to": "atbtrgjus",
+      "type": "major"
+    },
+    {
+      "id": "idzmy7e8k",
+      "from": "atbtrgjus",
+      "to": "hub",
+      "type": "minor"
+    },
+    {
+      "id": "y86g43fke",
+      "from": "hub",
+      "to": "wekqe9g9e",
+      "type": "minor"
+    },
+    {
+      "id": "b9yybxbre",
+      "from": "wekqe9g9e",
+      "to": "aexi6c3ot",
+      "type": "minor"
+    },
+    {
+      "id": "cjfkee7s9",
+      "from": "aexi6c3ot",
+      "to": "n5oiqog6o",
+      "type": "major"
+    },
+    {
+      "id": "qfvk6kiw1",
+      "from": "aexi6c3ot",
+      "to": "yomfa49zu",
+      "type": "major"
+    },
+    {
+      "id": "ikb5puj47",
+      "from": "yomfa49zu",
+      "to": "51gnwqypm",
+      "type": "major"
+    },
+    {
+      "id": "2w210wizm",
+      "from": "30j4i5x5o",
+      "to": "tm7egjyey",
+      "type": "restricted"
+    },
+    {
+      "id": "8hd5nthlw",
+      "from": "7k3rpnojp",
+      "to": "yr3ojft80",
+      "type": "minor"
+    },
+    {
+      "id": "fzp5fewg7",
+      "from": "7k3rpnojp",
+      "to": "y6ieeh4u2",
+      "type": "restricted"
+    },
+    {
+      "id": "nl5ngbiwj",
+      "from": "atbtrgjus",
+      "to": "y6ieeh4u2",
+      "type": "major"
+    },
+    {
+      "id": "li7bggp4l",
+      "from": "yr3ojft80",
+      "to": "lysyu2ode",
+      "type": "major"
+    },
+    {
+      "id": "pzacprk1v",
+      "from": "lysyu2ode",
+      "to": "gxb3q3rey",
+      "type": "major"
+    },
+    {
+      "id": "w2oedik16",
+      "from": "lysyu2ode",
+      "to": "6ymno8hf6",
+      "type": "minor"
+    },
+    {
+      "id": "vl4wzq7dq",
+      "from": "7k3rpnojp",
+      "to": "30j4i5x5o",
+      "type": "minor"
+    },
+    {
+      "id": "aarozsdc5",
+      "from": "6ymno8hf6",
+      "to": "750xh1w0x",
+      "type": "minor"
+    },
+    {
+      "id": "jgymrk339",
+      "from": "y6ieeh4u2",
+      "to": "tm7egjyey",
+      "type": "unexplored"
+    },
+    {
+      "id": "3ojlp04yf",
+      "from": "y6ieeh4u2",
+      "to": "hub",
+      "type": "unexplored"
+    },
+    {
+      "id": "obemrgciy",
+      "from": "hub",
+      "to": "pcheq1wvv",
+      "type": "unexplored"
+    },
+    {
+      "id": "5lw3f59xv",
+      "from": "51gnwqypm",
+      "to": "750xh1w0x",
+      "type": "unexplored"
+    },
+    {
+      "id": "dofezjsa5",
+      "from": "750xh1w0x",
+      "to": "pcheq1wvv",
+      "type": "restricted"
+    },
+    {
+      "id": "rka7xntqi",
+      "from": "pcheq1wvv",
+      "to": "51gnwqypm",
+      "type": "minor"
+    },
+    {
+      "id": "hl9ovxnnm",
+      "from": "n5oiqog6o",
+      "to": "9cwfxfub9",
+      "type": "major"
+    },
+    {
+      "id": "rje7d23ky",
+      "from": "n5oiqog6o",
+      "to": "7ubqu8rv1",
+      "type": "minor"
+    },
+    {
+      "id": "475ynm3ya",
+      "from": "tm7egjyey",
+      "to": "9cwfxfub9",
+      "type": "minor"
+    },
+    {
+      "id": "478ashl9v",
+      "from": "tm7egjyey",
+      "to": "7ubqu8rv1",
+      "type": "minor"
+    }
+  ],
+  "useTeamColors": true
+}

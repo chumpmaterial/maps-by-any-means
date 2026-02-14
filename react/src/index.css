@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+/* Enable class-based dark mode for Tailwind v4 */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Base styles */
+body {
+  @apply m-0 min-h-screen bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-gray-100;
+}
+
+#root {
+  @apply min-h-screen select-none;
+}
+
+input, textarea, [contenteditable="true"] {
+  @apply select-text;
+}
+
+/* Custom checkbox checkmark for appearance-none styled checkboxes */
+input[type="checkbox"] {
+  @apply relative cursor-pointer;
+}
+
+input[type="checkbox"]:checked::after {
+  content: '';
+  @apply absolute inset-0 bg-no-repeat bg-center;
+  background-size: 75%;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3E%3C/svg%3E");
+}
