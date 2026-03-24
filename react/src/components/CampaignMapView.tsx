@@ -3032,17 +3032,14 @@ function CampaignToolbar({
           </>
         )}
         {onOpenHistory && (
-          <>
-            <span className="mx-1 text-gray-300 dark:text-gray-700">|</span>
-            <button
-              onClick={onOpenHistory}
-              className="flex items-center gap-1.5 rounded px-3 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-200"
-              title="View campaign history"
-            >
-              <Clock size={16} className="shrink-0" />
-              History
-            </button>
-          </>
+          <button
+            onClick={onOpenHistory}
+            className="flex items-center gap-1.5 rounded px-3 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-200"
+            title="View campaign history"
+          >
+            <Clock size={16} className="shrink-0" />
+            History
+          </button>
         )}
 
         {/* Fleets dropdown (in_progress only) */}
