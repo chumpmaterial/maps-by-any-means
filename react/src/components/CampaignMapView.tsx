@@ -23,6 +23,9 @@ import { SystemsOverviewView } from './SystemsOverviewView';
 import { TurnHistoryBrowser } from './TurnHistoryBrowser';
 import { SettingsModal } from './SettingsModal';
 import { Toolbar } from './Toolbar';
+import { useMapCapture } from '../hooks/useMapCapture';
+import { CaptureButton } from './CaptureButton';
+import { ClipModePanel } from './ClipModePanel';
 import { generateRandomTeamColor } from '../utils/colorUtils';
 import { computeFleetBadges, computeMovementPoints, findFleetPaths, canJoinSystemFleet, getCarryCapacity } from '../utils/fleetUtils';
 import { isEffectivelyBlockaded, isBlockadedAgainst, diplomacyKey as supplyDiplomacyKey } from '../utils/supplyUtils';
@@ -40,6 +43,8 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
   const mapState = useMapState();
   const nameListHook = useNameLists();
   const confirm = useConfirm();
+  const captureHook = useMapCapture();
+  const svgRef = useRef<SVGSVGElement>(null) as React.RefObject<SVGSVGElement>;
   const [showSettings, setShowSettings] = useState(false);
   const [mapEditingMode, setMapEditingMode] = useState(false);
   const [mapSettings, setMapSettings] = useState({
@@ -2195,7 +2200,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
   const currentTurnPhaseLabel = TURN_PHASES.find(p => p.value === currentTurnPhase)?.label ?? currentTurnPhase;
 
   return (
-    <div className="flex h-screen flex-col">
+    <div className="relative flex h-screen flex-col">
       {/* Campaign Toolbar */}
       {mapEditingMode ? (
         <Toolbar
@@ -2434,6 +2439,10 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
               requestCenter={centerRequest}
               systemOwnership={phase !== 'homeworld_selection' ? systemOwnership : undefined}
               campaignPlayers={players}
+              svgRef={svgRef}
+              clipModeActive={captureHook.clipModeActive}
+              clipSelectedSystemIds={captureHook.clipSelectedSystemIds}
+              onClipToggleSystem={captureHook.toggleClipSystem}
             />
             {/* Map control pill */}
             {phase === 'in_progress' && (
@@ -2511,7 +2520,13 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
                     </div>
                   )}
                 </div>
-                {/* Divider */}
+                {/* Capture button */}
+                <CaptureButton
+                  disabled={mapState.map.systems.length === 0}
+                  onFullMap={() => captureHook.captureFullMap(svgRef, mapState.map, mapState.selectedSystemId, fowData)}
+                  onClipMode={() => captureHook.enterClipMode()}
+                />
+                {/* Divider before Map Editing */}
                 <div className="h-3 w-px bg-white/30" />
                 {/* Map Editing Mode */}
                 <button
@@ -2876,7 +2891,27 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
         isOpen={showSettings}
         onClose={() => setShowSettings(false)}
         nameListHook={nameListHook}
+        captureHook={captureHook}
       />
+
+      {/* Clip Mode Panel */}
+      {captureHook.clipModeActive && (
+        <div className="absolute bottom-28 left-4 z-40">
+          <ClipModePanel
+            captureHook={captureHook}
+            systems={mapState.map.systems}
+            onCapture={() => captureHook.captureClipMap(svgRef, mapState.map)}
+          />
+        </div>
+      )}
+
+      {/* Capture toast — portal ensures it appears above fullscreen sub-views */}
+      {captureHook.toastMessage && createPortal(
+        <div className="pointer-events-none fixed bottom-6 left-1/2 z-[9999] -translate-x-1/2 rounded-full bg-gray-900/90 px-4 py-2 text-sm text-white shadow-lg dark:bg-white/90 dark:text-gray-900">
+          {captureHook.toastMessage}
+        </div>,
+        document.body,
+      )}
     </div>
   );
 }
