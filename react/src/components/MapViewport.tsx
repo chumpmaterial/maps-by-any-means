@@ -1,21 +1,83 @@
-import { useRef, useEffect, useState, useCallback } from 'react';
+import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import type { useMapState } from '../hooks/useMapState';
-import type { System } from '../types';
+import type { System, SystemIntelSnapshot, CampaignPlayer } from '../types';
 import { usePanZoom } from '../hooks/usePanZoom';
 import { HexGrid } from './HexGrid';
 import { SystemNode } from './SystemNode';
 import { SystemTooltip } from './SystemTooltip';
 import { JumpLane } from './JumpLane';
 import { GenerationLog } from './GenerationLog';
-import { pixelToHex, hexToPixel, areAdjacent } from '../utils/hexUtils';
+import { SystemFleetBadge, getBadgeMargin } from './SystemFleetBadge';
+import { pixelToHex, hexToPixel, areAdjacent, getHexCorners, cornersToSvgPoints, DEFAULT_HEX_SIZE } from '../utils/hexUtils';
+
+export interface FowData {
+  intel: Record<string, SystemIntelSnapshot>;
+  initialIntel: Record<string, SystemIntelSnapshot>;
+  currentTurn: number;
+  blindExploration: boolean;
+}
+
+export interface FleetSummaryInfo {
+  id: string;
+  name: string;
+  isCMFleet: boolean;
+  unitCount: number;
+  unitsByCategory: Partial<Record<string, number>>;
+  totalEP: number;
+  highestCR: number | null;
+  isFast: boolean;
+  isScout: boolean;
+  isCivilian: boolean;
+  movedThisTurn: boolean;
+}
+
+export interface FleetOwnerIndicator {
+  ownerId: string;       // player.id, or 'cm' for all CM fleets grouped
+  ownerName: string;     // player.name, or 'CM'
+  color: string;         // player.teamColor or CM fleet color or '#6b7280' fallback
+  fleets: FleetSummaryInfo[];
+  totalFleets: number;
+  totalUnits: number;
+  unitsByCategory: Partial<Record<string, number>>;
+  totalEP: number;
+}
 
 interface MapViewportProps {
   mapState: ReturnType<typeof useMapState>;
   generationLog?: string[];
   onClearLog?: () => void;
+  campaignMode?: boolean;
+  mapEditingMode?: boolean;
+  showHexGrid?: boolean;
+  tradeRouteLaneIds?: Set<string>;
+  tradeRouteSystemIds?: Set<string>;
+  fowData?: FowData | null;
+  espionageMode?: boolean;
+  onEspionageTarget?: (systemId: string) => void;
+  fleetMoveMode?: { fleetId: string; playerId: string } | null;
+  onFleetMoveTarget?: (systemId: string) => void;
+  cmFleetMoveMode?: boolean;
+  onCMFleetMoveTarget?: (systemId: string) => void;
+  fleetIndicators?: Record<string, FleetOwnerIndicator[]>;
+  staleSystems?: Record<string, number>;
+  onFleetMove?: (playerId: string, fleetId: string) => void;
+  onCMFleetMove?: (fleetId: string) => void;
+  /** When set, the viewport will pan to center on the given system. Increment nonce to re-center on the same system. */
+  requestCenter?: { systemId: string; nonce: number } | null;
+  /** Campaign-mode ownership: systemId → playerId. When provided, overrides map editor color logic. */
+  systemOwnership?: Record<string, string>;
+  /** Campaign players (for color lookup by playerId). */
+  campaignPlayers?: CampaignPlayer[];
 }
 
-export function MapViewport({ mapState, generationLog = [], onClearLog }: MapViewportProps) {
+const SYSTEM_RADIUS_MULTIPLIERS: Record<string, number> = {
+  homeworld: 0.45,
+  major: 0.38,
+  minor: 0.30,
+  unimportant: 0.22,
+};
+
+export function MapViewport({ mapState, generationLog = [], onClearLog, campaignMode = false, mapEditingMode = false, showHexGrid = true, tradeRouteLaneIds, tradeRouteSystemIds, fowData, espionageMode = false, onEspionageTarget, fleetMoveMode, onFleetMoveTarget, cmFleetMoveMode, onCMFleetMoveTarget, fleetIndicators, staleSystems, onFleetMove, onCMFleetMove, requestCenter, systemOwnership, campaignPlayers }: MapViewportProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
 
@@ -27,6 +89,7 @@ export function MapViewport({ mapState, generationLog = [], onClearLog }: MapVie
     handleWheel,
     screenToWorld,
     resetViewport,
+    centerOn,
     zoomIn,
     zoomOut,
     zoomToFit,
@@ -46,6 +109,21 @@ export function MapViewport({ mapState, generationLog = [], onClearLog }: MapVie
     addSystem,
     addJumpLane,
   } = mapState;
+
+  // Convert world coordinates to screen coordinates
+  const worldToScreen = useCallback((wx: number, wy: number) => ({
+    x: wx * viewport.zoom + viewport.offsetX + dimensions.width / 2,
+    y: wy * viewport.zoom + viewport.offsetY + dimensions.height / 2,
+  }), [viewport, dimensions]);
+
+  // Center viewport on requested system
+  useEffect(() => {
+    if (!requestCenter) return;
+    const system = map.systems.find(s => s.id === requestCenter.systemId);
+    if (!system) return;
+    const { x, y } = hexToPixel(system.position, DEFAULT_HEX_SIZE);
+    centerOn(x, y);
+  }, [requestCenter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Tooltip state with hover delay
   const [hoveredSystem, setHoveredSystem] = useState<System | null>(null);
@@ -108,12 +186,12 @@ export function MapViewport({ mapState, generationLog = [], onClearLog }: MapVie
     // Check if there's a system at this hex
     const existingSystem = getSystemAtHex(hex);
 
-    if (existingSystem) {
+    if (existingSystem && (!fowData || !visibleSystemIds || visibleSystemIds.has(existingSystem.id))) {
       setSelectedSystemId(existingSystem.id);
       setSelectedLaneId(null);
-    } else {
-      // Double-click to add a system
-      if (e.detail === 2) {
+    } else if (!existingSystem || !fowData) {
+      // Double-click to add a system (disabled in campaign mode unless map editing)
+      if (e.detail === 2 && (!campaignMode || mapEditingMode)) {
         addSystem({
           name: '',
           type: 'unimportant',
@@ -132,9 +210,57 @@ export function MapViewport({ mapState, generationLog = [], onClearLog }: MapVie
     setSelectedSystemId(null);
   };
 
+  // Fog of War: compute visible system/lane sets
+  const { visibleSystemIds, outdatedSystemIds, visibleLaneIds, unknownButAdjacentSysIds } = useMemo(() => {
+    if (!fowData) return { visibleSystemIds: null, outdatedSystemIds: new Set<string>(), visibleLaneIds: null, unknownButAdjacentSysIds: new Set<string>() };
+    const visibleSysIds = new Set<string>();
+    const outdatedSysIds = new Set<string>();
+    for (const sys of map.systems) {
+      const hasRunning = !!fowData.intel[sys.id];
+      const hasInitial = !!fowData.initialIntel[sys.id];
+      if (hasRunning) {
+        visibleSysIds.add(sys.id);
+        if (fowData.intel[sys.id].turn < fowData.currentTurn) outdatedSysIds.add(sys.id);
+      } else if (!fowData.blindExploration && hasInitial) {
+        visibleSysIds.add(sys.id);
+        outdatedSysIds.add(sys.id);
+      }
+    }
+    const visibleLaneSet = new Set<string>();
+    for (const lane of map.jumpLanes) {
+      if (visibleSysIds.has(lane.from) || visibleSysIds.has(lane.to)) visibleLaneSet.add(lane.id);
+    }
+    // In Blind Exploration mode, track unknown systems adjacent to known ones
+    const unknownAdjacentIds = new Set<string>();
+    if (fowData.blindExploration) {
+      for (const lane of map.jumpLanes) {
+        const fromVisible = visibleSysIds.has(lane.from);
+        const toVisible = visibleSysIds.has(lane.to);
+        if (fromVisible && !toVisible) unknownAdjacentIds.add(lane.to);
+        if (toVisible && !fromVisible) unknownAdjacentIds.add(lane.from);
+      }
+    }
+    return { visibleSystemIds: visibleSysIds, outdatedSystemIds: outdatedSysIds, visibleLaneIds: visibleLaneSet, unknownButAdjacentSysIds: unknownAdjacentIds };
+  }, [fowData, map.systems, map.jumpLanes]);
+
   // Handle system click - supports shift+click to create jump lanes
   const handleSystemClick = (systemId: string, e: React.MouseEvent) => {
-    if (e.shiftKey && selectedSystemId && selectedSystemId !== systemId) {
+    // Fleet move mode: clicking a system sets movement target
+    if (fleetMoveMode && onFleetMoveTarget) {
+      onFleetMoveTarget(systemId);
+      return;
+    }
+    // CM fleet move mode: clicking a system teleports the CM fleet there
+    if (cmFleetMoveMode && onCMFleetMoveTarget) {
+      onCMFleetMoveTarget(systemId);
+      return;
+    }
+    // Espionage mode: clicking a system reports target instead of selecting
+    if (espionageMode && onEspionageTarget) {
+      onEspionageTarget(systemId);
+      return;
+    }
+    if (e.shiftKey && selectedSystemId && selectedSystemId !== systemId && (!campaignMode || mapEditingMode)) {
       // Shift+click: try to create a jump lane
       const fromSystem = getSystem(selectedSystemId);
       const toSystem = getSystem(systemId);
@@ -189,41 +315,107 @@ export function MapViewport({ mapState, generationLog = [], onClearLog }: MapVie
         height={dimensions.height}
         onWheel={handleWheel}
         onClick={handleSvgClick}
-        className="cursor-grab active:cursor-grabbing"
+        className={(espionageMode || fleetMoveMode || cmFleetMoveMode) ? 'cursor-crosshair' : 'cursor-grab active:cursor-grabbing'}
       >
         <g transform={transform}>
           {/* Background hex grid */}
-          <HexGrid radius={8} />
+          {showHexGrid && <HexGrid radius={8} />}
+
+          {/* FoW: dark hex overlays for outdated intel systems (rendered before lanes so they appear below) */}
+          {fowData && map.systems
+            .filter(s => visibleSystemIds?.has(s.id) && outdatedSystemIds.has(s.id))
+            .map(s => {
+              const { x, y } = hexToPixel(s.position);
+              const pts = cornersToSvgPoints(getHexCorners({ x, y }, DEFAULT_HEX_SIZE - 1));
+              return <polygon key={`fow-${s.id}`} points={pts} fill="black" opacity={0.45} className="pointer-events-none" />;
+            })
+          }
 
           {/* Jump lanes (render below systems) */}
-          {map.jumpLanes.map((lane) => {
-            const fromSystem = getSystem(lane.from);
-            const toSystem = getSystem(lane.to);
-            if (!fromSystem || !toSystem) return null;
-            return (
-              <JumpLane
-                key={lane.id}
-                lane={lane}
-                fromSystem={fromSystem}
-                toSystem={toSystem}
-                isSelected={lane.id === selectedLaneId}
-                onClick={() => handleLaneClick(lane.id)}
-              />
-            );
-          })}
+          {map.jumpLanes
+            .filter(l => !visibleLaneIds || visibleLaneIds.has(l.id))
+            .map((lane) => {
+              const fromSystem = getSystem(lane.from);
+              const toSystem = getSystem(lane.to);
+              if (!fromSystem || !toSystem) return null;
+              return (
+                <JumpLane
+                  key={lane.id}
+                  lane={lane}
+                  fromSystem={fromSystem}
+                  toSystem={toSystem}
+                  isSelected={lane.id === selectedLaneId}
+                  onClick={() => handleLaneClick(lane.id)}
+                  isOnTradeRoute={tradeRouteLaneIds?.has(lane.id)}
+                />
+              );
+            })}
+
+          {/* Blind Exploration: grey "?" markers for unknown adjacent systems (render above lanes) */}
+          {fowData?.blindExploration && map.systems
+            .filter(s => unknownButAdjacentSysIds.has(s.id))
+            .map(s => {
+              const { x, y } = hexToPixel(s.position);
+              const r = DEFAULT_HEX_SIZE * 0.30;
+              return (
+                <g key={`unknown-${s.id}`} className="pointer-events-none">
+                  <circle cx={x} cy={y} r={r} fill="#9ca3af" stroke="#6b7280" strokeWidth={2} />
+                  <text x={x} y={y} textAnchor="middle" dominantBaseline="central"
+                    fontSize={r * 1.1} fill="#374151" fontFamily="sans-serif" fontWeight="bold">
+                    ?
+                  </text>
+                  <text x={x} y={y + r + 14} textAnchor="middle"
+                    fontSize={10} fill="#6b7280" fontFamily="sans-serif">
+                    {s.name}
+                  </text>
+                </g>
+              );
+            })
+          }
 
           {/* Systems */}
-          {map.systems.map((system) => (
-            <SystemNode
-              key={system.id}
-              system={system}
-              isSelected={system.id === selectedSystemId}
-              onClick={(e) => handleSystemClick(system.id, e)}
-              onHover={handleSystemHover}
-              useTeamColors={map.useTeamColors}
-              getOwnerTeamColor={(ownerId) => getSystem(ownerId)?.teamColor}
-            />
-          ))}
+          {map.systems
+            .filter(s => !visibleSystemIds || visibleSystemIds.has(s.id))
+            .map((system) => (
+              <SystemNode
+                key={system.id}
+                system={system}
+                isSelected={system.id === selectedSystemId}
+                onClick={(e) => handleSystemClick(system.id, e)}
+                onHover={handleSystemHover}
+                useTeamColors={map.useTeamColors}
+                getOwnerTeamColor={(ownerId) => getSystem(ownerId)?.teamColor}
+                isOnTradeRoute={tradeRouteSystemIds?.has(system.id)}
+                systemOwnership={systemOwnership}
+                campaignPlayers={campaignPlayers}
+              />
+            ))}
+
+          {/* Fleet indicators (campaign in_progress phase) */}
+          {fleetIndicators && map.systems
+            .filter(s => !visibleSystemIds || visibleSystemIds.has(s.id))
+            .filter(s => (fleetIndicators[s.id]?.length ?? 0) > 0)
+            .map(s => {
+              const { x, y } = hexToPixel(s.position);
+              const sysRadius = DEFAULT_HEX_SIZE * (SYSTEM_RADIUS_MULTIPLIERS[s.type] ?? 0.30);
+              const badgeMargin = getBadgeMargin(sysRadius);
+              const badgeScreen = worldToScreen(x + sysRadius + badgeMargin, y - sysRadius - badgeMargin);
+              return (
+                <SystemFleetBadge
+                  key={`badge-${s.id}`}
+                  worldX={x}
+                  worldY={y}
+                  systemRadius={sysRadius}
+                  owners={fleetIndicators[s.id]}
+                  screenX={badgeScreen.x}
+                  screenY={badgeScreen.y}
+                  onMoveFleet={onFleetMove}
+                  onMoveCMFleet={onCMFleetMove}
+                  lastSeenTurn={staleSystems?.[s.id]}
+                />
+              );
+            })
+          }
         </g>
       </svg>
 
@@ -276,7 +468,10 @@ export function MapViewport({ mapState, generationLog = [], onClearLog }: MapVie
 
       {/* Instructions */}
       <div className="absolute bottom-4 right-4 rounded bg-black/50 px-2 py-1 text-xs text-white">
-        Drag: pan | Scroll: zoom | Double-click: add system | Shift+click: add lane | Del: delete | Ctrl+Z/Y: undo/redo | Esc: deselect
+        {campaignMode && !mapEditingMode
+          ? 'Drag: pan | Scroll: zoom | Click: select | Ctrl+Z/Y: undo/redo | Esc: deselect'
+          : 'Drag: pan | Scroll: zoom | Double-click: add system | Shift+click: add lane | Del: delete | Ctrl+Z/Y: undo/redo | Esc: deselect'
+        }
       </div>
 
       {/* Generation Log */}
