@@ -2205,7 +2205,6 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
           onGenerationLog={() => {}}
           nameListHook={nameListHook}
           onShowSettings={() => setShowSettings(true)}
-          onExitMapEditing={() => setMapEditingMode(false)}
         />
       ) : (
         <CampaignToolbar
@@ -3006,7 +3005,7 @@ function CampaignToolbar({
   }, []);
 
   return (
-    <div ref={toolbarRef} className="flex items-center justify-between border-b border-gray-300 bg-white px-4 py-2 dark:border-gray-700 dark:bg-gray-900">
+    <div ref={toolbarRef} className="relative flex items-center justify-between border-b border-gray-300 bg-white px-4 py-2 dark:border-gray-700 dark:bg-gray-900">
       {/* Left section */}
       <div className="flex items-center gap-2">
         <button
@@ -3211,8 +3210,8 @@ function CampaignToolbar({
         )}
       </div>
 
-      {/* Center: campaign name */}
-      <div className="text-sm font-medium dark:text-gray-200">
+      {/* Center: campaign name — absolutely centered so it's independent of left/right section widths */}
+      <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-sm font-medium dark:text-gray-200">
         {campaignName}
       </div>
 
