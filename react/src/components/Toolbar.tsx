@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import type { useMapState } from '../hooks/useMapState';
 import type { useNameLists } from '../hooks/useNameLists';
+import type { useMapCapture } from '../hooks/useMapCapture';
+import { CaptureButton } from './CaptureButton';
 import type { GameMap } from '../types';
 import { exportMapToFile, importMapFromFile, importNameListFromFile } from '../utils/fileUtils';
 import { generateMap } from '../utils/mapGenerator';
@@ -16,9 +18,13 @@ interface ToolbarProps {
   onGenerationLog: (log: string[]) => void;
   nameListHook: ReturnType<typeof useNameLists>;
   onShowSettings: () => void;
+  onNavigateHome?: () => void;
+  onExitMapEditing?: () => void;
+  captureHook?: ReturnType<typeof useMapCapture>;
+  svgRef?: React.RefObject<SVGSVGElement>;
 }
 
-export function Toolbar({ theme, onToggleTheme, mapState, onGenerationLog, nameListHook, onShowSettings }: ToolbarProps) {
+export function Toolbar({ theme, onToggleTheme, mapState, onGenerationLog, nameListHook, onShowSettings, onNavigateHome, onExitMapEditing, captureHook, svgRef }: ToolbarProps) {
   const { map, loadMap, setMapName } = mapState;
   const [showNewBlankDialog, setShowNewBlankDialog] = useState(false);
   const [showGenerateDialog, setShowGenerateDialog] = useState(false);
@@ -142,6 +148,28 @@ export function Toolbar({ theme, onToggleTheme, mapState, onGenerationLog, nameL
       <header className="flex h-12 items-center justify-between border-b border-gray-300 bg-white px-4 dark:border-gray-700 dark:bg-gray-900">
         {/* Left: File operations */}
         <div className="flex items-center gap-2">
+          {onExitMapEditing && (
+            <>
+              <button
+                onClick={onExitMapEditing}
+                className="rounded bg-amber-100 px-3 py-1 text-sm text-amber-800 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:hover:bg-amber-900/50"
+              >
+                Exit Map Editing
+              </button>
+              <span className="mx-1 text-gray-300 dark:text-gray-700">|</span>
+            </>
+          )}
+          {onNavigateHome && !onExitMapEditing && (
+            <>
+              <button
+                onClick={onNavigateHome}
+                className="rounded px-3 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
+                Home
+              </button>
+              <span className="mx-1 text-gray-300 dark:text-gray-700">|</span>
+            </>
+          )}
           <NewMapDropdown
             onNewBlankMap={handleNewBlankMap}
             onGenerateNew={handleGenerateNew}
@@ -158,6 +186,13 @@ export function Toolbar({ theme, onToggleTheme, mapState, onGenerationLog, nameL
           >
             Export
           </button>
+          {captureHook && svgRef && (
+            <CaptureButton
+              disabled={mapState.map.systems.length === 0}
+              onFullMap={() => captureHook.captureFullMap(svgRef, mapState.map, mapState.selectedSystemId)}
+              onClipMode={() => captureHook.enterClipMode()}
+            />
+          )}
           <button
             onClick={onShowSettings}
             className="rounded px-3 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
