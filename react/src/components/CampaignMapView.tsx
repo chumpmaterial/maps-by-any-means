@@ -41,7 +41,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
   const confirm = useConfirm();
   const [showSettings, setShowSettings] = useState(false);
   const [mapEditingMode, setMapEditingMode] = useState(false);
-  const [mapSettings, _setMapSettings] = useState({
+  const [mapSettings, setMapSettings] = useState({
     showTradeRoutes: false,
     showHexGrid: true,
     fogOfWar: false,
