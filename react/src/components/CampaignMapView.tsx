@@ -52,6 +52,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
   });
   const [unitPurchaseMapView, setUnitPurchaseMapView] = useState(false);
   const [generationLog] = useState<string[]>([]);
+  const [showMapSettingsPill, setShowMapSettingsPill] = useState(false);
 
   // Campaign state
   const [phase, setPhase] = useState<CampaignPhase>('homeworld_selection');
@@ -140,6 +141,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
   // Map centering requests (e.g. from combat encounter clicks)
   const centerNonceRef = useRef(0);
   const [centerRequest, setCenterRequest] = useState<{ systemId: string; nonce: number } | null>(null);
+  const mapSettingsPillRef = useRef<HTMLDivElement>(null);
 
   // Rebuild ownedSystemIds on all players from the canonical systemOwnership record
   function rebuildOwnedSystemIds(prevPlayers: CampaignPlayer[], ownership: Record<string, string>): CampaignPlayer[] {
@@ -929,6 +931,17 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
       setShowAddUnits(true);
     }
   }, [addUnitsPickMode, mapState.selectedSystemId]);
+
+  useEffect(() => {
+    if (!showMapSettingsPill) return;
+    const handleMouseDown = (e: MouseEvent) => {
+      if (mapSettingsPillRef.current && !mapSettingsPillRef.current.contains(e.target as Node)) {
+        setShowMapSettingsPill(false);
+      }
+    };
+    document.addEventListener('mousedown', handleMouseDown);
+    return () => document.removeEventListener('mousedown', handleMouseDown);
+  }, [showMapSettingsPill]);
 
   const handleEnterAddUnitsPickMode = useCallback(() => {
     addUnitsPickInitialIdRef.current = mapState.selectedSystemId;
@@ -2397,7 +2410,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
           )}
 
           {/* Map Viewport (center) */}
-          <div className="flex-1 bg-gray-200 dark:bg-gray-800">
+          <div className="relative flex-1 bg-gray-200 dark:bg-gray-800">
             <MapViewport
               mapState={mapState}
               generationLog={generationLog}
@@ -2423,6 +2436,94 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
               systemOwnership={phase !== 'homeworld_selection' ? systemOwnership : undefined}
               campaignPlayers={players}
             />
+            {/* Map control pill */}
+            {phase === 'in_progress' && (
+              <div
+                ref={mapSettingsPillRef}
+                className="absolute bottom-[5.5rem] left-4 flex items-center gap-1 rounded bg-black/50 px-1.5 py-1"
+              >
+                {/* Map Settings */}
+                <div className="relative">
+                  <button
+                    onClick={() => setShowMapSettingsPill(o => !o)}
+                    className="flex items-center justify-center rounded p-0.5 text-white hover:bg-white/20"
+                    title="Map settings"
+                  >
+                    <SlidersHorizontal size={20} />
+                  </button>
+                  {showMapSettingsPill && (
+                    <div className="absolute bottom-full left-0 z-50 mb-1 w-52 rounded border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900">
+                      <label className="flex cursor-pointer items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800">
+                        <input
+                          type="checkbox"
+                          checked={mapSettings.showTradeRoutes}
+                          onChange={e => setMapSettings(s => ({ ...s, showTradeRoutes: e.target.checked }))}
+                        />
+                        Trade Routes
+                      </label>
+                      <label className="flex cursor-pointer items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800">
+                        <input
+                          type="checkbox"
+                          checked={mapSettings.showHexGrid}
+                          onChange={e => setMapSettings(s => ({ ...s, showHexGrid: e.target.checked }))}
+                        />
+                        Hex Grid
+                      </label>
+                      <label className="flex cursor-pointer items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800">
+                        <input
+                          type="checkbox"
+                          checked={mapSettings.showFleets}
+                          onChange={e => setMapSettings(s => ({ ...s, showFleets: e.target.checked }))}
+                        />
+                        Show Fleets
+                      </label>
+                      <label className="flex cursor-pointer items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800">
+                        <input
+                          type="checkbox"
+                          checked={mapSettings.fogOfWar}
+                          onChange={e => setMapSettings(s => ({ ...s, fogOfWar: e.target.checked, fowPlayerId: null }))}
+                        />
+                        Fog of War
+                      </label>
+                      {mapSettings.fogOfWar && (
+                        <>
+                          <div className="px-4 py-1">
+                            <select
+                              value={mapSettings.fowPlayerId ?? ''}
+                              onChange={e => setMapSettings(s => ({ ...s, fowPlayerId: e.target.value || null }))}
+                              className="w-full rounded border border-gray-300 p-1 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                            >
+                              <option value="">Select player…</option>
+                              {players.map(p => (
+                                <option key={p.id} value={p.id}>{p.name}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <label className="flex cursor-pointer items-center gap-2 px-6 py-1.5 text-sm hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800">
+                            <input
+                              type="checkbox"
+                              checked={mapSettings.blindExploration}
+                              onChange={e => setMapSettings(s => ({ ...s, blindExploration: e.target.checked }))}
+                            />
+                            Blind Exploration
+                          </label>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+                {/* Divider */}
+                <div className="h-3 w-px bg-white/30" />
+                {/* Map Editing Mode */}
+                <button
+                  onClick={() => setMapEditingMode(o => !o)}
+                  className="flex items-center justify-center rounded p-0.5 hover:bg-white/20"
+                  title={mapEditingMode ? 'Exit map editing' : 'Map editing mode'}
+                >
+                  <Pencil size={20} className={mapEditingMode ? 'text-amber-400' : 'text-white'} />
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Property Panel (right sidebar) */}
