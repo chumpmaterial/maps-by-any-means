@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo, Fragment } from 'react';
 import { createPortal } from 'react-dom';
+import { Home, Download, Clock, Anchor, TrendingUp, FlaskConical, Eye, Globe, Sun, Moon, SlidersHorizontal, Pencil } from 'lucide-react';
 
 import type { Campaign, CampaignSettings, CampaignPlayer, CampaignFleet, CampaignUnit, CampaignPhase, TurnPhase, SystemCampaignStatus, System, JumpLane, LaneType, SystemType, EmpireUnit, UnitCategory, GameMap, MiscEntry, TurnOrderEntry, SystemIntelSnapshot, CMFleet, DiplomacyLevel, CombatScenario, IndependentUnitList, TechLevelType, UnitTrait, CampaignHistory, CampaignSnapshot, PhaseHistoryEntry } from '../types';
 import { SYSTEM_FLEET_NAMES } from '../types';
@@ -2909,9 +2910,10 @@ function CampaignToolbar({
       <div className="flex items-center gap-2">
         <button
           onClick={onNavigateHome}
-          className="rounded px-3 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
+          className="flex items-center gap-1.5 rounded px-3 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-200"
           title="Return to Main Menu"
         >
+          <Home size={16} className="shrink-0" />
           Home
         </button>
         <span className="mx-1 text-gray-300 dark:text-gray-700">|</span>
@@ -2919,9 +2921,10 @@ function CampaignToolbar({
           <>
             <button
               onClick={onExportSave}
-              className="rounded px-3 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-200"
+              className="flex items-center gap-1.5 rounded px-3 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-200"
               title="Export campaign to file"
             >
+              <Download size={16} className="shrink-0" />
               Export Save
             </button>
             <span className="mx-1 text-gray-300 dark:text-gray-700">|</span>
@@ -2932,9 +2935,10 @@ function CampaignToolbar({
             <span className="mx-1 text-gray-300 dark:text-gray-700">|</span>
             <button
               onClick={onOpenHistory}
-              className="rounded px-3 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-200"
+              className="flex items-center gap-1.5 rounded px-3 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-200"
               title="View campaign history"
             >
+              <Clock size={16} className="shrink-0" />
               History
             </button>
           </>
@@ -2947,8 +2951,9 @@ function CampaignToolbar({
             <div className="relative">
               <button
                 onClick={() => setActiveDropdown(d => d === 'fleets' ? null : 'fleets')}
-                className="flex items-center gap-1 rounded px-3 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-200"
+                className="flex items-center gap-1.5 rounded px-3 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-200"
               >
+                <Anchor size={16} className="shrink-0" />
                 Fleets
                 <svg className={`h-3 w-3 transition-transform ${activeDropdown === 'fleets' ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -2985,8 +2990,9 @@ function CampaignToolbar({
             <div className="relative">
               <button
                 onClick={() => setActiveDropdown(o => o === 'economy' ? null : 'economy')}
-                className="flex items-center gap-1 rounded px-3 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-200"
+                className="flex items-center gap-1.5 rounded px-3 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-200"
               >
+                <TrendingUp size={16} className="shrink-0" />
                 Economy
                 <svg className={`h-3 w-3 transition-transform ${activeDropdown === 'economy' ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -3013,8 +3019,9 @@ function CampaignToolbar({
             <div className="relative">
               <button
                 onClick={() => setActiveDropdown(o => o === 'tech' ? null : 'tech')}
-                className="flex items-center gap-1 rounded px-3 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-200"
+                className="flex items-center gap-1.5 rounded px-3 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-200"
               >
+                <FlaskConical size={16} className="shrink-0" />
                 Tech
                 <svg className={`h-3 w-3 transition-transform ${activeDropdown === 'tech' ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -3062,8 +3069,9 @@ function CampaignToolbar({
               <div className="relative">
                 <button
                   onClick={() => setActiveDropdown(o => o === 'intel' ? null : 'intel')}
-                  className="flex items-center gap-1 rounded px-3 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-200"
+                  className="flex items-center gap-1.5 rounded px-3 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-200"
                 >
+                  <Eye size={16} className="shrink-0" />
                   Intel
                   <svg className={`h-3 w-3 transition-transform ${activeDropdown === 'intel' ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -3096,8 +3104,9 @@ function CampaignToolbar({
             <span className="mx-1 text-gray-300 dark:text-gray-700">|</span>
             <button
               onClick={onOpenSystems}
-              className="rounded px-3 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-200"
+              className="flex items-center gap-1.5 rounded px-3 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-200"
             >
+              <Globe size={16} className="shrink-0" />
               Systems
             </button>
           </>
@@ -3120,9 +3129,12 @@ function CampaignToolbar({
 
         <button
           onClick={onToggleTheme}
-          className="rounded px-3 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-200"
+          className="flex items-center gap-1.5 rounded px-3 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-200"
         >
-          {theme === 'light' ? 'Dark' : 'Light'}
+          {theme === 'light'
+            ? <><Sun size={16} className="shrink-0" />Light</>
+            : <><Moon size={16} className="shrink-0" />Dark</>
+          }
         </button>
       </div>
     </div>
