@@ -68,6 +68,10 @@ interface MapViewportProps {
   systemOwnership?: Record<string, string>;
   /** Campaign players (for color lookup by playerId). */
   campaignPlayers?: CampaignPlayer[];
+  svgRef?: React.RefObject<SVGSVGElement>;
+  clipModeActive?: boolean;
+  clipSelectedSystemIds?: Set<string>;
+  onClipToggleSystem?: (systemId: string) => void;
 }
 
 const SYSTEM_RADIUS_MULTIPLIERS: Record<string, number> = {
@@ -77,7 +81,7 @@ const SYSTEM_RADIUS_MULTIPLIERS: Record<string, number> = {
   unimportant: 0.22,
 };
 
-export function MapViewport({ mapState, generationLog = [], onClearLog, campaignMode = false, mapEditingMode = false, showHexGrid = true, tradeRouteLaneIds, tradeRouteSystemIds, fowData, espionageMode = false, onEspionageTarget, fleetMoveMode, onFleetMoveTarget, cmFleetMoveMode, onCMFleetMoveTarget, fleetIndicators, staleSystems, onFleetMove, onCMFleetMove, requestCenter, systemOwnership, campaignPlayers }: MapViewportProps) {
+export function MapViewport({ mapState, generationLog = [], onClearLog, campaignMode = false, mapEditingMode = false, showHexGrid = true, tradeRouteLaneIds, tradeRouteSystemIds, fowData, espionageMode = false, onEspionageTarget, fleetMoveMode, onFleetMoveTarget, cmFleetMoveMode, onCMFleetMoveTarget, fleetIndicators, staleSystems, onFleetMove, onCMFleetMove, requestCenter, systemOwnership, campaignPlayers, svgRef, clipModeActive = false, clipSelectedSystemIds, onClipToggleSystem }: MapViewportProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
 
@@ -311,6 +315,7 @@ export function MapViewport({ mapState, generationLog = [], onClearLog, campaign
       onMouseLeave={() => { handleMouseUp(); handleSystemHover(null); setHoveredHex(null); }}
     >
       <svg
+        ref={svgRef}
         width={dimensions.width}
         height={dimensions.height}
         onWheel={handleWheel}
@@ -338,16 +343,24 @@ export function MapViewport({ mapState, generationLog = [], onClearLog, campaign
               const fromSystem = getSystem(lane.from);
               const toSystem = getSystem(lane.to);
               if (!fromSystem || !toSystem) return null;
+              const bothUnselected = clipModeActive && clipSelectedSystemIds
+                ? (!clipSelectedSystemIds.has(lane.from) && !clipSelectedSystemIds.has(lane.to))
+                : false;
               return (
-                <JumpLane
+                <g
                   key={lane.id}
-                  lane={lane}
-                  fromSystem={fromSystem}
-                  toSystem={toSystem}
-                  isSelected={lane.id === selectedLaneId}
-                  onClick={() => handleLaneClick(lane.id)}
-                  isOnTradeRoute={tradeRouteLaneIds?.has(lane.id)}
-                />
+                  data-lane-endpoints={`${lane.from},${lane.to}`}
+                  opacity={bothUnselected ? 0.2 : 1}
+                >
+                  <JumpLane
+                    lane={lane}
+                    fromSystem={fromSystem}
+                    toSystem={toSystem}
+                    isSelected={lane.id === selectedLaneId}
+                    onClick={() => handleLaneClick(lane.id)}
+                    isOnTradeRoute={tradeRouteLaneIds?.has(lane.id)}
+                  />
+                </g>
               );
             })}
 
@@ -376,20 +389,33 @@ export function MapViewport({ mapState, generationLog = [], onClearLog, campaign
           {/* Systems */}
           {map.systems
             .filter(s => !visibleSystemIds || visibleSystemIds.has(s.id))
-            .map((system) => (
-              <SystemNode
-                key={system.id}
-                system={system}
-                isSelected={system.id === selectedSystemId}
-                onClick={(e) => handleSystemClick(system.id, e)}
-                onHover={handleSystemHover}
-                useTeamColors={map.useTeamColors}
-                getOwnerTeamColor={(ownerId) => getSystem(ownerId)?.teamColor}
-                isOnTradeRoute={tradeRouteSystemIds?.has(system.id)}
-                systemOwnership={systemOwnership}
-                campaignPlayers={campaignPlayers}
-              />
-            ))}
+            .map((system) => {
+              const isClipDimmed = clipModeActive && clipSelectedSystemIds
+                ? !clipSelectedSystemIds.has(system.id)
+                : false;
+              const handleClick = clipModeActive
+                ? (e: React.MouseEvent) => { e.stopPropagation(); onClipToggleSystem?.(system.id); }
+                : (e: React.MouseEvent) => handleSystemClick(system.id, e);
+              return (
+                <g
+                  key={system.id}
+                  data-system-id={system.id}
+                  opacity={isClipDimmed ? 0.3 : 1}
+                >
+                  <SystemNode
+                    system={system}
+                    isSelected={system.id === selectedSystemId}
+                    onClick={handleClick}
+                    onHover={handleSystemHover}
+                    useTeamColors={map.useTeamColors}
+                    getOwnerTeamColor={(ownerId) => getSystem(ownerId)?.teamColor}
+                    isOnTradeRoute={tradeRouteSystemIds?.has(system.id)}
+                    systemOwnership={systemOwnership}
+                    campaignPlayers={campaignPlayers}
+                  />
+                </g>
+              );
+            })}
 
           {/* Fleet indicators (campaign in_progress phase) */}
           {fleetIndicators && map.systems
