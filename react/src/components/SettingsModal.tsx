@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import type { useNameLists } from '../hooks/useNameLists';
+import type { useMapCapture } from '../hooks/useMapCapture';
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   nameListHook: ReturnType<typeof useNameLists>;
+  captureHook?: ReturnType<typeof useMapCapture>;
 }
 
 const checkboxBase =
@@ -13,8 +15,9 @@ const checkboxBase =
 const checkboxSmall =
   'h-3.5 w-3.5 appearance-none rounded border border-gray-300 bg-white checked:border-blue-600 checked:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/30 dark:border-gray-600 dark:bg-gray-700 dark:checked:border-blue-500 dark:checked:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-40';
 
-export function SettingsModal({ isOpen, onClose, nameListHook }: SettingsModalProps) {
+export function SettingsModal({ isOpen, onClose, nameListHook, captureHook }: SettingsModalProps) {
   const [expandedLists, setExpandedLists] = useState<Set<string>>(new Set());
+  const [activeTab, setActiveTab] = useState<'nameLists' | 'capture'>('nameLists');
 
   if (!isOpen) return null;
 
@@ -37,109 +40,168 @@ export function SettingsModal({ isOpen, onClose, nameListHook }: SettingsModalPr
 
         {/* Tab bar */}
         <div className="mb-4 border-b border-gray-200 dark:border-gray-700">
-          <button className="border-b-2 border-blue-600 px-4 py-2 text-sm font-medium text-blue-600 dark:border-blue-400 dark:text-blue-400">
+          <button
+            onClick={() => setActiveTab('nameLists')}
+            className={`px-4 py-2 text-sm font-medium ${
+              activeTab === 'nameLists'
+                ? 'border-b-2 border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+            }`}
+          >
             Name Lists
           </button>
+          {captureHook && (
+            <button
+              onClick={() => setActiveTab('capture')}
+              className={`px-4 py-2 text-sm font-medium ${
+                activeTab === 'capture'
+                  ? 'border-b-2 border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+              }`}
+            >
+              Map Capture
+            </button>
+          )}
         </div>
 
-        {/* Allow Duplicates */}
-        <label className="mb-4 flex cursor-pointer items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={nameListHook.settings.allowDuplicates}
-            onChange={(e) => nameListHook.setAllowDuplicates(e.target.checked)}
-            className={checkboxBase}
-          />
-          <span>Allow Duplicates</span>
-          <span className="text-xs text-gray-500 dark:text-gray-400">
-            — When unchecked, duplicate names across lists are merged and no name can be assigned to more than one system
-          </span>
-        </label>
+        {activeTab === 'nameLists' && (
+          <>
+            {/* Allow Duplicates */}
+            <label className="mb-4 flex cursor-pointer items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={nameListHook.settings.allowDuplicates}
+                onChange={(e) => nameListHook.setAllowDuplicates(e.target.checked)}
+                className={checkboxBase}
+              />
+              <span>Allow Duplicates</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                — When unchecked, duplicate names across lists are merged and no name can be assigned to more than one system
+              </span>
+            </label>
 
-        {/* Name Lists */}
-        <div className="flex-1 space-y-2 overflow-y-auto border-t border-gray-200 pt-4 dark:border-gray-700">
-          {nameListHook.settings.lists.map(list => {
-            const isExpanded = expandedLists.has(list.id);
+            {/* Name Lists */}
+            <div className="flex-1 space-y-2 overflow-y-auto border-t border-gray-200 pt-4 dark:border-gray-700">
+              {nameListHook.settings.lists.map(list => {
+                const isExpanded = expandedLists.has(list.id);
 
-            return (
-              <div
-                key={list.id}
-                className="overflow-hidden rounded-lg border border-gray-200 transition-colors dark:border-gray-700"
-              >
-                {/* List header */}
-                <div className="flex items-center gap-2 bg-gray-50 px-3 py-2 dark:bg-gray-750 dark:bg-gray-900/40">
-                  <input
-                    type="checkbox"
-                    checked={list.enabled}
-                    onChange={(e) => nameListHook.toggleList(list.id, e.target.checked)}
-                    className={checkboxBase}
-                  />
-                  <button
-                    onClick={() => toggleExpanded(list.id)}
-                    className="flex flex-1 cursor-pointer items-center gap-2 text-left text-sm font-medium"
+                return (
+                  <div
+                    key={list.id}
+                    className="overflow-hidden rounded-lg border border-gray-200 transition-colors dark:border-gray-700"
                   >
-                    <svg
-                      className={`h-3.5 w-3.5 shrink-0 text-gray-400 transition-transform duration-150 ${isExpanded ? 'rotate-90' : ''}`}
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                    </svg>
-                    <span className={!list.enabled ? 'text-gray-400 dark:text-gray-500' : ''}>
-                      {list.name}
-                    </span>
-                    <span className="text-xs font-normal text-gray-500 dark:text-gray-400">
-                      ({list.names.filter(n => n.enabled).length}/{list.names.length} active)
-                    </span>
-                  </button>
-                  {list.id !== 'default' && (
-                    <button
-                      onClick={() => nameListHook.removeNameList(list.id)}
-                      className="rounded px-2 py-0.5 text-xs text-red-600 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-900/30"
-                    >
-                      Remove
-                    </button>
-                  )}
-                </div>
-
-                {/* Expanded names */}
-                {isExpanded && (
-                  <div className="max-h-48 overflow-y-auto border-t border-gray-200 bg-white px-3 py-2 dark:border-gray-700 dark:bg-gray-800">
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
-                      {list.names.map((entry, idx) => (
-                        <label
-                          key={idx}
-                          className={`flex cursor-pointer items-center gap-2 rounded px-1.5 py-0.5 text-sm transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 ${
-                            !list.enabled ? 'pointer-events-none opacity-50' : ''
-                          }`}
+                    {/* List header */}
+                    <div className="flex items-center gap-2 bg-gray-50 px-3 py-2 dark:bg-gray-750 dark:bg-gray-900/40">
+                      <input
+                        type="checkbox"
+                        checked={list.enabled}
+                        onChange={(e) => nameListHook.toggleList(list.id, e.target.checked)}
+                        className={checkboxBase}
+                      />
+                      <button
+                        onClick={() => toggleExpanded(list.id)}
+                        className="flex flex-1 cursor-pointer items-center gap-2 text-left text-sm font-medium"
+                      >
+                        <svg
+                          className={`h-3.5 w-3.5 shrink-0 text-gray-400 transition-transform duration-150 ${isExpanded ? 'rotate-90' : ''}`}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
                         >
-                          <input
-                            type="checkbox"
-                            checked={entry.enabled}
-                            disabled={!list.enabled}
-                            onChange={(e) => nameListHook.toggleName(list.id, idx, e.target.checked)}
-                            className={checkboxSmall}
-                          />
-                          <span className={
-                            !list.enabled
-                              ? 'text-gray-400 dark:text-gray-500'
-                              : !entry.enabled
-                                ? 'text-gray-400 line-through dark:text-gray-500'
-                                : ''
-                          }>
-                            {entry.name}
-                          </span>
-                        </label>
-                      ))}
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                        <span className={!list.enabled ? 'text-gray-400 dark:text-gray-500' : ''}>
+                          {list.name}
+                        </span>
+                        <span className="text-xs font-normal text-gray-500 dark:text-gray-400">
+                          ({list.names.filter(n => n.enabled).length}/{list.names.length} active)
+                        </span>
+                      </button>
+                      {list.id !== 'default' && (
+                        <button
+                          onClick={() => nameListHook.removeNameList(list.id)}
+                          className="rounded px-2 py-0.5 text-xs text-red-600 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-900/30"
+                        >
+                          Remove
+                        </button>
+                      )}
                     </div>
+
+                    {/* Expanded names */}
+                    {isExpanded && (
+                      <div className="max-h-48 overflow-y-auto border-t border-gray-200 bg-white px-3 py-2 dark:border-gray-700 dark:bg-gray-800">
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
+                          {list.names.map((entry, idx) => (
+                            <label
+                              key={idx}
+                              className={`flex cursor-pointer items-center gap-2 rounded px-1.5 py-0.5 text-sm transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                                !list.enabled ? 'pointer-events-none opacity-50' : ''
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={entry.enabled}
+                                disabled={!list.enabled}
+                                onChange={(e) => nameListHook.toggleName(list.id, idx, e.target.checked)}
+                                className={checkboxSmall}
+                              />
+                              <span className={
+                                !list.enabled
+                                  ? 'text-gray-400 dark:text-gray-500'
+                                  : !entry.enabled
+                                    ? 'text-gray-400 line-through dark:text-gray-500'
+                                    : ''
+                              }>
+                                {entry.name}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        {/* Map Capture tab */}
+        {activeTab === 'capture' && captureHook && (
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Image size for map captures. Valid range: 400–7680 px.
+            </p>
+            <div className="flex items-center gap-3">
+              <label className="w-16 text-sm dark:text-gray-200">Width</label>
+              <input
+                type="number"
+                min={400}
+                max={7680}
+                value={captureHook.captureWidth}
+                onChange={e => captureHook.setCaptureWidth(Number(e.target.value))}
+                className="w-28 rounded border border-gray-300 px-2 py-1 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+              />
+              <span className="text-xs text-gray-500">px</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <label className="w-16 text-sm dark:text-gray-200">Height</label>
+              <input
+                type="number"
+                min={400}
+                max={7680}
+                value={captureHook.captureHeight}
+                onChange={e => captureHook.setCaptureHeight(Number(e.target.value))}
+                className="w-28 rounded border border-gray-300 px-2 py-1 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+              />
+              <span className="text-xs text-gray-500">px</span>
+            </div>
+            <p className="text-xs text-gray-400 dark:text-gray-500">
+              Default: 1920 × 1080. Saved automatically.
+            </p>
+          </div>
+        )}
 
         {/* Footer */}
         <div className="mt-4 flex justify-end border-t border-gray-200 pt-4 dark:border-gray-700">
