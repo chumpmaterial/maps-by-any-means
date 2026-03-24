@@ -1814,6 +1814,133 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
     return result;
   }, [mapSettings.fogOfWar, mapSettings.fowPlayerId, mapSettings.showFleets, players, currentTurn]);
 
+  // FOW-aware fleet indicators: filters/replaces fleetIndicators based on the FOW player's intel
+  const fowAwareFleetIndicators = useMemo((): Record<string, FleetOwnerIndicator[]> | null => {
+    if (!mapSettings.fogOfWar || !mapSettings.fowPlayerId || !mapSettings.showFleets) return null;
+    const fowPlayer = players.find(p => p.id === mapSettings.fowPlayerId);
+    if (!fowPlayer) return null;
+
+    const intelMap = fowPlayer.intel ?? {};
+    const initialIntelMap = fowPlayer.initialIntel ?? {};
+
+    // Collect all systemIds to consider: union of live fleetIndicators and intel with units
+    const systemIds = new Set<string>([
+      ...Object.keys(fleetIndicators),
+      ...Object.entries(intelMap)
+        .filter(([, snap]) => snap.units.length > 0)
+        .map(([id]) => id),
+      ...Object.entries(initialIntelMap)
+        .filter(([, snap]) => snap.units.length > 0)
+        .map(([id]) => id),
+    ]);
+
+    const result: Record<string, FleetOwnerIndicator[]> = {};
+
+    for (const systemId of systemIds) {
+      // Find the relevant snapshot (intel takes precedence over initialIntel)
+      const snapshot = intelMap[systemId] ?? initialIntelMap[systemId];
+      if (!snapshot) continue;  // no intel → drop
+
+      // Current-turn (or future) intel → pass live indicators through unchanged.
+      // Uses >= rather than === as a defensive guard: snapshot.turn should never exceed
+      // currentTurn by design, but if it did, treating it as current is safer than stale.
+      if (snapshot.turn >= currentTurn) {
+        const live = fleetIndicators[systemId];
+        if (live?.length) result[systemId] = live;
+        continue;
+      }
+
+      // Outdated intel → own fleets live + enemy fleets from snapshot
+      const indicators: FleetOwnerIndicator[] = [];
+
+      // Own fleets: take the FOW player's live indicator as-is
+      const ownLive = fleetIndicators[systemId]?.find(o => o.ownerId === mapSettings.fowPlayerId);
+      if (ownLive) indicators.push(ownLive);
+
+      // Enemy fleets: reconstruct from snapshot.units (drop units with no playerId)
+      const unitsByPlayer: Record<string, typeof snapshot.units> = {};
+      for (const unit of snapshot.units) {
+        if (!unit.playerId || unit.playerId === mapSettings.fowPlayerId) continue;
+        (unitsByPlayer[unit.playerId] ??= []).push(unit);
+      }
+
+      for (const [playerId, units] of Object.entries(unitsByPlayer)) {
+        const player = players.find(p => p.id === playerId);
+        if (!player) continue;  // player no longer in campaign
+
+        // Group units by fleetId for fleet summaries
+        const byFleet: Record<string, typeof units> = {};
+        for (const unit of units) {
+          const key = unit.fleetId ?? `__no_fleet__${playerId}`;
+          (byFleet[key] ??= []).push(unit);
+        }
+
+        const ownerFleets: FleetSummaryInfo[] = [];
+        const ownerUnitsByCategory: Partial<Record<string, number>> = {};
+        let ownerTotalEP = 0;
+
+        for (const [fleetKey, fleetUnits] of Object.entries(byFleet)) {
+          const isNoFleet = fleetKey.startsWith('__no_fleet__');
+          const existingFleet = isNoFleet
+            ? null
+            : player.fleets?.find(f => f.id === fleetKey);
+          const fleetName = existingFleet?.name ?? player.name;
+
+          const unitsByCategory: Partial<Record<string, number>> = {};
+          let totalEP = 0;
+          let highestCR: number | null = null;
+
+          for (const unit of fleetUnits) {
+            const tmpl =
+              player.empire.units.find(t => t.id === unit.unitTemplateId) ??
+              DEFAULT_UNITS.find(t => t.id === unit.unitTemplateId);
+            if (tmpl) {
+              unitsByCategory[tmpl.category] = (unitsByCategory[tmpl.category] ?? 0) + 1;
+              totalEP += tmpl.cost;
+              if (typeof tmpl.cr === 'number') {
+                highestCR = highestCR === null ? tmpl.cr : Math.max(highestCR, tmpl.cr);
+              }
+            }
+            // Accumulate into owner totals
+            ownerTotalEP += tmpl?.cost ?? 0;
+          }
+          for (const [cat, cnt] of Object.entries(unitsByCategory)) {
+            ownerUnitsByCategory[cat] = (ownerUnitsByCategory[cat] ?? 0) + (cnt ?? 0);
+          }
+
+          ownerFleets.push({
+            id: `snapshot-${playerId}-${fleetKey}`,
+            name: fleetName,
+            isCMFleet: false,
+            unitCount: fleetUnits.length,
+            unitsByCategory,
+            totalEP,
+            highestCR,
+            isFast: false,
+            isScout: false,
+            isCivilian: false,
+            movedThisTurn: false,
+          });
+        }
+
+        indicators.push({
+          ownerId: playerId,
+          ownerName: player.name,
+          color: player.teamColor ?? '#6b7280',
+          fleets: ownerFleets,
+          totalFleets: ownerFleets.length,
+          totalUnits: units.length,
+          unitsByCategory: ownerUnitsByCategory,
+          totalEP: ownerTotalEP,
+        });
+      }
+
+      if (indicators.length > 0) result[systemId] = indicators;
+    }
+
+    return result;
+  }, [mapSettings.fogOfWar, mapSettings.fowPlayerId, mapSettings.showFleets, players, fleetIndicators, currentTurn]);
+
   // Advance a placeholder turn phase (turn_orders through end_of_turn)
   const handleAdvanceTurnPhase = useCallback(async () => {
     if (currentTurnPhase !== 'turn_orders') {
@@ -2291,7 +2418,9 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
               onFleetMoveTarget={handleFleetMoveTarget}
               cmFleetMoveMode={!!cmFleetMoveMode}
               onCMFleetMoveTarget={handleCMFleetMoveTarget}
-              fleetIndicators={phase === 'in_progress' && mapSettings.showFleets ? fleetIndicators : undefined}
+              fleetIndicators={phase === 'in_progress' && mapSettings.showFleets
+                ? (fowAwareFleetIndicators ?? fleetIndicators)
+                : undefined}
               staleSystems={phase === 'in_progress' ? fowStaleSystems ?? undefined : undefined}
               onFleetMove={phase === 'in_progress' ? handleEnterFleetMoveMode : undefined}
               onCMFleetMove={phase === 'in_progress' ? handleEnterCMFleetMoveMode : undefined}
