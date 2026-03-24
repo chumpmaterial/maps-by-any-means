@@ -108,7 +108,8 @@ export async function captureMapToClipboard(options: CaptureOptions): Promise<st
   // Deep-clone before any DOM queries so we don't mutate the live tree
   const cloneG = mainG.cloneNode(true) as Element;
 
-  // Inline text styles while originals are still in live DOM
+  // inlineTextStyles must be called before removeNonClipElements:
+  // it pairs clone texts to live texts by index, so the counts must still match.
   inlineTextStyles(cloneG, liveSvg);
   stripInteractivityClasses(cloneG);
 
@@ -125,13 +126,14 @@ export async function captureMapToClipboard(options: CaptureOptions): Promise<st
   captureSvg.setAttribute('height', String(height));
 
   // Background rect: read color from the map container div
-  const bgColor = liveSvg.parentElement
+  const rawBg = liveSvg.parentElement
     ? window.getComputedStyle(liveSvg.parentElement).backgroundColor
-    : '#e5e7eb';
+    : '';
+  const isTransparent = !rawBg || rawBg === 'rgba(0, 0, 0, 0)' || rawBg === 'transparent';
   const bg = document.createElementNS(ns, 'rect');
   bg.setAttribute('width', String(width));
   bg.setAttribute('height', String(height));
-  bg.setAttribute('fill', bgColor || '#e5e7eb');
+  bg.setAttribute('fill', isTransparent ? '#e5e7eb' : rawBg);
   captureSvg.appendChild(bg);
   captureSvg.appendChild(cloneG);
 
