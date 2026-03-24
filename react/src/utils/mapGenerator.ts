@@ -188,26 +188,41 @@ function sortClockwise(hexes: HexCoordinate[]): HexCoordinate[] {
 }
 
 function getHomeworldPositions(ringCount: number): Map<string, number> {
-  // All homeworlds go in the outer (final) ring, spaced equidistantly
   const positions = new Map<string, number>();
+
+  // Hardcoded positions matching the standard preset maps for rings 2–6.
+  // Assigned by direct index — do NOT apply angle-matching, as some rings contain angular ties.
+  const standardPositions: Record<number, HexCoordinate[]> = {
+    2: [{ q: 0, r: -2 }, { q: 0, r: 2 }],
+    3: [{ q: 0, r: -3 }, { q: 3, r: 0 }, { q: -3, r: 3 }],
+    4: [{ q: -3, r: 4 }, { q: 3, r: 1 }, { q: 3, r: -4 }, { q: -3, r: -1 }],
+    5: [{ q: 0, r: 5 }, { q: -5, r: 4 }, { q: 5, r: -1 }, { q: -3, r: -2 }, { q: 3, r: -5 }],
+    6: [{ q: 0, r: -6 }, { q: 6, r: -6 }, { q: 6, r: 0 }, { q: 0, r: 6 }, { q: -6, r: 6 }, { q: -6, r: 0 }],
+  };
+
+  if (standardPositions[ringCount]) {
+    standardPositions[ringCount].forEach((hex, i) => {
+      positions.set(hexKey(hex), i + 1);
+    });
+    return positions;
+  }
+
+  // Algorithmic fallback for ring counts outside 2–6 (future-proofing).
+  // Uses modulo-based circular distance to handle targetAngle outside [-π, +π].
   const outerHexes = getHexesAtRing(ringCount);
-
   for (let i = 0; i < ringCount; i++) {
-    const targetAngle = (2 * Math.PI / ringCount) * i - Math.PI / 2; // Start from top
-
+    const targetAngle = (2 * Math.PI / ringCount) * i - Math.PI / 2;
     let bestHex = outerHexes[0];
     let bestDiff = Infinity;
-
     for (const hex of outerHexes) {
       const angle = getAngle(hex);
-      let diff = Math.abs(angle - targetAngle);
+      let diff = ((angle - targetAngle) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
       if (diff > Math.PI) diff = 2 * Math.PI - diff;
       if (diff < bestDiff) {
         bestDiff = diff;
         bestHex = hex;
       }
     }
-
     positions.set(hexKey(bestHex), i + 1);
   }
 
