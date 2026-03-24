@@ -41,7 +41,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
   const confirm = useConfirm();
   const [showSettings, setShowSettings] = useState(false);
   const [mapEditingMode, setMapEditingMode] = useState(false);
-  const [mapSettings, setMapSettings] = useState({
+  const [mapSettings, _setMapSettings] = useState({
     showTradeRoutes: false,
     showHexGrid: true,
     fogOfWar: false,
@@ -2198,16 +2198,10 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
           campaignName={settings.name}
           theme={theme}
           onToggleTheme={toggleTheme}
-          mapEditingMode={mapEditingMode}
-          onToggleMapEditing={() => setMapEditingMode(!mapEditingMode)}
           onNavigateHome={onNavigateHome}
           currentTurn={phase === 'in_progress' ? currentTurn : undefined}
           currentTurnPhaseLabel={phase === 'in_progress' ? currentTurnPhaseLabel : undefined}
           onAddMiscEntry={phase === 'in_progress' ? () => setShowMiscIncomeModal(true) : undefined}
-          mapSettings={mapSettings}
-          onMapSettingsChange={setMapSettings}
-          players={players}
-          intelPhase={phase === 'in_progress' && currentTurnPhase === 'intel'}
           espionageFlowActive={espionageFlow?.step === 'select_system'}
           onStartEspionage={() => setEspionageFlow({ step: 'select_player' })}
           onCancelEspionage={() => setEspionageFlow(null)}
@@ -2861,16 +2855,10 @@ interface CampaignToolbarProps {
   campaignName: string;
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
-  mapEditingMode: boolean;
-  onToggleMapEditing: () => void;
   onNavigateHome: () => void;
   currentTurn?: number;
   currentTurnPhaseLabel?: string;
   onAddMiscEntry?: () => void;
-  mapSettings: { showTradeRoutes: boolean; showHexGrid: boolean; fogOfWar: boolean; fowPlayerId: string | null; blindExploration: boolean; showFleets: boolean };
-  onMapSettingsChange: (s: { showTradeRoutes: boolean; showHexGrid: boolean; fogOfWar: boolean; fowPlayerId: string | null; blindExploration: boolean; showFleets: boolean }) => void;
-  players?: CampaignPlayer[];
-  intelPhase?: boolean;
   espionageFlowActive?: boolean;
   onStartEspionage?: () => void;
   onCancelEspionage?: () => void;
@@ -2887,16 +2875,10 @@ function CampaignToolbar({
   campaignName,
   theme,
   onToggleTheme,
-  mapEditingMode,
-  onToggleMapEditing,
   onNavigateHome,
   currentTurn,
   currentTurnPhaseLabel,
   onAddMiscEntry,
-  mapSettings,
-  onMapSettingsChange,
-  players,
-  intelPhase,
   espionageFlowActive,
   onStartEspionage,
   onCancelEspionage,
@@ -2908,7 +2890,7 @@ function CampaignToolbar({
   onExportSave,
   onOpenHistory,
 }: CampaignToolbarProps) {
-  const [activeDropdown, setActiveDropdown] = useState<'economy' | 'mapSettings' | 'intel' | 'fleets' | 'tech' | null>(null);
+  const [activeDropdown, setActiveDropdown] = useState<'economy' | 'intel' | 'fleets' | 'tech' | null>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -2933,93 +2915,8 @@ function CampaignToolbar({
           Home
         </button>
         <span className="mx-1 text-gray-300 dark:text-gray-700">|</span>
-        <button
-          onClick={onToggleMapEditing}
-          className={`rounded px-3 py-1 text-sm ${
-            mapEditingMode
-              ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
-              : 'hover:bg-gray-100 dark:hover:bg-gray-800'
-          }`}
-        >
-          {mapEditingMode ? 'Exit Map Editing' : 'Map Editing Mode'}
-        </button>
-
-        {/* Map Settings dropdown */}
-        <div className="relative">
-          <button
-            onClick={() => setActiveDropdown(o => o === 'mapSettings' ? null : 'mapSettings')}
-            className="flex items-center gap-1 rounded px-3 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-200"
-          >
-            Map Settings
-            <svg className={`h-3 w-3 transition-transform ${activeDropdown === 'mapSettings' ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
-          </button>
-          {activeDropdown === 'mapSettings' && (
-            <div className="absolute left-0 z-50 mt-1 w-52 rounded border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900">
-              <label className="flex cursor-pointer items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800">
-                <input
-                  type="checkbox"
-                  checked={mapSettings.showTradeRoutes}
-                  onChange={e => onMapSettingsChange({ ...mapSettings, showTradeRoutes: e.target.checked })}
-                />
-                Trade Routes
-              </label>
-              <label className="flex cursor-pointer items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800">
-                <input
-                  type="checkbox"
-                  checked={mapSettings.showHexGrid}
-                  onChange={e => onMapSettingsChange({ ...mapSettings, showHexGrid: e.target.checked })}
-                />
-                Hex Grid
-              </label>
-              <label className="flex cursor-pointer items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800">
-                <input
-                  type="checkbox"
-                  checked={mapSettings.showFleets}
-                  onChange={e => onMapSettingsChange({ ...mapSettings, showFleets: e.target.checked })}
-                />
-                Show Fleets
-              </label>
-              <label className="flex cursor-pointer items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800">
-                <input
-                  type="checkbox"
-                  checked={mapSettings.fogOfWar}
-                  onChange={e => onMapSettingsChange({ ...mapSettings, fogOfWar: e.target.checked, fowPlayerId: null })}
-                />
-                Fog of War
-              </label>
-              {mapSettings.fogOfWar && (
-                <>
-                  <div className="px-4 py-1">
-                    <select
-                      value={mapSettings.fowPlayerId ?? ''}
-                      onChange={e => onMapSettingsChange({ ...mapSettings, fowPlayerId: e.target.value || null })}
-                      className="w-full rounded border border-gray-300 p-1 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-                    >
-                      <option value="">Select player…</option>
-                      {players?.map(p => (
-                        <option key={p.id} value={p.id}>{p.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <label className="flex cursor-pointer items-center gap-2 px-6 py-1.5 text-sm hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800">
-                    <input
-                      type="checkbox"
-                      checked={mapSettings.blindExploration}
-                      onChange={e => onMapSettingsChange({ ...mapSettings, blindExploration: e.target.checked })}
-                    />
-                    Blind Exploration
-                  </label>
-                </>
-              )}
-            </div>
-          )}
-        </div>
-
         {onExportSave && (
           <>
-            <span className="mx-1 text-gray-300 dark:text-gray-700">|</span>
             <button
               onClick={onExportSave}
               className="rounded px-3 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-200"
@@ -3027,9 +2924,9 @@ function CampaignToolbar({
             >
               Export Save
             </button>
+            <span className="mx-1 text-gray-300 dark:text-gray-700">|</span>
           </>
         )}
-
         {onOpenHistory && (
           <>
             <span className="mx-1 text-gray-300 dark:text-gray-700">|</span>
@@ -3147,8 +3044,8 @@ function CampaignToolbar({
           </>
         )}
 
-        {/* Intel dropdown (Intel Phase only) */}
-        {intelPhase && onStartEspionage && (
+        {/* Intel dropdown */}
+        {onStartEspionage && (
           <>
             <span className="mx-1 text-gray-300 dark:text-gray-700">|</span>
             {espionageFlowActive ? (
