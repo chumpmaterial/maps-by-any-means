@@ -2908,6 +2908,8 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
       {showAddUnits && (
         <AddUnitsView
           players={players}
+          allPlayers={players}
+          diplomacyRelations={diplomacyRelations}
           map={mapState.map}
           settings={settings}
           systemOwnership={systemOwnership}
