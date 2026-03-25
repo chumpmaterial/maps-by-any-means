@@ -16,6 +16,7 @@ import type { FleetOwnerIndicator, FleetSummaryInfo } from './MapViewport';
 import { PropertyPanel } from './PropertyPanel';
 import { EditFleetView } from './EditFleetView';
 import { FleetManagerView, CM_TAB_ID } from './FleetManagerView';
+import { TradeRouteManagerView } from './TradeRouteManagerView';
 import { AddUnitsView } from './AddUnitsView';
 import { CombatScenarioView } from './CombatScenarioView';
 import { SupplyPhaseView } from './SupplyPhaseView';
@@ -57,7 +58,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
   });
   const [unitPurchaseMapView, setUnitPurchaseMapView] = useState(false);
   const [generationLog] = useState<string[]>([]);
-  const [showMapSettingsPill, setShowMapSettingsPill] = useState(false);
+  const [activePillDropdown, setActivePillDropdown] = useState<'settings' | 'capture' | null>(null);
 
   // Campaign state
   const [phase, setPhase] = useState<CampaignPhase>('homeworld_selection');
@@ -117,6 +118,9 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
   const [editingCMFleet, setEditingCMFleet] = useState<string | null>(null);
   const [cmFleetMoveMode, setCmFleetMoveMode] = useState<string | null>(null);
   const [showFleetManager, setShowFleetManager] = useState(false);
+  const [showTradeRouteManager, setShowTradeRouteManager] = useState(false);
+  const [tradeRoutePickMode, setTradeRoutePickMode] = useState(false);
+  const [tradeRoutePickedSystemId, setTradeRoutePickedSystemId] = useState<string | null>(null);
   const [showSystemsOverview, setShowSystemsOverview] = useState(false);
   const [showHistoryBrowser, setShowHistoryBrowser] = useState(false);
   const [fleetManagerFocus, setFleetManagerFocus] = useState<{ playerId: string; systemId: string } | null>(null);
@@ -124,8 +128,13 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
   const [addUnitsSystemId, setAddUnitsSystemId] = useState('');
   const [addUnitsPickMode, setAddUnitsPickMode] = useState(false);
   const [showAddToTechPoolModal, setShowAddToTechPoolModal] = useState(false);
+  const [showStealUnitTechModal, setShowStealUnitTechModal] = useState(false);
+  const [showTransferUnitModal, setShowTransferUnitModal] = useState(false);
   const [showForceAdvancementModal, setShowForceAdvancementModal] = useState(false);
+  const [tradeRouteWarnings, setTradeRouteWarnings] = useState<Array<{ routeOwnerName: string; systemName: string; reason: string }>>([]);
+  const [showTradeRouteWarningModal, setShowTradeRouteWarningModal] = useState(false);
   const addUnitsPickInitialIdRef = useRef<string | null>(null);
+  const bypassTradeWarningRef = useRef(false);
   const [cmFleets, setCmFleets] = useState<CMFleet[]>([]);
   const [systemFleetOrder, setSystemFleetOrder] = useState<Record<string, string[]>>({});
   const [pathSelectModal, setPathSelectModal] = useState<{
@@ -787,6 +796,20 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
     }));
   }, [currentPlayerIndex]);
 
+  // Recall a Convoy from a trade route to a specific system (dissolves the route)
+  const handleRecallConvoy = useCallback((convoyUnitId: string, toSystemId: string) => {
+    setPlayers(prev => prev.map((player, i) => {
+      if (i !== currentPlayerIndex) return player;
+      return {
+        ...player,
+        tradeRoutes: (player.tradeRoutes ?? []).filter(r => r.convoyUnitId !== convoyUnitId),
+        units: player.units.map(u =>
+          u.id === convoyUnitId ? { ...u, fleetId: undefined, systemId: toSystemId } : u
+        ),
+      };
+    }));
+  }, [currentPlayerIndex]);
+
   // Finish trade routes: transition to in_progress, capture initialIntel for all players
   const handleFinishTradeRoutes = useCallback(() => {
     // Build initial intel snapshot (turn 0) for every system on the map
@@ -937,16 +960,23 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
     }
   }, [addUnitsPickMode, mapState.selectedSystemId]);
 
+  // Trade route pick mode: watch for system clicks
   useEffect(() => {
-    if (!showMapSettingsPill) return;
+    if (!tradeRoutePickMode) return;
+    const current = mapState.selectedSystemId;
+    if (current) setTradeRoutePickedSystemId(current);
+  }, [tradeRoutePickMode, mapState.selectedSystemId]);
+
+  useEffect(() => {
+    if (activePillDropdown !== 'settings') return;
     const handleMouseDown = (e: MouseEvent) => {
       if (mapSettingsPillRef.current && !mapSettingsPillRef.current.contains(e.target as Node)) {
-        setShowMapSettingsPill(false);
+        setActivePillDropdown(null);
       }
     };
     document.addEventListener('mousedown', handleMouseDown);
     return () => document.removeEventListener('mousedown', handleMouseDown);
-  }, [showMapSettingsPill]);
+  }, [activePillDropdown]);
 
   const handleEnterAddUnitsPickMode = useCallback(() => {
     addUnitsPickInitialIdRef.current = mapState.selectedSystemId;
@@ -1741,8 +1771,54 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
   // Add to tech pool directly (admin tool — no EP deduction)
   const handleAddToTechPool = useCallback((playerId: string, amount: number) => {
     setPlayers(prev => prev.map(p =>
-      p.id !== playerId ? p : { ...p, techPool: (p.techPool ?? 0) + amount }
+      p.id !== playerId ? p : { ...p, techPool: Math.max(0, (p.techPool ?? 0) + amount) }
     ));
+  }, []);
+
+  // Steal a unit design from another empire's force list
+  const handleStealUnitTech = useCallback((receivingPlayerId: string, sourceEmpireId: string, unit: EmpireUnit) => {
+    setPlayers(prev => prev.map(p => {
+      if (p.id !== receivingPlayerId) return p;
+      const alreadyStolen = (p.stolenUnits ?? []).some(
+        s => s.sourceEmpireId === sourceEmpireId && s.unit.id === unit.id
+      );
+      if (alreadyStolen) return p; // no-op: duplicate
+      return { ...p, stolenUnits: [...(p.stolenUnits ?? []), { sourceEmpireId, unit: structuredClone(unit) }] };
+    }));
+  }, []);
+
+  // Transfer a unit from one empire to another (voluntary, no EP cost)
+  const handleTransferUnit = useCallback((unitId: string, fromPlayerId: string, toPlayerId: string) => {
+    setPlayers(prev => {
+      const fromPlayer = prev.find(p => p.id === fromPlayerId);
+      if (!fromPlayer) return prev;
+      const unit = fromPlayer.units.find(u => u.id === unitId);
+      if (!unit) return prev;
+
+      // Resolve destination systemId: use unit.systemId or look up fleet.systemId
+      let destSystemId: string | undefined = unit.systemId;
+      if (!destSystemId && unit.fleetId) {
+        const fleet = (fromPlayer.fleets ?? []).find(f => f.id === unit.fleetId);
+        destSystemId = fleet?.systemId;
+      }
+
+      const transferredUnit = {
+        ...unit,
+        id: Math.random().toString(36).substring(2, 11), // new ID to avoid collisions
+        fleetId: undefined,
+        systemId: destSystemId,
+      };
+
+      return prev.map(p => {
+        if (p.id === fromPlayerId) {
+          return { ...p, units: p.units.filter(u => u.id !== unitId) };
+        }
+        if (p.id === toPlayerId) {
+          return { ...p, units: [...p.units, transferredUnit] };
+        }
+        return p;
+      });
+    });
   }, []);
 
   // Set diplomacy relation between two players (stored symmetrically)
@@ -1960,8 +2036,64 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
     return result;
   }, [mapSettings.fogOfWar, mapSettings.fowPlayerId, mapSettings.showFleets, players, fleetIndicators, currentTurn]);
 
+  // Check all players' trade routes for enemy fleets or fallen relationships
+  const checkTradeRouteWarnings = useCallback(() => {
+    const warnings: Array<{ routeOwnerName: string; systemName: string; reason: string }> = [];
+
+    for (const player of players) {
+      for (const route of player.tradeRoutes ?? []) {
+        for (const sysId of route.systemIds) {
+          const sysName = mapState.map.systems.find(s => s.id === sysId)?.name ?? sysId;
+          const ownerId = systemOwnership[sysId];
+
+          // Check 1: relationship with system owner has fallen below Trade
+          if (ownerId && ownerId !== player.id) {
+            const rel = diplomacyRelations[diplomacyKey(player.id, ownerId)] ?? 'Unmet';
+            if (DIPLOMACY_LEVELS.indexOf(rel) < DIPLOMACY_LEVELS.indexOf('Trade')) {
+              const ownerName = players.find(p => p.id === ownerId)?.name ?? ownerId;
+              warnings.push({
+                routeOwnerName: player.name,
+                systemName: sysName,
+                reason: `Relationship with ${ownerName} (owner of ${sysName}) has fallen below Trade.`,
+              });
+            }
+          }
+
+          // Check 2: enemy fleet at this system
+          for (const otherPlayer of players) {
+            if (otherPlayer.id === player.id) continue;
+            const rel = diplomacyRelations[diplomacyKey(player.id, otherPlayer.id)] ?? 'Unmet';
+            const isEnemy = DIPLOMACY_LEVELS.indexOf(rel) <= DIPLOMACY_LEVELS.indexOf('Hostilities');
+            if (!isEnemy) continue;
+            const hasFleet = [...(otherPlayer.fleets ?? [])].some(f => f.systemId === sysId)
+              || otherPlayer.units.some(u => !u.fleetId && u.systemId === sysId);
+            if (hasFleet) {
+              warnings.push({
+                routeOwnerName: player.name,
+                systemName: sysName,
+                reason: `${otherPlayer.name} has a fleet at ${sysName} (enemy of ${player.name}).`,
+              });
+            }
+          }
+        }
+      }
+    }
+    return warnings;
+  }, [players, mapState.map.systems, systemOwnership, diplomacyRelations]);
+
   // Advance a placeholder turn phase (turn_orders through end_of_turn)
   const handleAdvanceTurnPhase = useCallback(async () => {
+    // Intercept movement → next phase: check trade route warnings first
+    if (currentTurnPhase === 'movement' && !bypassTradeWarningRef.current) {
+      const warnings = checkTradeRouteWarnings();
+      if (warnings.length > 0) {
+        setTradeRouteWarnings(warnings);
+        setShowTradeRouteWarningModal(true);
+        return;
+      }
+    }
+    bypassTradeWarningRef.current = false;
+
     if (currentTurnPhase !== 'turn_orders') {
       const isLastPhase = currentTurnPhase === 'end_of_turn';
       const phaseLabel = TURN_PHASES.find(p => p.value === currentTurnPhase)?.label ?? currentTurnPhase;
@@ -2053,7 +2185,14 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
       if (next) setCurrentTurnPhase(next);
     }
     setTurnPhaseMapView(false);
-  }, [currentTurnPhase, players, turnOrders, mapState.map, currentTurn, confirm, diplomacyCooldownsRaisedThisTurn]);
+  }, [currentTurnPhase, players, turnOrders, mapState.map, currentTurn, confirm, diplomacyCooldownsRaisedThisTurn, checkTradeRouteWarnings]);
+
+  const handleAcknowledgeTradeRouteWarnings = useCallback(() => {
+    setShowTradeRouteWarningModal(false);
+    setTradeRouteWarnings([]);
+    bypassTradeWarningRef.current = true;
+    handleAdvanceTurnPhase();
+  }, [handleAdvanceTurnPhase]);
 
 
   // Purchase a unit for the current player
@@ -2224,7 +2363,9 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
           onStartEspionage={() => setEspionageFlow({ step: 'select_player' })}
           onCancelEspionage={() => setEspionageFlow(null)}
           onOpenFleetManager={phase === 'in_progress' ? handleOpenFleetManager : undefined}
+          onOpenTradeRoutes={phase === 'in_progress' ? () => setShowTradeRouteManager(true) : undefined}
           onOpenAddUnits={phase === 'in_progress' ? () => { setAddUnitsSystemId(mapState.selectedSystemId ?? ''); setShowAddUnits(true); } : undefined}
+          onOpenTransferUnit={phase === 'in_progress' ? () => setShowTransferUnitModal(true) : undefined}
           onOpenAddToTechPool={phase === 'in_progress' ? () => setShowAddToTechPoolModal(true) : undefined}
           onOpenForceAdvancement={phase === 'in_progress' ? () => setShowForceAdvancementModal(true) : undefined}
           onOpenSystems={phase === 'in_progress' ? () => setShowSystemsOverview(true) : undefined}
@@ -2453,13 +2594,13 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
                 {/* Map Settings */}
                 <div className="relative">
                   <button
-                    onClick={() => setShowMapSettingsPill(o => !o)}
+                    onClick={() => setActivePillDropdown(d => d === 'settings' ? null : 'settings')}
                     className="flex items-center justify-center rounded p-0.5 text-white hover:bg-white/20"
                     title="Map settings"
                   >
                     <SlidersHorizontal size={20} />
                   </button>
-                  {showMapSettingsPill && (
+                  {activePillDropdown === 'settings' && (
                     <div className="absolute bottom-full left-0 z-50 mb-1 w-52 rounded border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900">
                       <label className="flex cursor-pointer items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800">
                         <input
@@ -2520,12 +2661,6 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
                     </div>
                   )}
                 </div>
-                {/* Capture button */}
-                <CaptureButton
-                  disabled={mapState.map.systems.length === 0}
-                  onFullMap={() => captureHook.captureFullMap(svgRef, mapState.map, mapState.selectedSystemId, fowData)}
-                  onClipMode={() => captureHook.enterClipMode()}
-                />
                 {/* Map Editing Mode */}
                 <button
                   onClick={() => setMapEditingMode(o => !o)}
@@ -2534,6 +2669,15 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
                 >
                   <Pencil size={20} className={mapEditingMode ? 'text-amber-400' : 'text-white'} />
                 </button>
+                {/* Capture button */}
+                <CaptureButton
+                  disabled={mapState.map.systems.length === 0}
+                  onFullMap={() => captureHook.captureFullMap(svgRef, mapState.map, mapState.selectedSystemId, fowData)}
+                  onClipMode={() => captureHook.enterClipMode()}
+                  buttonClassName="flex items-center justify-center rounded p-0.5 text-white hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40"
+                  open={activePillDropdown === 'capture'}
+                  onOpenChange={v => setActivePillDropdown(v ? 'capture' : null)}
+                />
               </div>
             )}
           </div>
@@ -2693,6 +2837,25 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
           onCancel={() => setPathSelectModal(null)}
         />,
         document.body
+      )}
+
+      {/* Trade Route Manager fullscreen overlay (also mounted during pick mode so the floating panel renders) */}
+      {(showTradeRouteManager || tradeRoutePickMode) && (
+        <TradeRouteManagerView
+          players={players}
+          currentPlayerIndex={currentPlayerIndex}
+          map={mapState.map}
+          diplomacyRelations={diplomacyRelations}
+          systemOwnership={systemOwnership}
+          inPickMode={tradeRoutePickMode}
+          pickedSystemId={tradeRoutePickedSystemId}
+          onEnterPickMode={() => { setTradeRoutePickMode(true); setTradeRoutePickedSystemId(null); setShowTradeRouteManager(false); }}
+          onExitPickMode={() => { setTradeRoutePickMode(false); setTradeRoutePickedSystemId(null); setShowTradeRouteManager(true); }}
+          onSetTradeRoute={handleSetTradeRoute}
+          onClearTradeRoute={handleClearTradeRoute}
+          onRecallConvoy={handleRecallConvoy}
+          onClose={() => { setShowTradeRouteManager(false); setTradeRoutePickMode(false); }}
+        />
       )}
 
       {/* Fleet Manager fullscreen overlay */}
@@ -2859,6 +3022,62 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
         />
       )}
 
+      {/* Steal Unit Tech modal */}
+      {showStealUnitTechModal && (
+        <StealUnitTechModal
+          players={players}
+          onSteal={handleStealUnitTech}
+          onClose={() => setShowStealUnitTechModal(false)}
+        />
+      )}
+
+      {/* Transfer Unit modal */}
+      {showTransferUnitModal && (
+        <TransferUnitModal
+          players={players}
+          currentPlayerIndex={currentPlayerIndex}
+          onTransfer={handleTransferUnit}
+          onClose={() => setShowTransferUnitModal(false)}
+        />
+      )}
+
+      {/* Trade Route Warning Modal */}
+      {showTradeRouteWarningModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="w-full max-w-md rounded-lg border border-gray-300 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900">
+            <div className="flex items-center justify-between border-b border-gray-200 px-5 py-3 dark:border-gray-700">
+              <h2 className="text-base font-semibold text-amber-700 dark:text-amber-400">Trade Route Warnings</h2>
+              <button onClick={() => setShowTradeRouteWarningModal(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">✕</button>
+            </div>
+            <div className="p-5 space-y-3">
+              <p className="text-sm text-gray-600 dark:text-gray-400">The following trade routes have issues. Routes are not automatically dissolved — review them manually.</p>
+              <div className="space-y-2">
+                {tradeRouteWarnings.map((w, i) => (
+                  <div key={i} className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm dark:border-amber-800 dark:bg-amber-950/30">
+                    <span className="font-medium text-amber-800 dark:text-amber-300">{w.routeOwnerName}</span>
+                    <span className="text-amber-700 dark:text-amber-400"> — {w.reason}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-end gap-2 pt-1">
+                <button
+                  onClick={() => setShowTradeRouteWarningModal(false)}
+                  className="rounded border border-gray-300 px-4 py-1.5 text-sm hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+                >
+                  Go Back
+                </button>
+                <button
+                  onClick={handleAcknowledgeTradeRouteWarnings}
+                  className="rounded bg-amber-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-amber-700"
+                >
+                  Acknowledge & Advance
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Force Tech Advancement modal */}
       {showForceAdvancementModal && (
         <ForceAdvancementModal
@@ -2997,7 +3216,9 @@ interface CampaignToolbarProps {
   onStartEspionage?: () => void;
   onCancelEspionage?: () => void;
   onOpenFleetManager?: () => void;
+  onOpenTradeRoutes?: () => void;
   onOpenAddUnits?: () => void;
+  onOpenTransferUnit?: () => void;
   onOpenAddToTechPool?: () => void;
   onOpenForceAdvancement?: () => void;
   onOpenSystems?: () => void;
@@ -3017,7 +3238,9 @@ function CampaignToolbar({
   onStartEspionage,
   onCancelEspionage,
   onOpenFleetManager,
+  onOpenTradeRoutes,
   onOpenAddUnits,
+  onOpenTransferUnit,
   onOpenAddToTechPool,
   onOpenForceAdvancement,
   onOpenSystems,
@@ -3075,7 +3298,7 @@ function CampaignToolbar({
         )}
 
         {/* Fleets dropdown (in_progress only) */}
-        {(onOpenFleetManager || onOpenAddUnits) && (
+        {(onOpenFleetManager || onOpenAddUnits || onOpenTransferUnit) && (
           <>
             <span className="mx-1 text-gray-300 dark:text-gray-700">|</span>
             <div className="relative">
@@ -3107,6 +3330,14 @@ function CampaignToolbar({
                       Add Units
                     </button>
                   )}
+                  {onOpenTransferUnit && (
+                    <button
+                      onClick={() => { onOpenTransferUnit(); setActiveDropdown(null); }}
+                      className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
+                    >
+                      Transfer Unit
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -3130,6 +3361,14 @@ function CampaignToolbar({
               </button>
               {activeDropdown === 'economy' && (
                 <div className="absolute left-0 z-50 mt-1 w-52 rounded border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900">
+                  {onOpenTradeRoutes && (
+                    <button
+                      onClick={() => { setActiveDropdown(null); onOpenTradeRoutes(); }}
+                      className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
+                    >
+                      Manage Trade Routes
+                    </button>
+                  )}
                   <button
                     onClick={() => { setActiveDropdown(null); onAddMiscEntry(); }}
                     className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
@@ -3164,7 +3403,7 @@ function CampaignToolbar({
                       onClick={() => { setActiveDropdown(null); onOpenAddToTechPool(); }}
                       className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
                     >
-                      Add to Tech Pool
+                      Add/Remove from Tech Pool
                     </button>
                   )}
                   {onOpenForceAdvancement && (
@@ -3214,6 +3453,12 @@ function CampaignToolbar({
                       className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
                     >
                       Apply Espionage Mission
+                    </button>
+                    <button
+                      onClick={() => { setActiveDropdown(null); setShowStealUnitTechModal(true); }}
+                      className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
+                    >
+                      Steal Unit Tech
                     </button>
                     <button
                       disabled
@@ -6235,16 +6480,16 @@ function AddToTechPoolModal({
 
   const handleConfirm = () => {
     const amount = parseInt(amountStr);
-    if (!selectedPlayerId || isNaN(amount) || amount <= 0) return;
+    if (!selectedPlayerId || isNaN(amount) || amount === 0) return;
     onAdd(selectedPlayerId, amount);
-    setAmountStr('');
+    onClose();
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="w-full max-w-sm rounded-lg border border-gray-300 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900">
         <div className="flex items-center justify-between border-b border-gray-200 px-5 py-3 dark:border-gray-700">
-          <h2 className="text-base font-semibold dark:text-gray-100">Add to Tech Pool</h2>
+          <h2 className="text-base font-semibold dark:text-gray-100">Add/Remove from Tech Pool</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">✕</button>
         </div>
         <div className="p-5 space-y-4">
@@ -6267,11 +6512,10 @@ function AddToTechPoolModal({
             <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Amount (EP)</label>
             <input
               type="number"
-              min="1"
               value={amountStr}
               onChange={e => setAmountStr(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleConfirm()}
-              placeholder="e.g. 10"
+              placeholder="e.g. 10 or -5"
               className="w-full rounded border border-gray-300 px-3 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
             />
           </div>
@@ -6279,12 +6523,242 @@ function AddToTechPoolModal({
             <button onClick={onClose} className="rounded border border-gray-300 px-4 py-1.5 text-sm hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800">Cancel</button>
             <button
               onClick={handleConfirm}
-              disabled={!selectedPlayerId || !amountStr || parseInt(amountStr) <= 0}
+              disabled={!selectedPlayerId || !amountStr || parseInt(amountStr) === 0 || isNaN(parseInt(amountStr))}
               className="rounded bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
             >
-              Add to Pool
+              Confirm
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- Steal Unit Tech Modal ---
+
+function StealUnitTechModal({
+  players,
+  onSteal,
+  onClose,
+}: {
+  players: CampaignPlayer[];
+  onSteal: (receivingPlayerId: string, sourceEmpireId: string, unit: EmpireUnit) => void;
+  onClose: () => void;
+}) {
+  const [receivingPlayerId, setReceivingPlayerId] = useState(players[0]?.id ?? '');
+  const [targetPlayerId, setTargetPlayerId] = useState('');
+  const [selectedUnitId, setSelectedUnitId] = useState('');
+
+  const receivingPlayer = players.find(p => p.id === receivingPlayerId);
+  const targetPlayer = players.find(p => p.id === targetPlayerId);
+  const targetUnits = targetPlayer?.empire.units ?? [];
+
+  const isAlreadyStolen = (unit: EmpireUnit) =>
+    (receivingPlayer?.stolenUnits ?? []).some(
+      s => s.sourceEmpireId === targetPlayerId && s.unit.id === unit.id
+    );
+
+  const selectedUnit = targetUnits.find(u => u.id === selectedUnitId);
+  const canConfirm = !!receivingPlayerId && !!targetPlayerId && !!selectedUnit;
+
+  const handleConfirm = () => {
+    if (!selectedUnit || !targetPlayerId) return;
+    onSteal(receivingPlayerId, targetPlayerId, selectedUnit);
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="w-full max-w-md rounded-lg border border-gray-300 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900">
+        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-3 dark:border-gray-700">
+          <h2 className="text-base font-semibold dark:text-gray-100">Steal Unit Tech</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">✕</button>
+        </div>
+        <div className="p-5 space-y-4">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Receiving Player</label>
+            <select
+              value={receivingPlayerId}
+              onChange={e => { setReceivingPlayerId(e.target.value); setSelectedUnitId(''); }}
+              className="w-full rounded border border-gray-300 bg-white px-3 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+            >
+              {players.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Target Empire</label>
+            <select
+              value={targetPlayerId}
+              onChange={e => { setTargetPlayerId(e.target.value); setSelectedUnitId(''); }}
+              className="w-full rounded border border-gray-300 bg-white px-3 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+            >
+              <option value="">— Select target —</option>
+              {players.filter(p => p.id !== receivingPlayerId).map(p => (
+                <option key={p.id} value={p.id}>{p.name} ({p.empire.name})</option>
+              ))}
+            </select>
+          </div>
+          {targetPlayer && (
+            <div>
+              <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Unit Design</label>
+              <select
+                value={selectedUnitId}
+                onChange={e => setSelectedUnitId(e.target.value)}
+                className="w-full rounded border border-gray-300 bg-white px-3 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+              >
+                <option value="">— Select unit —</option>
+                {targetUnits.map(u => (
+                  <option key={u.id} value={u.id}>
+                    {u.name}{isAlreadyStolen(u) ? ' (Already Stolen)' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          <div className="flex justify-end gap-2 pt-1">
+            <button onClick={onClose} className="rounded border border-gray-300 px-4 py-1.5 text-sm hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800">Cancel</button>
+            <button
+              onClick={handleConfirm}
+              disabled={!canConfirm}
+              className="rounded bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            >
+              Steal Design
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- Transfer Unit Modal ---
+
+function TransferUnitModal({
+  players,
+  currentPlayerIndex,
+  onTransfer,
+  onClose,
+}: {
+  players: CampaignPlayer[];
+  currentPlayerIndex: number;
+  onTransfer: (unitId: string, fromPlayerId: string, toPlayerId: string) => void;
+  onClose: () => void;
+}) {
+  const [step, setStep] = useState<'pick_unit' | 'pick_recipient'>('pick_unit');
+  const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
+  const [recipientPlayerId, setRecipientPlayerId] = useState('');
+
+  const fromPlayer = players[currentPlayerIndex];
+  if (!fromPlayer) return null;
+
+  // Group units by fleet/system for display
+  const unitGroups: { label: string; units: CampaignUnit[] }[] = [];
+  const fleets = fromPlayer.fleets ?? [];
+  for (const fleet of fleets) {
+    const units = fromPlayer.units.filter(u => u.fleetId === fleet.id);
+    if (units.length > 0) unitGroups.push({ label: fleet.name, units });
+  }
+  const untasked = fromPlayer.units.filter(u => !u.fleetId);
+  if (untasked.length > 0) unitGroups.push({ label: 'Untasked', units: untasked });
+
+  const selectedUnit = fromPlayer.units.find(u => u.id === selectedUnitId);
+  const otherPlayers = players.filter(p => p.id !== fromPlayer.id);
+
+  const handleConfirm = () => {
+    if (!selectedUnitId || !recipientPlayerId) return;
+    onTransfer(selectedUnitId, fromPlayer.id, recipientPlayerId);
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="w-full max-w-lg rounded-lg border border-gray-300 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900">
+        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-3 dark:border-gray-700">
+          <h2 className="text-base font-semibold dark:text-gray-100">
+            Transfer Unit — {step === 'pick_unit' ? 'Select Unit' : 'Select Recipient'}
+          </h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">✕</button>
+        </div>
+
+        {step === 'pick_unit' && (
+          <div className="max-h-96 overflow-y-auto p-5 space-y-4">
+            {unitGroups.length === 0 && (
+              <p className="text-sm italic text-gray-400">No units to transfer.</p>
+            )}
+            {unitGroups.map(group => (
+              <div key={group.label}>
+                <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{group.label}</div>
+                <div className="space-y-1">
+                  {group.units.map(unit => (
+                    <button
+                      key={unit.id}
+                      onClick={() => setSelectedUnitId(unit.id)}
+                      className={`flex w-full items-center gap-3 rounded border px-3 py-2 text-left text-sm ${
+                        selectedUnitId === unit.id
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                          : 'border-gray-200 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800'
+                      } dark:text-gray-200`}
+                    >
+                      <span className="font-medium">{unit.name ?? unit.unitTemplateId}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {step === 'pick_recipient' && (
+          <div className="p-5 space-y-3">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Transferring: <span className="font-medium dark:text-gray-200">{selectedUnit?.name ?? selectedUnit?.unitTemplateId}</span>
+            </p>
+            <div className="space-y-2">
+              {otherPlayers.map(p => (
+                <button
+                  key={p.id}
+                  onClick={() => setRecipientPlayerId(p.id)}
+                  className={`flex w-full items-center gap-3 rounded border px-4 py-2.5 text-left text-sm ${
+                    recipientPlayerId === p.id
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                      : 'border-gray-200 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800'
+                  } dark:text-gray-200`}
+                >
+                  {p.teamColor && <span className="inline-block h-3 w-3 flex-shrink-0 rounded-full" style={{ backgroundColor: p.teamColor }} />}
+                  {p.name} ({p.empire.name})
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="flex justify-end gap-2 border-t border-gray-200 px-5 py-3 dark:border-gray-700">
+          {step === 'pick_recipient' && (
+            <button onClick={() => setStep('pick_unit')} className="rounded border border-gray-300 px-4 py-1.5 text-sm hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800">
+              ← Back
+            </button>
+          )}
+          <button onClick={onClose} className="rounded border border-gray-300 px-4 py-1.5 text-sm hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800">Cancel</button>
+          {step === 'pick_unit' ? (
+            <button
+              onClick={() => setStep('pick_recipient')}
+              disabled={!selectedUnitId}
+              className="rounded bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            >
+              Next →
+            </button>
+          ) : (
+            <button
+              onClick={handleConfirm}
+              disabled={!recipientPlayerId}
+              className="rounded bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            >
+              Transfer Unit
+            </button>
+          )}
         </div>
       </div>
     </div>
