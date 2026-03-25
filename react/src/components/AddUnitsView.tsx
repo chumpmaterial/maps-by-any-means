@@ -1100,7 +1100,12 @@ export function AddUnitsView({
                           <button
                             onClick={() => {
                               const unit = (activePlayer?.empire.units ?? independentLists[cmSubTab]?.units ?? []).find(u => u.id === item.templateId);
-                              if (unit) addToCart(unit);
+                              if (unit) { addToCart(unit); return; }
+                              // Allied/stolen units: not in own units or independent lists
+                              const stolen = (activePlayer?.stolenUnits ?? []).find(s => s.unit.id === item.templateId);
+                              if (stolen) { addToCart({ ...stolen.unit, cost: alliedCost(stolen.unit.cost ?? 0) }); return; }
+                              const allyUnit = getAllies().flatMap(a => a.empire.units).find(u => u.id === item.templateId);
+                              if (allyUnit) { addToCart({ ...allyUnit, cost: alliedCost(allyUnit.cost ?? 0) }); return; }
                             }}
                             className="flex h-5 w-5 items-center justify-center rounded text-xs text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
                           >+</button>
