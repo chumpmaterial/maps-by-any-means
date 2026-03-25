@@ -5,9 +5,11 @@ interface CaptureButtonProps {
   onFullMap: () => void;
   onClipMode: () => void;
   disabled?: boolean;
+  /** Override the trigger button's className. Defaults to pill-style (white icon on dark bg). */
+  buttonClassName?: string;
 }
 
-export function CaptureButton({ onFullMap, onClipMode, disabled = false }: CaptureButtonProps) {
+export function CaptureButton({ onFullMap, onClipMode, disabled = false, buttonClassName }: CaptureButtonProps) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -22,16 +24,17 @@ export function CaptureButton({ onFullMap, onClipMode, disabled = false }: Captu
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
+  const btnClass = buttonClassName ?? 'flex items-center justify-center rounded p-0.5 text-white hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40';
+
   return (
     <div ref={containerRef} className="relative">
       <button
         title={disabled ? 'No systems on map' : 'Capture map to clipboard'}
         disabled={disabled}
         onClick={() => { if (!disabled) setOpen(o => !o); }}
-        className="flex items-center gap-1.5 rounded px-2 py-1 text-sm font-medium hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-gray-700 dark:text-gray-200"
+        className={btnClass}
       >
-        <Camera size={15} />
-        Capture
+        <Camera size={20} />
       </button>
       {open && (
         <div className="absolute right-0 top-full z-50 mt-1 w-36 rounded border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900">

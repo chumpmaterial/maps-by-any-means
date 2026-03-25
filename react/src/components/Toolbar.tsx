@@ -191,6 +191,7 @@ export function Toolbar({ theme, onToggleTheme, mapState, onGenerationLog, nameL
               disabled={mapState.map.systems.length === 0}
               onFullMap={() => captureHook.captureFullMap(svgRef, mapState.map, mapState.selectedSystemId)}
               onClipMode={() => captureHook.enterClipMode()}
+              buttonClassName="flex items-center justify-center rounded p-0.5 text-gray-500 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 dark:text-gray-300 dark:hover:bg-gray-700"
             />
           )}
           <button

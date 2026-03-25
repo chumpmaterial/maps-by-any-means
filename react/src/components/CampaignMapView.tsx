@@ -2526,8 +2526,6 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
                   onFullMap={() => captureHook.captureFullMap(svgRef, mapState.map, mapState.selectedSystemId, fowData)}
                   onClipMode={() => captureHook.enterClipMode()}
                 />
-                {/* Divider before Map Editing */}
-                <div className="h-3 w-px bg-white/30" />
                 {/* Map Editing Mode */}
                 <button
                   onClick={() => setMapEditingMode(o => !o)}
