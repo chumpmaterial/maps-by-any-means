@@ -2042,7 +2042,8 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
   }, [espionageFlow, players, mapState.map, currentTurn, confirm]);
 
   const galaxyStateHighlights = useMemo((): Record<string, 'independent' | 'raider' | 'both'> | null => {
-    if (phase !== 'galaxy_state_setup' || !galaxyStateLog) return null;
+    if (phase !== 'galaxy_state_setup') return null;
+    if (!galaxyStateLog) return {};
     const result: Record<string, 'independent' | 'raider' | 'both'> = {};
     for (const id of galaxyStateLog.independents ?? []) result[id] = 'independent';
     for (const id of galaxyStateLog.raiderSystems ?? []) {

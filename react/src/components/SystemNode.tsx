@@ -153,16 +153,6 @@ export function SystemNode({
         />
       )}
 
-      {/* Main circle */}
-      <circle
-        cx={x}
-        cy={y}
-        r={radius}
-        fill={fillColor}
-        stroke={strokeColor}
-        strokeWidth={2}
-      />
-
       {/* Galaxy State Setup highlight ring */}
       {galaxyStateHighlight && (
         <circle
@@ -179,6 +169,16 @@ export function SystemNode({
           opacity={0.85}
         />
       )}
+
+      {/* Main circle */}
+      <circle
+        cx={x}
+        cy={y}
+        r={radius}
+        fill={fillColor}
+        stroke={strokeColor}
+        strokeWidth={2}
+      />
 
       {/* Star icon for homeworlds */}
       {system.type === 'homeworld' && (
