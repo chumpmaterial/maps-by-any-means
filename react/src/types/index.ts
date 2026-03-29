@@ -549,7 +549,7 @@ export interface CampaignSnapshot {
   activeCombatScenarios: CombatScenario[];
   turnOrders: Record<string, TurnOrderEntry>;
   independentUnitListOverrides: IndependentUnitList[];
-  independentSystemColors: Record<string, string>;
+  independentSystemColors?: Record<string, string>;
   galaxyStateLog: Campaign['galaxyStateLog'];
 }
 
