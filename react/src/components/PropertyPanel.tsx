@@ -38,6 +38,8 @@ interface PropertyPanelProps {
   onMoveTemplateToFleet?: (playerId: string, templateId: string, fromFleetKey: string, toFleetKey: string, systemId: string, count: number) => void;
   systemOwnership?: Record<string, string>;
   onChangeSystemOwner?: (systemId: string, newPlayerId: string | null) => void;
+  independentSystemColors?: Record<string, string>;
+  onSetIndependentSystemColor?: (sysId: string, color: string) => void;
   cmFleets?: CMFleet[];
   independentLists?: IndependentUnitList[];
   onEditCMFleet?: (fleetId: string) => void;
@@ -1059,6 +1061,8 @@ interface SystemPropertiesPanelProps {
   onMoveTemplateToFleet?: (playerId: string, templateId: string, fromFleetKey: string, toFleetKey: string, systemId: string, count: number) => void;
   systemOwnership?: Record<string, string>;
   onChangeSystemOwner?: (systemId: string, newPlayerId: string | null) => void;
+  independentSystemColors?: Record<string, string>;
+  onSetIndependentSystemColor?: (sysId: string, color: string) => void;
   cmFleets?: CMFleet[];
   independentLists?: IndependentUnitList[];
   onEditCMFleet?: (fleetId: string) => void;

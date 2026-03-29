@@ -292,7 +292,9 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
     for (const fleet of cmFleets) {
       if (!fleet.systemId) continue;
       const systemId = fleet.systemId;
-      const color = fleet.color ?? '#6b7280';
+      const color = fleet.independentSystemId
+        ? (independentSystemColors[fleet.independentSystemId] ?? fleet.color ?? '#6b7280')
+        : (fleet.color ?? '#6b7280');
       const cmOwnerId = `cm-${color}`;
 
       const unitsByCategory: Partial<Record<string, number>> = {};
@@ -364,7 +366,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
     }
 
     return result;
-  }, [players, cmFleets, systemOwnership]);
+  }, [players, cmFleets, systemOwnership, independentSystemColors]);
 
   // Initialize: load the map and set up players (or restore a saved campaign)
   useEffect(() => {
@@ -1256,16 +1258,28 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
   }, [cmFleetMoveMode]);
 
   // Change or clear campaign ownership of any system
+  const handleSetIndependentSystemColor = useCallback((sysId: string, color: string) => {
+    setIndependentSystemColors(prev => ({ ...prev, [sysId]: color }));
+  }, []);
+
   const handleChangeSystemOwner = useCallback((systemId: string, newPlayerId: string | null) => {
+    // Revert independent fleet ownership if this system was previously independent
+    const prevOwner = systemOwnership[systemId];
+    if (prevOwner && isIndependentId(prevOwner)) {
+      setCmFleets(prev => prev.map(f =>
+        f.independentSystemId === systemId ? { ...f, independentSystemId: undefined } : f
+      ));
+    }
+
     const newOwnership = { ...systemOwnership };
-    if (newPlayerId) {
-      newOwnership[systemId] = newPlayerId;
-    } else {
+    if (!newPlayerId) {
       delete newOwnership[systemId];
+    } else {
+      newOwnership[systemId] = newPlayerId;
     }
     setSystemOwnership(newOwnership);
     setPlayers(prev => rebuildOwnedSystemIds(prev, newOwnership));
-  }, [systemOwnership]);
+  }, [systemOwnership, cmFleets]);
 
   // Move a unit to a different fleet (validates category rules for system fleets)
   const handleMoveUnitToFleet = useCallback((playerId: string, unitId: string, newFleetId: string) => {
@@ -2928,6 +2942,8 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
             onMoveTemplateToFleet={phase === 'in_progress' ? handleMoveTemplateToFleet : undefined}
             systemOwnership={systemOwnership}
             onChangeSystemOwner={phase === 'in_progress' ? handleChangeSystemOwner : undefined}
+            independentSystemColors={independentSystemColors}
+            onSetIndependentSystemColor={phase === 'in_progress' ? handleSetIndependentSystemColor : undefined}
             cmFleets={cmFleets}
             independentLists={INDEPENDENT_UNIT_LISTS}
             onEditCMFleet={phase === 'in_progress' ? (id) => setEditingCMFleet(id) : undefined}
