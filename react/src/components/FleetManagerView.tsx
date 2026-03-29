@@ -36,7 +36,7 @@ interface FleetManagerViewProps {
   onMoveCMTemplateToFleet?: (fromFleetId: string, toFleetId: string, templateId: string, systemId: string, count: number) => void;
   turnOrders?: Record<string, TurnOrderEntry>;
   onUpdateOrders?: (key: string, entry: TurnOrderEntry) => void;
-  onToggleUnitStatus?: (playerId: string, unitId: string, status: 'crippled' | 'outOfSupply' | 'captured' | 'exhausted') => void;
+  onToggleUnitStatus?: (playerId: string, unitId: string, status: StrategicStatus) => void;
   initialPlayerId?: string;
   initialSystemId?: string;
 }

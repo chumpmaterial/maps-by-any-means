@@ -1755,7 +1755,7 @@ function SystemPropertiesPanel({ mapState, selectedSystem, nameListHook, campaig
                   <label key={key} className="flex cursor-pointer items-center gap-2 text-sm">
                     <input
                       type="checkbox"
-                      checked={systemStatuses[selectedSystem.id]?.[key] ?? false}
+                      checked={Boolean(systemStatuses[selectedSystem.id]?.[key])}
                       onChange={e => onSetSystemStatus(selectedSystem.id, { [key]: e.target.checked })}
                       className="h-4 w-4 rounded border-gray-300"
                     />

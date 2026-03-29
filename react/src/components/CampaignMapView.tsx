@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo, Fragment } from 'rea
 import { createPortal } from 'react-dom';
 import { Home, Download, Clock, Anchor, TrendingUp, FlaskConical, Eye, Globe, Sun, Moon, SlidersHorizontal, Pencil } from 'lucide-react';
 
-import type { Campaign, CampaignSettings, CampaignPlayer, CampaignFleet, CampaignUnit, CampaignPhase, TurnPhase, SystemCampaignStatus, System, JumpLane, LaneType, SystemType, EmpireUnit, UnitCategory, GameMap, MiscEntry, TurnOrderEntry, SystemIntelSnapshot, CMFleet, DiplomacyLevel, CombatScenario, IndependentUnitList, TechLevelType, UnitTrait, CampaignHistory, CampaignSnapshot, PhaseHistoryEntry } from '../types';
+import type { Campaign, CampaignSettings, CampaignPlayer, CampaignFleet, CampaignUnit, CampaignPhase, TurnPhase, SystemCampaignStatus, System, JumpLane, LaneType, SystemType, EmpireUnit, UnitCategory, GameMap, MiscEntry, TurnOrderEntry, SystemIntelSnapshot, CMFleet, DiplomacyLevel, CombatScenario, IndependentUnitList, TechLevelType, CampaignHistory, CampaignSnapshot, PhaseHistoryEntry } from '../types';
 import { SYSTEM_FLEET_NAMES } from '../types';
 import { INDEPENDENT_UNIT_LISTS } from '../data/independentLists';
 import { useTheme } from '../hooks/useTheme';
@@ -31,9 +31,9 @@ import { CaptureButton } from './CaptureButton';
 import { ClipModePanel } from './ClipModePanel';
 import { generateRandomTeamColor } from '../utils/colorUtils';
 import { computeFleetBadges, computeMovementPoints, findFleetPaths, canJoinSystemFleet, getCarryCapacity, resolveUnitTemplate } from '../utils/fleetUtils';
-import { isEffectivelyBlockaded, isBlockadedAgainst, diplomacyKey as supplyDiplomacyKey } from '../utils/supplyUtils';
+import { isEffectivelyBlockaded, diplomacyKey as supplyDiplomacyKey } from '../utils/supplyUtils';
 import { saveCampaignToStorage, exportCampaignToFile } from '../utils/fileUtils';
-import { computeTAC, getUpgradePoints, getTotalAP, nextTechLevel, nextTLIterator, TECH_LEVEL_TABLE, STANDARD_TRAITS, FACTOR_TRAITS, TROOP_TRAITS, DEFAULT_UNITS } from '../data/unitData';
+import { computeTAC, getUpgradePoints, getTotalAP, nextTechLevel, nextTLIterator, STANDARD_TRAITS, FACTOR_TRAITS, TROOP_TRAITS, DEFAULT_UNITS } from '../data/unitData';
 
 /** Returns true if the given ownership ID refers to an independent system rather than a player. */
 function isIndependentId(id: string): boolean {
@@ -1765,7 +1765,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
         ...oldUnit,
         id: crypto.randomUUID(),
         name: newUnitName,
-        techLevel: nextTL,
+        techLevel: nextTL as TechLevelType,
         parentUnitId: oldUnit.id,
         isSuperseded: false,
         researched: true,
@@ -1808,7 +1808,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
         ...oldUnit,
         id: crypto.randomUUID(),
         name: newUnitName,
-        techLevel: nextTL,
+        techLevel: nextTL as TechLevelType,
         parentUnitId: oldUnit.id,
         isSuperseded: false,
         researched: true,
@@ -1857,7 +1857,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
         ...oldUnit,
         id: crypto.randomUUID(),
         name: newUnitName,
-        techLevel: nextTL,
+        techLevel: nextTL as TechLevelType,
         parentUnitId: oldUnit.id,
         isSuperseded: false,
         researched: true,
@@ -1898,7 +1898,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
         ...oldUnit,
         id: crypto.randomUUID(),
         name: newUnitName,
-        techLevel: nextTL,
+        techLevel: nextTL as TechLevelType,
         parentUnitId: oldUnit.id,
         isSuperseded: false,
         dv: oldUnit.dv + dvDelta,
@@ -3881,11 +3881,6 @@ const TURN_PHASE_ORDER: TurnPhase[] = [
 function getTurnPhaseAfter(p: TurnPhase): TurnPhase | null {
   const idx = TURN_PHASE_ORDER.indexOf(p);
   return idx >= 0 && idx < TURN_PHASE_ORDER.length - 1 ? TURN_PHASE_ORDER[idx + 1] : null;
-}
-
-function getTurnPhaseBefore(p: TurnPhase): TurnPhase | null {
-  const idx = TURN_PHASE_ORDER.indexOf(p);
-  return idx > 0 ? TURN_PHASE_ORDER[idx - 1] : null;
 }
 
 // --- Turn Orders Phase ---
@@ -6073,7 +6068,7 @@ interface TechPhaseViewProps {
 
 function TechPhaseView({
   players,
-  settings,
+  settings: _settings,
   onAdvancePhase,
   onRevertPhase,
   onViewMap,
@@ -7111,7 +7106,7 @@ function StealUnitTechModal({
 
 function ForceAdvancementModal({
   players,
-  settings,
+  settings: _settings,
   independentListOverrides,
   onUnlockUnit,
   onUpgradeUnit,
@@ -7687,13 +7682,14 @@ function CustomUnitForm({
       name: name.trim(),
       hullCode,
       category,
+      cost: 0,
       isd: 'N/A',
       researched: true,
       dv,
       as: asStr === '-' ? '-' : (parseInt(asStr) || 0),
       af: (isTroops || afStr === '-') ? '-' : (parseInt(afStr) || 0),
-      cr: (!isTroops && crStr) ? parseInt(crStr) || undefined : undefined,
-      cc: (!isTroops && ccStr) ? parseInt(ccStr) || undefined : undefined,
+      cr: (isTroops || !crStr) ? '-' : (parseInt(crStr) || 0),
+      cc: (isTroops || !ccStr) ? '-' : (parseInt(ccStr) || 0),
       traits: traits.filter(t => t.name.trim()).map(t => ({
         name: t.name.trim(),
         factor: t.factor ? parseFloat(t.factor) : undefined,
@@ -8032,16 +8028,6 @@ interface CampaignPhasePanelProps {
   canRevert: boolean;
   onRevert: () => void;
 }
-
-const PHASE_LABELS: Partial<Record<CampaignPhase, string>> = {
-  homeworld_selection: 'Homeworld Selection',
-  system_purchase: 'System Purchase',
-  galaxy_state_setup: 'Galaxy State Setup',
-  lane_rolling: 'Lane Rolling',
-  unit_purchase: 'Unit Purchase',
-  unit_deployment: 'Unit Deployment',
-  trade_routes: 'Trade Routes',
-};
 
 function CampaignPhasePanel({
   phase,

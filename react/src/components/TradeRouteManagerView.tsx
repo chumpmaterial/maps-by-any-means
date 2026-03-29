@@ -104,7 +104,7 @@ export function TradeRouteManagerView({
   onEnterPickMode,
   onExitPickMode,
   onSetTradeRoute,
-  onClearTradeRoute,
+  onClearTradeRoute: _onClearTradeRoute,
   onRecallConvoy,
   onPickChainChange,
   onCenterSystem,

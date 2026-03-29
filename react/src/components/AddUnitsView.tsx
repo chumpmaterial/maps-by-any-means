@@ -148,7 +148,7 @@ export function AddUnitsView({
   allPlayers,
   diplomacyRelations,
   map,
-  settings,
+  settings: _settings,
   systemOwnership,
   turnOrders,
   onUpdateOrders,

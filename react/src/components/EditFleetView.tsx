@@ -521,6 +521,7 @@ export function EditFleetView({
   ownerLabel,
   ownerColor,
   fleetNamesToAvoid,
+  allPlayers,
   onToggleUnitStatus,
 }: EditFleetViewProps) {
   const confirm = useConfirm();

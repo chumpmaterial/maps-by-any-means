@@ -12,8 +12,6 @@ export function computePhaseDiff(
   map: GameMap,
 ): PhaseDiff {
   const sysName = (id: string) => map.systems.find(s => s.id === id)?.name ?? id;
-  const playerName = (id: string, players: CampaignPlayer[]) =>
-    players.find(p => p.id === id)?.name ?? id;
 
   return {
     epSp: diffEPSP(before.players, after.players),

@@ -15,7 +15,7 @@ interface SupplyPhaseViewProps {
   systemOwnership: Record<string, string>;
   diplomacyRelations: Record<string, DiplomacyLevel>;
   currentTurn: number;
-  onToggleUnitStatus: (playerId: string, unitId: string, status: 'crippled' | 'outOfSupply' | 'captured' | 'exhausted') => void;
+  onToggleUnitStatus: (playerId: string, unitId: string, status: StrategicStatus) => void;
   onDeleteUnit: (playerId: string, unitId: string) => void;
   onBulkSetOutOfSupply: (playerId: string, unitIds: string[], value: boolean) => void;
   onViewMap: () => void;

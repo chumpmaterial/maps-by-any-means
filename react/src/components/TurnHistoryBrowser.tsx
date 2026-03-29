@@ -249,7 +249,7 @@ const DOT_CLASSES = {
   amber: 'bg-amber-500',
 } as const;
 
-export function TurnHistoryBrowser({ history, currentSnapshot, players, map, onClose }: TurnHistoryBrowserProps) {
+export function TurnHistoryBrowser({ history, currentSnapshot, players: _players, map, onClose }: TurnHistoryBrowserProps) {
   const [selectedIndex, setSelectedIndex] = useState<number>(history.entries.length - 1);
 
   // Group entries by turn number
