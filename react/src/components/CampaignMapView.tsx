@@ -5154,11 +5154,11 @@ function DiplomacyPhaseView({
 
                 {/* First Contact section */}
                 {(() => {
-                  const relevantContacts = firstContactSystems.filter(entry => {
-                    if (entry.kind === 'player-player') {
-                      return entry.presentPlayers.some(p => p.id === activePlayer.id);
+                  const relevantContacts = firstContactSystems.filter(fc => {
+                    if (fc.kind === 'player-player') {
+                      return fc.presentPlayers.some(p => p.id === activePlayer.id);
                     }
-                    return getRelation(activePlayer.id, entry.independentId) === 'Unmet';
+                    return getRelation(activePlayer.id, fc.independentId) === 'Unmet';
                   });
                   if (relevantContacts.length === 0) return null;
                   return (
@@ -5183,8 +5183,7 @@ function DiplomacyPhaseView({
                               </div>
                             ) : (
                               <div className="text-xs text-gray-500 dark:text-gray-400">
-                                First Contact with {fc.independentName}
-                                <span className="ml-1 text-gray-400 dark:text-gray-500">— Independent System</span>
+                                First contact — Independent faction
                               </div>
                             )}
                           </div>
@@ -5349,7 +5348,7 @@ function DiplomacyPhaseView({
               {/* Independent Relations */}
               {(() => {
                 const independentSystems = Object.entries(systemOwnership)
-                  .filter(([, ownerId]) => ownerId.startsWith('independent:'))
+                  .filter(([, ownerId]) => isIndependentId(ownerId))
                   .map(([sysId, independentId]) => ({
                     independentId,
                     systemId: sysId,
