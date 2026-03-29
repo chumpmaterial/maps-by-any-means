@@ -103,7 +103,7 @@ function formatTraitModifiers(trait: SystemTrait): string {
   return parts.join(', ');
 }
 
-export function PropertyPanel({ mapState, nameListHook, campaignMode = false, mapEditingMode = false, players, systemStatuses, onSetSystemStatus, fowData, onDeleteUnits, onCreateFleet, onEditFleet, onMoveFleet, fleetDisplayOrder, onReorderAnyFleet, onMoveUnitToFleet, onMoveTemplateToFleet, systemOwnership, onChangeSystemOwner, cmFleets, independentLists, onEditCMFleet, onMoveCMFleet, onDeleteCMUnits, onMoveCMTemplateToFleet }: PropertyPanelProps) {
+export function PropertyPanel({ mapState, nameListHook, campaignMode = false, mapEditingMode = false, players, systemStatuses, onSetSystemStatus, fowData, onDeleteUnits, onCreateFleet, onEditFleet, onMoveFleet, fleetDisplayOrder, onReorderAnyFleet, onMoveUnitToFleet, onMoveTemplateToFleet, systemOwnership, onChangeSystemOwner, independentSystemColors, onSetIndependentSystemColor, cmFleets, independentLists, onEditCMFleet, onMoveCMFleet, onDeleteCMUnits, onMoveCMTemplateToFleet }: PropertyPanelProps) {
   const confirm = useConfirm();
   const {
     selectedSystemId,
@@ -215,6 +215,8 @@ export function PropertyPanel({ mapState, nameListHook, campaignMode = false, ma
       onMoveTemplateToFleet={onMoveTemplateToFleet}
       systemOwnership={systemOwnership}
       onChangeSystemOwner={onChangeSystemOwner}
+      independentSystemColors={independentSystemColors}
+      onSetIndependentSystemColor={onSetIndependentSystemColor}
       cmFleets={cmFleets}
       independentLists={independentLists}
       onEditCMFleet={onEditCMFleet}
@@ -1071,7 +1073,7 @@ interface SystemPropertiesPanelProps {
   onMoveCMTemplateToFleet?: (fromFleetId: string, toFleetId: string, templateId: string, count: number) => void;
 }
 
-function SystemPropertiesPanel({ mapState, selectedSystem, nameListHook, campaignMode = false, mapEditingMode = false, players, systemStatuses, onSetSystemStatus, fowData, onDeleteUnits, onCreateFleet, onEditFleet, onMoveFleet, fleetDisplayOrder, onReorderAnyFleet, onMoveTemplateToFleet, systemOwnership, onChangeSystemOwner, cmFleets, independentLists, onEditCMFleet, onMoveCMFleet, onDeleteCMUnits, onMoveCMTemplateToFleet }: SystemPropertiesPanelProps) {
+function SystemPropertiesPanel({ mapState, selectedSystem, nameListHook, campaignMode = false, mapEditingMode = false, players, systemStatuses, onSetSystemStatus, fowData, onDeleteUnits, onCreateFleet, onEditFleet, onMoveFleet, fleetDisplayOrder, onReorderAnyFleet, onMoveTemplateToFleet, systemOwnership, onChangeSystemOwner, independentSystemColors, onSetIndependentSystemColor, cmFleets, independentLists, onEditCMFleet, onMoveCMFleet, onDeleteCMUnits, onMoveCMTemplateToFleet }: SystemPropertiesPanelProps) {
   const confirm = useConfirm();
   const {
     map,

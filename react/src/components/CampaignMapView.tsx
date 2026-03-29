@@ -1279,7 +1279,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
     }
     setSystemOwnership(newOwnership);
     setPlayers(prev => rebuildOwnedSystemIds(prev, newOwnership));
-  }, [systemOwnership, cmFleets]);
+  }, [systemOwnership]);
 
   // Move a unit to a different fleet (validates category rules for system fleets)
   const handleMoveUnitToFleet = useCallback((playerId: string, unitId: string, newFleetId: string) => {
