@@ -1999,25 +1999,24 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
 
   // Transfer units from a CM fleet to a player or independent system
   const handleCMTransfer = useCallback((unitIds: string[], fromFleetId: string, toTarget: string) => {
+    let movedUnits: CampaignUnit[] = [];
     setCmFleets(prev => {
-      const updated = prev.map(f => {
-        if (f.id !== fromFleetId) return f;
-        return { ...f, units: f.units.filter(u => !unitIds.includes(u.id)) };
-      });
+      movedUnits = prev.find(f => f.id === fromFleetId)?.units.filter(u => unitIds.includes(u.id)) ?? [];
+      const updated = prev.map(f =>
+        f.id !== fromFleetId ? f : { ...f, units: f.units.filter(u => !unitIds.includes(u.id)) }
+      );
       if (toTarget.startsWith('independent:')) {
         const sysId = toTarget.replace('independent:', '');
         const existingFleet = updated.find(f => f.independentSystemId === sysId);
         if (existingFleet) {
-          return updated.map(f => {
-            if (f.id !== existingFleet.id) return f;
-            const movedUnits = prev.find(f2 => f2.id === fromFleetId)?.units.filter(u => unitIds.includes(u.id)) ?? [];
-            return { ...f, units: [...f.units, ...movedUnits] };
-          });
+          return updated.map(f =>
+            f.id !== existingFleet.id ? f : { ...f, units: [...f.units, ...movedUnits] }
+          );
         } else {
-          const movedUnits = prev.find(f2 => f2.id === fromFleetId)?.units.filter(u => unitIds.includes(u.id)) ?? [];
+          const sysName = mapState.map.systems.find(s => s.id === sysId)?.name;
           const newFleet: CMFleet = {
             id: `cm-fleet-${Date.now()}`,
-            name: 'Fleet',
+            name: sysName ? `${sysName} Fleet` : 'Fleet',
             systemId: undefined,
             independentSystemId: sysId,
             sourceListId: '',
@@ -2029,13 +2028,11 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
       return updated;
     });
     if (!toTarget.startsWith('independent:')) {
-      setPlayers(prev => prev.map(p => {
-        if (p.id !== toTarget) return p;
-        const movedUnits = cmFleets.find(f => f.id === fromFleetId)?.units.filter(u => unitIds.includes(u.id)) ?? [];
-        return { ...p, units: [...p.units, ...movedUnits] };
-      }));
+      setPlayers(prev => prev.map(p =>
+        p.id !== toTarget ? p : { ...p, units: [...p.units, ...movedUnits] }
+      ));
     }
-  }, [cmFleets, setPlayers]);
+  }, [mapState.map.systems, setPlayers]);
 
   // Set diplomacy relation between two players (stored symmetrically)
   const handleSetRelation = useCallback((p1Id: string, p2Id: string, level: DiplomacyLevel) => {
