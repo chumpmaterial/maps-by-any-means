@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import type { Campaign, CampaignPlayer, CampaignSettings, GameMap } from '../types';
 
 interface GalaxyStateSetupPanelProps {
@@ -33,7 +33,10 @@ export function GalaxyStateSetupPanel({
     raiderChecked: {},
   };
 
-  const unownedSystems = map.systems.filter(s => !systemOwnership[s.id]);
+  const unownedSystems = useMemo(
+    () => map.systems.filter(s => !systemOwnership[s.id]),
+    [map.systems, systemOwnership],
+  );
 
   const rollIndependents = useCallback(() => {
     const lines: string[] = ['=== Independent Systems Roll ==='];
