@@ -34,6 +34,11 @@ import { isEffectivelyBlockaded, isBlockadedAgainst, diplomacyKey as supplyDiplo
 import { saveCampaignToStorage, exportCampaignToFile } from '../utils/fileUtils';
 import { computeTAC, getUpgradePoints, getTotalAP, nextTechLevel, nextTLIterator, TECH_LEVEL_TABLE, STANDARD_TRAITS, FACTOR_TRAITS, TROOP_TRAITS, DEFAULT_UNITS } from '../data/unitData';
 
+/** Returns true if the given ownership ID refers to an independent system rather than a player. */
+function isIndependentId(id: string): boolean {
+  return id.startsWith('independent:');
+}
+
 interface CampaignMapViewProps {
   settings: CampaignSettings;
   savedCampaign?: Campaign;   // if provided, restores full campaign state instead of fresh init
@@ -174,9 +179,15 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
   function rebuildOwnedSystemIds(prevPlayers: CampaignPlayer[], ownership: Record<string, string>): CampaignPlayer[] {
     const byPlayer: Record<string, string[]> = {};
     for (const [sysId, pid] of Object.entries(ownership)) {
+      if (!pid || pid.startsWith('independent:')) continue;
       (byPlayer[pid] ??= []).push(sysId);
     }
     return prevPlayers.map(p => ({ ...p, ownedSystemIds: byPlayer[p.id] ?? [] }));
+  }
+
+  function getIndependentSystemName(id: string): string {
+    const sysId = id.replace('independent:', '');
+    return mapState.map.systems.find(s => s.id === sysId)?.name ?? 'Independent System';
   }
 
   // Fleet indicators: per-system owner badges shown on the map in in_progress phase
@@ -1311,9 +1322,9 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
   const handleOpenFleetManager = useCallback(() => {
     const selectedSysId = mapState.selectedSystemId;
     if (selectedSysId) {
-      // Prefer the owner of the system
+      // Prefer the owner of the system (skip independent systems — they have no player tab)
       const ownerPlayerId = systemOwnership[selectedSysId];
-      if (ownerPlayerId) {
+      if (ownerPlayerId && !isIndependentId(ownerPlayerId)) {
         setFleetManagerFocus({ playerId: ownerPlayerId, systemId: selectedSysId });
       } else {
         // Find player with highest AS total from fleets at this system
@@ -2161,8 +2172,8 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
           const sysName = mapState.map.systems.find(s => s.id === sysId)?.name ?? sysId;
           const ownerId = systemOwnership[sysId];
 
-          // Check 1: relationship with system owner has fallen below Trade
-          if (ownerId && ownerId !== player.id) {
+          // Check 1: relationship with system owner has fallen below Trade (skip independent systems)
+          if (ownerId && ownerId !== player.id && !isIndependentId(ownerId)) {
             const rel = diplomacyRelations[diplomacyKey(player.id, ownerId)] ?? 'Unmet';
             if (DIPLOMACY_LEVELS.indexOf(rel) < DIPLOMACY_LEVELS.indexOf('Trade')) {
               const ownerName = players.find(p => p.id === ownerId)?.name ?? ownerId;
@@ -4243,7 +4254,7 @@ function EndOfTurnPhasePanel({
   const moraleCheckSystems = useMemo(() => {
     return map.systems.filter(sys => {
       const ownerId = systemOwnership[sys.id];
-      if (!ownerId) return false; // unowned — skip
+      if (!ownerId || isIndependentId(ownerId)) return false; // unowned or independent — skip
       const status = systemStatuses[sys.id];
       if (!status) return false;
       return (status.hasEnemyFleet ?? false) || (status.inOpposition ?? false);
@@ -4821,7 +4832,7 @@ function DiplomacyPhaseView({
   for (const sys of map.systems) {
     const presentIds = new Set<string>();
     const ownerPlayerId = systemOwnership[sys.id];
-    if (ownerPlayerId) presentIds.add(ownerPlayerId);
+    if (ownerPlayerId && !isIndependentId(ownerPlayerId)) presentIds.add(ownerPlayerId);
     for (const p of players) {
       if (p.units.some(u => u.systemId === sys.id)) presentIds.add(p.id);
     }
