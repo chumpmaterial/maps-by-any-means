@@ -4254,7 +4254,7 @@ function EndOfTurnPhasePanel({
   const moraleCheckSystems = useMemo(() => {
     return map.systems.filter(sys => {
       const ownerId = systemOwnership[sys.id];
-      if (!ownerId || isIndependentId(ownerId)) return false; // unowned or independent — skip
+      if (!ownerId) return false; // unowned — skip
       const status = systemStatuses[sys.id];
       if (!status) return false;
       return (status.hasEnemyFleet ?? false) || (status.inOpposition ?? false);
@@ -4832,7 +4832,7 @@ function DiplomacyPhaseView({
   for (const sys of map.systems) {
     const presentIds = new Set<string>();
     const ownerPlayerId = systemOwnership[sys.id];
-    if (ownerPlayerId && !isIndependentId(ownerPlayerId)) presentIds.add(ownerPlayerId);
+    if (ownerPlayerId) presentIds.add(ownerPlayerId);
     for (const p of players) {
       if (p.units.some(u => u.systemId === sys.id)) presentIds.add(p.id);
     }
