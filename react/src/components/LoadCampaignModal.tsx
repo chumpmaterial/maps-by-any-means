@@ -30,6 +30,7 @@ function formatPhase(phase: CampaignPhase, turnPhase?: TurnPhase, turn?: number)
     setup: 'Setup',
     homeworld_selection: 'Homeworld Selection',
     system_purchase: 'System Purchase',
+    galaxy_state_setup: 'Galaxy State Setup',
     lane_rolling: 'Lane Rolling',
     unit_purchase: 'Unit Purchase',
     unit_deployment: 'Unit Deployment',

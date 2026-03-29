@@ -331,6 +331,7 @@ export type CampaignPhase =
   | 'setup'
   | 'homeworld_selection'
   | 'system_purchase'
+  | 'galaxy_state_setup'
   | 'lane_rolling'
   | 'unit_purchase'
   | 'unit_deployment'
@@ -398,6 +399,7 @@ export interface CMFleet {
   systemId?: string;
   sourceListId: string;  // which IndependentUnitList these units came from
   units: CampaignUnit[];
+  independentSystemId?: string;  // set when this fleet belongs to an independent system
 }
 
 /**
@@ -524,6 +526,13 @@ export interface Campaign {
   systemOwnership?: Record<string, string>; // systemId → playerId (campaign-mode ownership, independent of map editor)
   independentUnitLists?: IndependentUnitList[]; // campaign-level overrides of static JSON lists (for tech advances)
   history?: CampaignHistory;
+  galaxyStateLog?: {
+    independents: string[];
+    raiderSystems: string[];
+    independentChecked: Record<string, boolean>;
+    raiderChecked: Record<string, boolean>;
+  };
+  independentSystemColors?: Record<string, string>;  // systemId → hex color
 }
 
 // ─── Campaign History ─────────────────────────────────────────────────────────
@@ -540,6 +549,8 @@ export interface CampaignSnapshot {
   activeCombatScenarios: CombatScenario[];
   turnOrders: Record<string, TurnOrderEntry>;
   independentUnitListOverrides: IndependentUnitList[];
+  independentSystemColors: Record<string, string>;
+  galaxyStateLog: Campaign['galaxyStateLog'];
 }
 
 /** A snapshot taken at the start of a specific phase */
