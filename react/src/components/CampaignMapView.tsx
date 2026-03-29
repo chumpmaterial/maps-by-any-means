@@ -4445,6 +4445,9 @@ function EndOfTurnPhasePanel({
                     const ownerId = systemOwnership[sys.id];
                     const owner = players.find(p => p.id === ownerId);
                     const resolved = moraleResolved[sys.id] ?? false;
+                    const ownerLabel = isIndependentId(ownerId)
+                      ? `${getIndependentSystemName(ownerId, map)} (Independent System)`
+                      : owner?.name;
                     return (
                       <li key={sys.id} className="flex items-center gap-2">
                         <input
@@ -4459,8 +4462,11 @@ function EndOfTurnPhasePanel({
                         >
                           {sys.name || sys.id}
                         </button>
-                        {owner && owner.teamColor && (
-                          <span className="inline-block h-2 w-2 flex-shrink-0 rounded-full" style={{ backgroundColor: owner.teamColor }} title={owner.name} />
+                        {owner?.teamColor && (
+                          <span className="inline-block h-2 w-2 flex-shrink-0 rounded-full" style={{ backgroundColor: owner.teamColor }} title={ownerLabel} />
+                        )}
+                        {isIndependentId(ownerId) && ownerLabel && (
+                          <span className="text-xs text-gray-400 dark:text-gray-500">{ownerLabel}</span>
                         )}
                       </li>
                     );
