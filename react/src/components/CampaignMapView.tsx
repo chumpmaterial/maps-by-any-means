@@ -40,6 +40,12 @@ function isIndependentId(id: string): boolean {
   return id.startsWith('independent:');
 }
 
+/** Returns the display name of an independent system given its ownership ID (e.g. 'independent:<sysId>'). */
+function getIndependentSystemName(id: string, map: GameMap): string {
+  const sysId = id.replace('independent:', '');
+  return map.systems.find(s => s.id === sysId)?.name ?? 'Independent System';
+}
+
 interface CampaignMapViewProps {
   settings: CampaignSettings;
   savedCampaign?: Campaign;   // if provided, restores full campaign state instead of fresh init
@@ -4941,23 +4947,47 @@ function DiplomacyPhaseView({
     return badges;
   };
 
-  // First Contact: systems where two or more unmet players have a presence (fleet or ownership)
-  const firstContactSystems: Array<{ id: string; name: string; presentPlayers: CampaignPlayer[] }> = [];
+  // First Contact: systems where unmet parties share a presence
+  type FirstContactEntry =
+    | { kind: 'player-player'; id: string; name: string; presentPlayers: CampaignPlayer[] }
+    | { kind: 'player-independent'; id: string; name: string; independentId: string; independentName: string };
+  const firstContactSystems: FirstContactEntry[] = [];
   for (const sys of map.systems) {
-    const presentIds = new Set<string>();
-    const ownerPlayerId = systemOwnership[sys.id];
-    if (ownerPlayerId) presentIds.add(ownerPlayerId);
-    for (const p of players) {
-      if (p.units.some(u => u.systemId === sys.id)) presentIds.add(p.id);
-    }
-    const present = players.filter(p => presentIds.has(p.id));
-    let hasUnmet = false;
-    outer: for (let i = 0; i < present.length; i++) {
-      for (let j = i + 1; j < present.length; j++) {
-        if (getRelation(present[i].id, present[j].id) === 'Unmet') { hasUnmet = true; break outer; }
+    const ownerId = systemOwnership[sys.id];
+    if (ownerId && isIndependentId(ownerId)) {
+      // player-independent: any player with presence (fleet units) and Unmet relation to this independent
+      const presentPlayerIds = new Set<string>();
+      for (const p of players) {
+        if (p.units.some(u => u.systemId === sys.id)) presentPlayerIds.add(p.id);
       }
+      const hasUnmetPlayer = players.some(
+        p => presentPlayerIds.has(p.id) && getRelation(p.id, ownerId) === 'Unmet'
+      );
+      if (hasUnmetPlayer) {
+        firstContactSystems.push({
+          kind: 'player-independent',
+          id: sys.id,
+          name: sys.name,
+          independentId: ownerId,
+          independentName: getIndependentSystemName(ownerId, map),
+        });
+      }
+    } else {
+      // player-player: two or more unmet players with a presence (fleet or ownership)
+      const presentIds = new Set<string>();
+      if (ownerId) presentIds.add(ownerId);
+      for (const p of players) {
+        if (p.units.some(u => u.systemId === sys.id)) presentIds.add(p.id);
+      }
+      const present = players.filter(p => presentIds.has(p.id));
+      let hasUnmet = false;
+      outer: for (let i = 0; i < present.length; i++) {
+        for (let j = i + 1; j < present.length; j++) {
+          if (getRelation(present[i].id, present[j].id) === 'Unmet') { hasUnmet = true; break outer; }
+        }
+      }
+      if (hasUnmet) firstContactSystems.push({ kind: 'player-player', id: sys.id, name: sys.name, presentPlayers: present });
     }
-    if (hasUnmet) firstContactSystems.push({ id: sys.id, name: sys.name, presentPlayers: present });
   }
 
   const activePlayer = players[activeTab];
@@ -5041,33 +5071,6 @@ function DiplomacyPhaseView({
                   onChange={e => onUpdateOrders(activeKey, { ...entry, diplomatic: e.target.value })}
                   placeholder="CM diplomacy notes…"
                 />
-                {/* First Contact section */}
-                <div className="mt-4">
-                  <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                    First Contact
-                  </div>
-                  {firstContactSystems.length === 0 ? (
-                    <p className="text-xs italic text-gray-400 dark:text-gray-500">No first contact situations.</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {firstContactSystems.map(({ id, name, presentPlayers }) => (
-                        <div key={id} className="rounded border border-amber-200 bg-amber-50 p-2 dark:border-amber-800/40 dark:bg-amber-900/20">
-                          <div className="mb-1 text-sm font-medium dark:text-gray-100">{name}</div>
-                          <div className="flex flex-wrap gap-2">
-                            {presentPlayers.map(p => (
-                              <span key={p.id} className="flex items-center gap-1 text-xs dark:text-gray-300">
-                                {p.teamColor && (
-                                  <span className="inline-block h-2 w-2 flex-shrink-0 rounded-full" style={{ backgroundColor: p.teamColor }} />
-                                )}
-                                {p.name}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
               </div>
             ) : (
               <div>
@@ -5148,6 +5151,48 @@ function DiplomacyPhaseView({
                     })}
                   </ul>
                 )}
+
+                {/* First Contact section */}
+                {(() => {
+                  const relevantContacts = firstContactSystems.filter(entry => {
+                    if (entry.kind === 'player-player') {
+                      return entry.presentPlayers.some(p => p.id === activePlayer.id);
+                    }
+                    return getRelation(activePlayer.id, entry.independentId) === 'Unmet';
+                  });
+                  if (relevantContacts.length === 0) return null;
+                  return (
+                    <div className="mt-4">
+                      <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                        First Contact
+                      </div>
+                      <div className="space-y-2">
+                        {relevantContacts.map(fc => (
+                          <div key={fc.id} className="rounded border border-amber-200 bg-amber-50 p-2 dark:border-amber-800/40 dark:bg-amber-900/20">
+                            <div className="mb-1 text-sm font-medium dark:text-gray-100">{fc.name}</div>
+                            {fc.kind === 'player-player' ? (
+                              <div className="flex flex-wrap gap-2">
+                                {fc.presentPlayers.map(p => (
+                                  <span key={p.id} className="flex items-center gap-1 text-xs dark:text-gray-300">
+                                    {p.teamColor && (
+                                      <span className="inline-block h-2 w-2 flex-shrink-0 rounded-full" style={{ backgroundColor: p.teamColor }} />
+                                    )}
+                                    {p.name}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="text-xs text-gray-500 dark:text-gray-400">
+                                First Contact with {fc.independentName}
+                                <span className="ml-1 text-gray-400 dark:text-gray-500">— Independent System</span>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             )}
           </div>
@@ -5300,6 +5345,47 @@ function DiplomacyPhaseView({
                   })}
                 </div>
               )}
+
+              {/* Independent Relations */}
+              {(() => {
+                const independentSystems = Object.entries(systemOwnership)
+                  .filter(([, ownerId]) => ownerId.startsWith('independent:'))
+                  .map(([sysId, independentId]) => ({
+                    independentId,
+                    systemId: sysId,
+                    systemName: map.systems.find(s => s.id === sysId)?.name ?? sysId,
+                  }));
+                if (independentSystems.length === 0) return null;
+                return (
+                  <div className="mt-6">
+                    <h4 className="mb-3 text-sm font-semibold dark:text-gray-200">Independent Systems</h4>
+                    <div className="space-y-2">
+                      {independentSystems.map(({ independentId, systemName }) => {
+                        const rel = getRelation(activePlayer.id, independentId);
+                        return (
+                          <div key={independentId} className="rounded border border-gray-200 px-3 py-2.5 dark:border-gray-700">
+                            <div className="flex items-center gap-3">
+                              <div className="flex min-w-0 flex-1 flex-col">
+                                <span className="text-sm font-medium dark:text-gray-200">{systemName}</span>
+                                <span className="text-xs text-gray-400 dark:text-gray-500">Independent System</span>
+                              </div>
+                              <select
+                                value={rel}
+                                onChange={e => onSetRelation(activePlayer.id, independentId, e.target.value as DiplomacyLevel)}
+                                className="rounded border border-gray-300 px-2 py-1 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                              >
+                                {DIPLOMACY_LEVELS.map(lvl => (
+                                  <option key={lvl} value={lvl}>{DIPLOMACY_LEVEL_LABELS[lvl]}</option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           ) : null}
         </div>
