@@ -1639,7 +1639,7 @@ export function FleetManagerView({
                             {fleetsHere.map(cmFleet => {
                               const asCampaignFleet: CampaignFleet = { id: cmFleet.id, name: cmFleet.name, systemId: cmFleet.systemId ?? '', movedThisTurn: false };
                               const cmFleetSubtitle = cmFleet.independentSystemId
-                                ? (map.systems.find(s => s.id === cmFleet.independentSystemId)?.name ?? 'Independent System')
+                                ? (map.systems.find(s => s.id === cmFleet.independentSystemId)?.name ?? 'Unknown system')
                                 : 'CM-owned';
                               return (
                                 <div key={cmFleet.id} className="rounded border border-gray-100 p-2 dark:border-gray-800">
