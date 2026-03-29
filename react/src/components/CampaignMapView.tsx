@@ -185,11 +185,6 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
     return prevPlayers.map(p => ({ ...p, ownedSystemIds: byPlayer[p.id] ?? [] }));
   }
 
-  function getIndependentSystemName(id: string): string {
-    const sysId = id.replace('independent:', '');
-    return mapState.map.systems.find(s => s.id === sysId)?.name ?? 'Independent System';
-  }
-
   // Fleet indicators: per-system owner badges shown on the map in in_progress phase
   const fleetIndicators = useMemo((): Record<string, FleetOwnerIndicator[]> => {
     const result: Record<string, FleetOwnerIndicator[]> = {};
