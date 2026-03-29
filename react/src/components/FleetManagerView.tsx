@@ -378,6 +378,7 @@ function FMUnitRow({
 function FMFleetSection({
   fleetKey,
   fleetName,
+  fleetSubtitle,
   fleet,
   player,
   allPlayers,
@@ -408,6 +409,7 @@ function FMFleetSection({
 }: {
   fleetKey: string;
   fleetName: string;
+  fleetSubtitle?: string;
   fleet: CampaignFleet | null;
   player?: CampaignPlayer;
   allPlayers?: CampaignPlayer[];
@@ -704,6 +706,11 @@ function FMFleetSection({
               {fleetName}
               <span className="ml-1 text-gray-400 dark:text-gray-600">{expanded ? '−' : '+'}</span>
             </div>
+            {fleetSubtitle && (
+              <span className="block text-xs text-gray-400 dark:text-gray-500">
+                {fleetSubtitle}
+              </span>
+            )}
           </button>
 
           {hasActions && (
@@ -1631,11 +1638,15 @@ export function FleetManagerView({
                           <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2 xl:grid-cols-4">
                             {fleetsHere.map(cmFleet => {
                               const asCampaignFleet: CampaignFleet = { id: cmFleet.id, name: cmFleet.name, systemId: cmFleet.systemId ?? '', movedThisTurn: false };
+                              const cmFleetSubtitle = cmFleet.independentSystemId
+                                ? (map.systems.find(s => s.id === cmFleet.independentSystemId)?.name ?? 'Independent System')
+                                : 'CM-owned';
                               return (
                                 <div key={cmFleet.id} className="rounded border border-gray-100 p-2 dark:border-gray-800">
                                   <FMFleetSection
                                     fleetKey={cmFleet.id}
                                     fleetName={cmFleet.name}
+                                    fleetSubtitle={cmFleetSubtitle}
                                     fleet={asCampaignFleet}
                                     unitPool={allIndieUnits}
                                     fleetColor={cmFleet.color}
