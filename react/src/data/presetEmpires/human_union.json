@@ -1,0 +1,862 @@
+{
+  "id": "35d27ac8-cf8e-45d3-aba9-497c126f8f71",
+  "name": "Human Union",
+  "advantages": [
+    "Charismatic",
+    "Gifted Explorers"
+  ],
+  "disadvantage": "Volunteer Army",
+  "units": [
+    {
+      "id": "ce6a58e5-b169-4efd-a93e-2f4f252e8b4c",
+      "name": "Convoy",
+      "category": "Civilian",
+      "hullCode": "N/A",
+      "cost": 20,
+      "isd": "N/A",
+      "dv": 10,
+      "as": 0,
+      "af": 0,
+      "cr": 0,
+      "cc": 0,
+      "traits": []
+    },
+    {
+      "id": "fed3d23c-5cbd-45d2-bbdf-42ed9733db16",
+      "name": "Shipyard",
+      "category": "Civilian",
+      "hullCode": "N/A",
+      "cost": 20,
+      "isd": "N/A",
+      "dv": 10,
+      "as": 0,
+      "af": 0,
+      "cr": 0,
+      "cc": 0,
+      "traits": []
+    },
+    {
+      "id": "ae14e0a8-29ec-4377-a7c6-69a3dcf167fc",
+      "name": "Supply Depot",
+      "category": "Civilian",
+      "hullCode": "N/A",
+      "cost": 20,
+      "isd": "N/A",
+      "dv": 10,
+      "as": 0,
+      "af": 0,
+      "cr": 0,
+      "cc": 0,
+      "traits": []
+    },
+    {
+      "id": "36268a8e-3b22-4cf3-9439-dc02051f84fb",
+      "name": "Icarus",
+      "category": "Ships",
+      "hullCode": "CL",
+      "cost": 7,
+      "isd": "3000",
+      "dv": 4,
+      "as": 2,
+      "af": 2,
+      "cr": 5,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Scout",
+          "factor": 1
+        },
+        {
+          "name": "Supply",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "d88dcf2a-51fd-49d4-bf44-4398b141642f",
+      "name": "Hoplite",
+      "category": "Ships",
+      "hullCode": "AB",
+      "cost": 2,
+      "isd": "3000",
+      "dv": 2,
+      "as": 0,
+      "af": 3,
+      "cr": 2,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        }
+      ]
+    },
+    {
+      "id": "73781e74-0fe1-4d4e-be9f-0b846b44f665",
+      "name": "Sentry",
+      "category": "Ships",
+      "hullCode": "CT",
+      "cost": 3,
+      "isd": "3001",
+      "dv": 2,
+      "as": 1,
+      "af": 2,
+      "cr": 3,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        }
+      ]
+    },
+    {
+      "id": "0fde1fa2-08cd-48cc-8f0e-8368d2bc387d",
+      "name": "Sparta",
+      "category": "Ships",
+      "hullCode": "FF",
+      "cost": 4,
+      "isd": "3002",
+      "dv": 2,
+      "as": 3,
+      "af": 2,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        }
+      ]
+    },
+    {
+      "id": "efc130ec-a570-470d-be3c-27ab449a5720",
+      "name": "Athena",
+      "category": "Ships",
+      "hullCode": "DD",
+      "cost": 5,
+      "isd": "3003",
+      "dv": 3,
+      "as": 2,
+      "af": 3,
+      "cr": 5,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "a534dc04-3e6b-4bf8-b1e3-55a14a9cd990",
+      "name": "Achilles",
+      "category": "Ships",
+      "hullCode": "CL",
+      "cost": 6,
+      "isd": "3004",
+      "dv": 5,
+      "as": 5,
+      "af": 0,
+      "cr": 6,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "135a6b11-52f8-4529-9f4c-fdcfe57d799c",
+      "name": "Vesuvius",
+      "category": "Ships",
+      "hullCode": "CA",
+      "cost": 8,
+      "isd": "3005",
+      "dv": 6,
+      "as": 4,
+      "af": 4,
+      "cr": 8,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Armored"
+        }
+      ]
+    },
+    {
+      "id": "b056552f-4822-4b39-900c-e618fa6fe432",
+      "name": "Odysseus",
+      "category": "Ships",
+      "hullCode": "CL",
+      "cost": 7,
+      "isd": "3006",
+      "dv": 5,
+      "as": 0,
+      "af": 1,
+      "cr": 5,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Tender",
+          "factor": 3
+        }
+      ]
+    },
+    {
+      "id": "892e5aec-0bc6-4545-ad78-fc2eac0ee65f",
+      "name": "Europa",
+      "category": "Ships",
+      "hullCode": "DD",
+      "cost": 6,
+      "isd": "3007",
+      "dv": 4,
+      "as": 0,
+      "af": 2,
+      "cr": 5,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "88be4689-584f-4897-b239-2b51bc93670c",
+      "name": "Alexander",
+      "category": "Ships",
+      "hullCode": "CA",
+      "cost": 8,
+      "isd": "3008",
+      "dv": 7,
+      "as": 6,
+      "af": 1,
+      "cr": 8,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "d8c6e049-1a04-4a8e-b87a-1a00d7d91dd8",
+      "name": "Zephyr",
+      "category": "Ships",
+      "hullCode": "DD",
+      "cost": 6,
+      "isd": "3009",
+      "dv": 6,
+      "as": 0,
+      "af": 0,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Supply",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "09c6af88-26af-41d7-87c1-0485cd714594",
+      "name": "Prometheus",
+      "category": "Ships",
+      "hullCode": "BC",
+      "cost": 10,
+      "isd": "3010",
+      "dv": 6,
+      "as": 4,
+      "af": 2,
+      "cr": 7,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 1
+        },
+        {
+          "name": "Scout",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "e1880b7a-2fbd-4d8d-8ae4-ea5a8a3a8ce4",
+      "name": "Victory",
+      "category": "Ships",
+      "hullCode": "BC",
+      "cost": 10,
+      "isd": "3011",
+      "dv": 7,
+      "as": 1,
+      "af": 4,
+      "cr": 9,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 3
+        }
+      ]
+    },
+    {
+      "id": "d54ebea1-ee28-40b2-a57b-8be6ef0a31de",
+      "name": "Chiron",
+      "category": "Ships",
+      "hullCode": "DD",
+      "cost": 6,
+      "isd": "3012",
+      "dv": 6,
+      "as": 0,
+      "af": 0,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Hospital",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "314f6206-dbad-43a0-9225-9569d0bf1d6d",
+      "name": "Hermes",
+      "category": "Ships",
+      "hullCode": "FF",
+      "cost": 4,
+      "isd": "3013",
+      "dv": 4,
+      "as": 1,
+      "af": 1,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        },
+        {
+          "name": "Diplomatic"
+        }
+      ]
+    },
+    {
+      "id": "383fec9d-5902-491d-8732-bb5bde461301",
+      "name": "Heracles",
+      "category": "Ships",
+      "hullCode": "CA",
+      "cost": 9,
+      "isd": "3014",
+      "dv": 7,
+      "as": 4,
+      "af": 1,
+      "cr": 8,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Assault",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "14c8765a-1131-4a44-ba43-1683772af955",
+      "name": "Zeus",
+      "category": "Ships",
+      "hullCode": "DN",
+      "cost": 12,
+      "isd": "3015",
+      "dv": 8,
+      "as": 12,
+      "af": 1,
+      "cr": 10,
+      "cc": 5,
+      "traits": [
+        {
+          "name": "Gunship"
+        }
+      ]
+    },
+    {
+      "id": "e14595df-a604-46b2-a6e7-a6b39ba241cd",
+      "name": "Vesta",
+      "category": "Ships",
+      "hullCode": "CL",
+      "cost": 7,
+      "isd": "3016",
+      "dv": 5,
+      "as": 2,
+      "af": 1,
+      "cr": 6,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "67300167-1739-448c-9f61-42b3ebda5e43",
+      "name": "Mercury",
+      "category": "Ships",
+      "hullCode": "FF",
+      "cost": 4,
+      "isd": "3017",
+      "dv": 3,
+      "as": 2,
+      "af": 2,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Fast"
+        }
+      ]
+    },
+    {
+      "id": "300e2d29-3d90-42af-870a-8b679c654da7",
+      "name": "Alliance",
+      "category": "Ships",
+      "hullCode": "BC",
+      "cost": 9,
+      "isd": "3018",
+      "dv": 7,
+      "as": 7,
+      "af": 2,
+      "cr": 9,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "cb2d11ef-1b23-4b21-99f1-2245ab2aec91",
+      "name": "Hera",
+      "category": "Ships",
+      "hullCode": "DN",
+      "cost": 14,
+      "isd": "3019",
+      "dv": 10,
+      "as": 0,
+      "af": 4,
+      "cr": 10,
+      "cc": 5,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 5
+        }
+      ]
+    },
+    {
+      "id": "2fb1b477-2e07-437e-bcf8-49772ba33625",
+      "name": "Perseus",
+      "category": "Ships",
+      "hullCode": "DD",
+      "cost": 5,
+      "isd": "3020",
+      "dv": 4,
+      "as": 4,
+      "af": 2,
+      "cr": 5,
+      "cc": 2,
+      "traits": []
+    },
+    {
+      "id": "df397ab6-c0bc-4bdc-8871-d6e6c1e9506d",
+      "name": "Sagittarius",
+      "category": "Ships",
+      "hullCode": "CW",
+      "cost": 7,
+      "isd": "3021",
+      "dv": 5,
+      "as": 6,
+      "af": 1,
+      "cr": 7,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Bombardment"
+        }
+      ]
+    },
+    {
+      "id": "23074cf5-f6ef-486b-8b2c-4ff26983dcbb",
+      "name": "Argonaut",
+      "category": "Ships",
+      "hullCode": "CA",
+      "cost": 9,
+      "isd": "3022",
+      "dv": 7,
+      "as": 1,
+      "af": 2,
+      "cr": 6,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Supply",
+          "factor": 3
+        }
+      ]
+    },
+    {
+      "id": "8a6098f5-863a-499d-9a5e-5cd4b101f88f",
+      "name": "Atalanta",
+      "category": "Ships",
+      "hullCode": "CL",
+      "cost": 6,
+      "isd": "3023",
+      "dv": 5,
+      "as": 0,
+      "af": 5,
+      "cr": 6,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Carronade"
+        }
+      ]
+    },
+    {
+      "id": "1fdd7b78-2772-458d-8990-6efb45140deb",
+      "name": "Nike",
+      "category": "Ships",
+      "hullCode": "BB",
+      "cost": 10,
+      "isd": "3024",
+      "dv": 8,
+      "as": 8,
+      "af": 4,
+      "cr": 10,
+      "cc": 5,
+      "traits": []
+    },
+    {
+      "id": "a06794ec-6aa3-4f0e-9258-0aa617a0b568",
+      "name": "Theseus",
+      "category": "Ships",
+      "hullCode": "BC",
+      "cost": 10,
+      "isd": "3025",
+      "dv": 8,
+      "as": 5,
+      "af": 1,
+      "cr": 9,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Assault",
+          "factor": 1
+        },
+        {
+          "name": "Carrier",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "209ab325-e13f-476d-83f6-0ff5a5e24b37",
+      "name": "Javelin",
+      "category": "Fighters",
+      "hullCode": "LF",
+      "cost": 2,
+      "isd": "3000",
+      "dv": 2,
+      "as": 1,
+      "af": 2,
+      "cr": 2,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        }
+      ]
+    },
+    {
+      "id": "10c57934-faf6-40c4-9b40-611fd9cf1ee9",
+      "name": "Myrmidon",
+      "category": "Fighters",
+      "hullCode": "HF",
+      "cost": 4,
+      "isd": "3004",
+      "dv": 4,
+      "as": 4,
+      "af": 2,
+      "cr": 4,
+      "cc": 1,
+      "traits": []
+    },
+    {
+      "id": "ebd551aa-0149-4a09-a703-f369ec9d09a5",
+      "name": "Lancer",
+      "category": "Fighters",
+      "hullCode": "MF",
+      "cost": 3,
+      "isd": "3009",
+      "dv": 3,
+      "as": 2,
+      "af": 2,
+      "cr": 3,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        }
+      ]
+    },
+    {
+      "id": "78c5915d-f1c7-41b6-811f-374a76632901",
+      "name": "Saber",
+      "category": "Fighters",
+      "hullCode": "MF",
+      "cost": 3,
+      "isd": "3014",
+      "dv": 3,
+      "as": 1,
+      "af": 3,
+      "cr": 3,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        }
+      ]
+    },
+    {
+      "id": "b63f9466-a7b5-4c58-b3e5-17cafe83b607",
+      "name": "Atlas",
+      "category": "Fighters",
+      "hullCode": "SHF",
+      "cost": 5,
+      "isd": "3022",
+      "dv": 4,
+      "as": 2,
+      "af": 3,
+      "cr": 5,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        },
+        {
+          "name": "Assault",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "4b0fb82c-4e72-4e79-92c7-923f41ff51a1",
+      "name": "Everest",
+      "category": "Bases",
+      "hullCode": "BS2",
+      "cost": 13,
+      "isd": "3000",
+      "dv": 10,
+      "as": 8,
+      "af": 6,
+      "cr": 8,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 3
+        }
+      ]
+    },
+    {
+      "id": "5285ea12-8659-487a-8e57-c00f7e2cbaaa",
+      "name": "Thor",
+      "category": "Bases",
+      "hullCode": "OWP",
+      "cost": 4,
+      "isd": "3005",
+      "dv": 3,
+      "as": 3,
+      "af": 2,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "ba9d2a39-168d-4b6e-8f6b-a6bb8b6a0bfb",
+      "name": "Denali",
+      "category": "Bases",
+      "hullCode": "BS1",
+      "cost": 9,
+      "isd": "3010",
+      "dv": 8,
+      "as": 5,
+      "af": 3,
+      "cr": 6,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "a30a2ecb-a4af-4244-99d0-222d15aaeed1",
+      "name": "Mauna Kea",
+      "category": "Bases",
+      "hullCode": "BS3",
+      "cost": 18,
+      "isd": "3015",
+      "dv": 14,
+      "as": 12,
+      "af": 6,
+      "cr": 10,
+      "cc": 5,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 4
+        }
+      ]
+    },
+    {
+      "id": "ed03dca2-bf45-45f9-a243-c9738de8fd64",
+      "name": "Olympus",
+      "category": "Bases",
+      "hullCode": "BS4",
+      "cost": 23,
+      "isd": "3020",
+      "dv": 18,
+      "as": 12,
+      "af": 8,
+      "cr": 12,
+      "cc": 6,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 6
+        }
+      ]
+    },
+    {
+      "id": "1d4cdf8f-55e3-409e-808e-f65f5c1518c6",
+      "name": "Militia",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 1,
+      "isd": "N/A",
+      "dv": 4,
+      "as": 4,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": [
+        {
+          "name": "Garrison"
+        }
+      ]
+    },
+    {
+      "id": "4a61a6aa-b909-407a-96a7-3802e02de133",
+      "name": "Mobile Infantry",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 2,
+      "isd": "3000",
+      "dv": 4,
+      "as": 8,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": []
+    },
+    {
+      "id": "69e1f0d9-dbb0-48b8-b1ae-988cbfa108fc",
+      "name": "Marines",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 3,
+      "isd": "3004",
+      "dv": 6,
+      "as": 6,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": [
+        {
+          "name": "Marines"
+        }
+      ]
+    },
+    {
+      "id": "1752c844-3043-4d4c-b016-9f9cd57fb386",
+      "name": "Light Armor",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 2,
+      "isd": "3008",
+      "dv": 8,
+      "as": 4,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": []
+    },
+    {
+      "id": "babe7083-5784-4375-826a-7e538df09b0d",
+      "name": "Commandos",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 2,
+      "isd": "3012",
+      "dv": 2,
+      "as": 4,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": [
+        {
+          "name": "Special Forces"
+        }
+      ]
+    },
+    {
+      "id": "304ad7a1-5904-4709-ae9d-8e6ad54703c3",
+      "name": "Mechanized Infantry",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 3,
+      "isd": "3016",
+      "dv": 9,
+      "as": 9,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": []
+    }
+  ],
+  "recommendedEP": 200,
+  "recommendedYear": 3005,
+  "recommendedForces": [
+    { "name": "Icarus", "count": 3 },
+    { "name": "Hoplite", "count": 7 },
+    { "name": "Sentry", "count": 5 },
+    { "name": "Sparta", "count": 4 },
+    { "name": "Athena", "count": 4 },
+    { "name": "Achilles", "count": 2 },
+    { "name": "Vesuvius", "count": 1 },
+    { "name": "Javelin", "count": 5 },
+    { "name": "Myrmidon", "count": 4 },
+    { "name": "Everest", "count": 1 },
+    { "name": "Militia", "count": 5 },
+    { "name": "Mobile Infantry", "count": 2 },
+    { "name": "Marines", "count": 2 },
+    { "name": "Convoy", "count": 1 },
+    { "name": "Shipyard", "count": 1 }
+  ]
+}

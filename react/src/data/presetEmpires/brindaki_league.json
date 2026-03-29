@@ -1,0 +1,882 @@
+{
+  "id": "b7cfa57b-167f-4c2f-8989-e0d4c5738ffc",
+  "name": "Brindaki League",
+  "advantages": [
+    "Deep Range Logistics",
+    "Free Traders"
+  ],
+  "disadvantage": "Bureaucratic Diplomacy",
+  "units": [
+    {
+      "id": "78b8352c-5973-4f84-853f-90d14f587a68",
+      "name": "Convoy",
+      "category": "Civilian",
+      "hullCode": "N/A",
+      "cost": 20,
+      "isd": "N/A",
+      "dv": 10,
+      "as": 0,
+      "af": 0,
+      "cr": 0,
+      "cc": 0,
+      "traits": []
+    },
+    {
+      "id": "e005ae0b-082a-455e-b437-37e8f4c54649",
+      "name": "Shipyard",
+      "category": "Civilian",
+      "hullCode": "N/A",
+      "cost": 20,
+      "isd": "N/A",
+      "dv": 10,
+      "as": 0,
+      "af": 0,
+      "cr": 0,
+      "cc": 0,
+      "traits": []
+    },
+    {
+      "id": "970fb14c-879a-4513-99b1-0dd31dc3569b",
+      "name": "Supply Depot",
+      "category": "Civilian",
+      "hullCode": "N/A",
+      "cost": 20,
+      "isd": "N/A",
+      "dv": 10,
+      "as": 0,
+      "af": 0,
+      "cr": 0,
+      "cc": 0,
+      "traits": []
+    },
+    {
+      "id": "03111e45-c1dd-4902-933a-f9d07f70682e",
+      "name": "Wanderer",
+      "category": "Ships",
+      "hullCode": "CL",
+      "cost": 7,
+      "isd": "3000",
+      "dv": 5,
+      "as": 1,
+      "af": 2,
+      "cr": 5,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Scout",
+          "factor": 1
+        },
+        {
+          "name": "Supply",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "1cc61817-831e-4a6c-98aa-d0ea3b5b29a8",
+      "name": "Patroller",
+      "category": "Ships",
+      "hullCode": "AB",
+      "cost": 2,
+      "isd": "3000",
+      "dv": 2,
+      "as": 1,
+      "af": 2,
+      "cr": 2,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Police"
+        }
+      ]
+    },
+    {
+      "id": "20a5be18-8452-4e49-8dec-b1cf76ddb42d",
+      "name": "Tireless",
+      "category": "Ships",
+      "hullCode": "CT",
+      "cost": 3,
+      "isd": "3001",
+      "dv": 3,
+      "as": 2,
+      "af": 0,
+      "cr": 3,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        }
+      ]
+    },
+    {
+      "id": "ebed7ac0-d308-45b2-885a-9c24f7dc2cde",
+      "name": "Steadfast",
+      "category": "Ships",
+      "hullCode": "FF",
+      "cost": 4,
+      "isd": "3002",
+      "dv": 4,
+      "as": 1,
+      "af": 3,
+      "cr": 4,
+      "cc": 2,
+      "traits": []
+    },
+    {
+      "id": "7d0a2a69-f34e-42f7-b0ef-5de4e0642293",
+      "name": "Dromedary",
+      "category": "Ships",
+      "hullCode": "DD",
+      "cost": 6,
+      "isd": "3003",
+      "dv": 4,
+      "as": 1,
+      "af": 1,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Supply",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "9a7dddda-a92c-42c7-b248-d5bf13885a28",
+      "name": "Endurance",
+      "category": "Ships",
+      "hullCode": "CL",
+      "cost": 6,
+      "isd": "3004",
+      "dv": 5,
+      "as": 3,
+      "af": 2,
+      "cr": 6,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Supply",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "a15237ef-7e15-4cb3-abe8-fccb5f739a57",
+      "name": "Ferocious",
+      "category": "Ships",
+      "hullCode": "CL",
+      "cost": 7,
+      "isd": "3005",
+      "dv": 5,
+      "as": 0,
+      "af": 3,
+      "cr": 6,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "d07451f1-0b8e-4b1b-ac7d-5586e65a0e48",
+      "name": "Perseverance",
+      "category": "Ships",
+      "hullCode": "CA",
+      "cost": 9,
+      "isd": "3006",
+      "dv": 6,
+      "as": 5,
+      "af": 1,
+      "cr": 8,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 1
+        },
+        {
+          "name": "Supply",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "03287416-5fec-467b-a1bf-95a1c967cb6e",
+      "name": "Dauntless",
+      "category": "Ships",
+      "hullCode": "CW",
+      "cost": 7,
+      "isd": "3007",
+      "dv": 5,
+      "as": 5,
+      "af": 2,
+      "cr": 7,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "92a44f6a-4758-4cbb-b191-1c602e3be1f8",
+      "name": "Longevity",
+      "category": "Ships",
+      "hullCode": "CL",
+      "cost": 6,
+      "isd": "3008",
+      "dv": 5,
+      "as": 3,
+      "af": 2,
+      "cr": 6,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Police"
+        }
+      ]
+    },
+    {
+      "id": "6d176ac5-6e28-4919-87b5-07ba02f7ad22",
+      "name": "Unseen",
+      "category": "Ships",
+      "hullCode": "DD",
+      "cost": 5,
+      "isd": "3009",
+      "dv": 4,
+      "as": 3,
+      "af": 2,
+      "cr": 5,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Q-Ship"
+        }
+      ]
+    },
+    {
+      "id": "72d2b84c-d209-4912-af47-f00a789d0c42",
+      "name": "Diligent",
+      "category": "Ships",
+      "hullCode": "BC",
+      "cost": 10,
+      "isd": "3010",
+      "dv": 7,
+      "as": 5,
+      "af": 2,
+      "cr": 9,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 1
+        },
+        {
+          "name": "Supply",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "a69c86d0-f920-4648-9264-8ceaaf3186da",
+      "name": "Bactrian",
+      "category": "Ships",
+      "hullCode": "CL",
+      "cost": 7,
+      "isd": "3011",
+      "dv": 6,
+      "as": 0,
+      "af": 0,
+      "cr": 5,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Supply",
+          "factor": 3
+        }
+      ]
+    },
+    {
+      "id": "1f577856-7b04-4318-bed7-fe569ec5eef2",
+      "name": "Loyal",
+      "category": "Ships",
+      "hullCode": "FF",
+      "cost": 4,
+      "isd": "3012",
+      "dv": 3,
+      "as": 0,
+      "af": 4,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Carronade"
+        }
+      ]
+    },
+    {
+      "id": "4f7ac244-1d86-4d61-926c-33317d4bb60d",
+      "name": "Sojourner",
+      "category": "Ships",
+      "hullCode": "CA",
+      "cost": 9,
+      "isd": "3013",
+      "dv": 7,
+      "as": 0,
+      "af": 3,
+      "cr": 6,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Scout",
+          "factor": 2
+        },
+        {
+          "name": "Supply",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "379c60f6-f594-4592-bd82-9dcb511fd61c",
+      "name": "Adamant",
+      "category": "Ships",
+      "hullCode": "BB",
+      "cost": 10,
+      "isd": "3014",
+      "dv": 8,
+      "as": 7,
+      "af": 3,
+      "cr": 10,
+      "cc": 5,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "54779ec6-2f52-4fdb-9bbc-d8407bddd613",
+      "name": "Resolute",
+      "category": "Ships",
+      "hullCode": "CA",
+      "cost": 9,
+      "isd": "3015",
+      "dv": 6,
+      "as": 2,
+      "af": 2,
+      "cr": 8,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 2
+        },
+        {
+          "name": "Supply",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "9d1d8fb5-ada9-49de-9562-c8b1b5e5d087",
+      "name": "Proud",
+      "category": "Ships",
+      "hullCode": "BC",
+      "cost": 10,
+      "isd": "3016",
+      "dv": 7,
+      "as": 5,
+      "af": 2,
+      "cr": 9,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Assault",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "f59827fa-7b5d-42a9-8094-5ca89add822c",
+      "name": "Unwavering",
+      "category": "Ships",
+      "hullCode": "DN",
+      "cost": 14,
+      "isd": "3017",
+      "dv": 9,
+      "as": 4,
+      "af": 3,
+      "cr": 10,
+      "cc": 5,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 4
+        }
+      ]
+    },
+    {
+      "id": "dde57edd-dc64-41e1-9ee7-039733b3d48a",
+      "name": "Vigorous",
+      "category": "Ships",
+      "hullCode": "CW",
+      "cost": 8,
+      "isd": "3018",
+      "dv": 6,
+      "as": 0,
+      "af": 4,
+      "cr": 7,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "10898151-0842-4551-9f5e-5428d575a838",
+      "name": "Fearless",
+      "category": "Ships",
+      "hullCode": "BC",
+      "cost": 10,
+      "isd": "3019",
+      "dv": 8,
+      "as": 2,
+      "af": 4,
+      "cr": 9,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "a608be8b-9082-45e6-8255-c53e3f6fe9d1",
+      "name": "Unbowed",
+      "category": "Ships",
+      "hullCode": "CW",
+      "cost": 7,
+      "isd": "3020",
+      "dv": 6,
+      "as": 4,
+      "af": 4,
+      "cr": 7,
+      "cc": 3,
+      "traits": []
+    },
+    {
+      "id": "07e51619-bf18-4e2f-bd73-5b63f78c250f",
+      "name": "Indiscernible",
+      "category": "Ships",
+      "hullCode": "CL",
+      "cost": 6,
+      "isd": "3021",
+      "dv": 4,
+      "as": 4,
+      "af": 3,
+      "cr": 6,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Q-Ship"
+        }
+      ]
+    },
+    {
+      "id": "c97795cd-ea6b-4e4d-8a8c-1d6ad34a0585",
+      "name": "Undaunted",
+      "category": "Ships",
+      "hullCode": "BB",
+      "cost": 11,
+      "isd": "3022",
+      "dv": 7,
+      "as": 6,
+      "af": 3,
+      "cr": 10,
+      "cc": 5,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 1
+        },
+        {
+          "name": "Supply",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "8511784b-4a45-467a-98b5-ea6afb97bc77",
+      "name": "Pragmatic",
+      "category": "Ships",
+      "hullCode": "FF",
+      "cost": 4,
+      "isd": "3023",
+      "dv": 3,
+      "as": 3,
+      "af": 0,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Fast"
+        },
+        {
+          "name": "Gunship"
+        }
+      ]
+    },
+    {
+      "id": "f884e1aa-e7c9-448f-ae37-55b5e2cbfc80",
+      "name": "Inflexible",
+      "category": "Ships",
+      "hullCode": "DN",
+      "cost": 13,
+      "isd": "3024",
+      "dv": 9,
+      "as": 8,
+      "af": 3,
+      "cr": 10,
+      "cc": 5,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "7bd1a31b-c220-4d67-970f-24a483936352",
+      "name": "Meticulous",
+      "category": "Ships",
+      "hullCode": "CA",
+      "cost": 9,
+      "isd": "3025",
+      "dv": 7,
+      "as": 0,
+      "af": 3,
+      "cr": 8,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 3
+        }
+      ]
+    },
+    {
+      "id": "01e60846-baa0-4752-9101-8031300eb05d",
+      "name": "Mameluk",
+      "category": "Fighters",
+      "hullCode": "LF",
+      "cost": 2,
+      "isd": "3000",
+      "dv": 2,
+      "as": 2,
+      "af": 1,
+      "cr": 2,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        }
+      ]
+    },
+    {
+      "id": "5528d4f7-5f33-4140-aa9c-3eeff87d6299",
+      "name": "Dervish",
+      "category": "Fighters",
+      "hullCode": "MF",
+      "cost": 3,
+      "isd": "3002",
+      "dv": 3,
+      "as": 1,
+      "af": 3,
+      "cr": 3,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        }
+      ]
+    },
+    {
+      "id": "5d2be7d9-6369-4f43-814a-a7c11f93df4a",
+      "name": "Sandstorm",
+      "category": "Fighters",
+      "hullCode": "HF",
+      "cost": 4,
+      "isd": "3007",
+      "dv": 3,
+      "as": 4,
+      "af": 2,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        }
+      ]
+    },
+    {
+      "id": "dc542af7-bbdc-44d6-9bd9-d8d2be3c5ced",
+      "name": "Fakir",
+      "category": "Fighters",
+      "hullCode": "MF",
+      "cost": 3,
+      "isd": "3011",
+      "dv": 2,
+      "as": 2,
+      "af": 2,
+      "cr": 2,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        },
+        {
+          "name": "Police"
+        }
+      ]
+    },
+    {
+      "id": "b1138fb7-3dfc-48e8-b581-ae829d98f6b3",
+      "name": "Marabout",
+      "category": "Fighters",
+      "hullCode": "SHF",
+      "cost": 5,
+      "isd": "3016",
+      "dv": 4,
+      "as": 4,
+      "af": 3,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        }
+      ]
+    },
+    {
+      "id": "5f4fc14a-0da3-4f55-b24f-31123a6dae69",
+      "name": "Waypoint",
+      "category": "Bases",
+      "hullCode": "BS1",
+      "cost": 9,
+      "isd": "3000",
+      "dv": 6,
+      "as": 6,
+      "af": 4,
+      "cr": 6,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "9bd0d67c-04d6-4e02-adc0-77ab6e00addf",
+      "name": "Bivouac",
+      "category": "Bases",
+      "hullCode": "BS2",
+      "cost": 14,
+      "isd": "3004",
+      "dv": 12,
+      "as": 5,
+      "af": 5,
+      "cr": 8,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 2
+        },
+        {
+          "name": "Supply",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "91c5ace8-f5e5-4cc6-bd99-4f77b2a3b68c",
+      "name": "Gnamma",
+      "category": "Bases",
+      "hullCode": "OWP",
+      "cost": 4,
+      "isd": "3006",
+      "dv": 3,
+      "as": 4,
+      "af": 2,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Gunship"
+        }
+      ]
+    },
+    {
+      "id": "87f7690f-4899-4209-ad4a-cd91a53681a8",
+      "name": "Oasis",
+      "category": "Bases",
+      "hullCode": "BS1",
+      "cost": 8,
+      "isd": "3013",
+      "dv": 8,
+      "as": 5,
+      "af": 5,
+      "cr": 6,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Supply",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "dfa66643-67b9-4e4a-a844-10202b3bead6",
+      "name": "Rendezvous",
+      "category": "Bases",
+      "hullCode": "BS3",
+      "cost": 19,
+      "isd": "3018",
+      "dv": 14,
+      "as": 9,
+      "af": 5,
+      "cr": 10,
+      "cc": 5,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 3
+        },
+        {
+          "name": "Supply",
+          "factor": 3
+        }
+      ]
+    },
+    {
+      "id": "0af50949-af3f-40c7-85e1-d63eaf2077bb",
+      "name": "Militia",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 1,
+      "isd": "N/A",
+      "dv": 4,
+      "as": 4,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": [
+        {
+          "name": "Garrison"
+        }
+      ]
+    },
+    {
+      "id": "736778a4-4111-4827-bd63-e87253c5a376",
+      "name": "Mobile Infantry",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 2,
+      "isd": "3000",
+      "dv": 4,
+      "as": 8,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": []
+    },
+    {
+      "id": "834da2eb-51e2-45a5-8c57-54f3a7284cec",
+      "name": "Light Armor",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 2,
+      "isd": "3005",
+      "dv": 8,
+      "as": 4,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": []
+    },
+    {
+      "id": "5ff9817d-3fb0-46b4-930f-e81338b4d24a",
+      "name": "Marines",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 3,
+      "isd": "3010",
+      "dv": 6,
+      "as": 6,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": [
+        {
+          "name": "Marines"
+        }
+      ]
+    },
+    {
+      "id": "3bf11e3a-265c-462d-812c-14575291401b",
+      "name": "Mechanized Infantry",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 3,
+      "isd": "3015",
+      "dv": 9,
+      "as": 9,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": []
+    },
+    {
+      "id": "14e92633-42cb-4157-b806-64c128f00274",
+      "name": "Heavy Armor",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 3,
+      "isd": "3020",
+      "dv": 12,
+      "as": 6,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": []
+    }
+  ],
+  "recommendedEP": 200,
+  "recommendedYear": 3005,
+  "recommendedForces": [
+    { "name": "Wanderer", "count": 3 },
+    { "name": "Patroller", "count": 7 },
+    { "name": "Tireless", "count": 5 },
+    { "name": "Steadfast", "count": 4 },
+    { "name": "Dromedary", "count": 2 },
+    { "name": "Endurance", "count": 3 },
+    { "name": "Ferocious", "count": 3 },
+    { "name": "Mameluk", "count": 4 },
+    { "name": "Dervish", "count": 4 },
+    { "name": "Waypoint", "count": 1 },
+    { "name": "Militia", "count": 6 },
+    { "name": "Mobile Infantry", "count": 2 },
+    { "name": "Light Armor", "count": 2 },
+    { "name": "Shipyard", "count": 1 },
+    { "name": "Convoy", "count": 1 }
+  ]
+}

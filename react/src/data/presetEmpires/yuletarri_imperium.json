@@ -1,0 +1,867 @@
+{
+  "id": "65cf0b7f-b453-452a-a102-590593173aa5",
+  "name": "Yuletarri Imperium",
+  "advantages": [
+    "Spymasters",
+    "Orbital Bulwarks"
+  ],
+  "disadvantage": "Quarrelsome",
+  "units": [
+    {
+      "id": "0e93edd3-a56b-4bb2-80f0-641b8b2e644e",
+      "name": "Convoy",
+      "category": "Civilian",
+      "hullCode": "N/A",
+      "cost": 20,
+      "isd": "N/A",
+      "dv": 10,
+      "as": 0,
+      "af": 0,
+      "cr": 0,
+      "cc": 0,
+      "traits": []
+    },
+    {
+      "id": "2dd10221-1281-4b11-8aa5-0c84548306f6",
+      "name": "Shipyard",
+      "category": "Civilian",
+      "hullCode": "N/A",
+      "cost": 20,
+      "isd": "N/A",
+      "dv": 10,
+      "as": 0,
+      "af": 0,
+      "cr": 0,
+      "cc": 0,
+      "traits": []
+    },
+    {
+      "id": "118df90c-bfe1-4be2-af06-46493ab1a25b",
+      "name": "Supply Depot",
+      "category": "Civilian",
+      "hullCode": "N/A",
+      "cost": 20,
+      "isd": "N/A",
+      "dv": 10,
+      "as": 0,
+      "af": 0,
+      "cr": 0,
+      "cc": 0,
+      "traits": []
+    },
+    {
+      "id": "a292c497-7eff-40d1-b109-89ffe521286f",
+      "name": "Bayonet",
+      "category": "Ships",
+      "hullCode": "CT",
+      "cost": 3,
+      "isd": "3000",
+      "dv": 3,
+      "as": 0,
+      "af": 0,
+      "cr": 2,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        },
+        {
+          "name": "Scout",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "f19b5f0c-2c35-4a46-b1b3-4d973948a84a",
+      "name": "Dagger",
+      "category": "Ships",
+      "hullCode": "AB",
+      "cost": 2,
+      "isd": "3000",
+      "dv": 1,
+      "as": 2,
+      "af": 2,
+      "cr": 2,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        }
+      ]
+    },
+    {
+      "id": "3c002747-40c8-4d73-b298-eb14d09c1c66",
+      "name": "Poniard",
+      "category": "Ships",
+      "hullCode": "FF",
+      "cost": 4,
+      "isd": "3001",
+      "dv": 3,
+      "as": 2,
+      "af": 3,
+      "cr": 4,
+      "cc": 2,
+      "traits": []
+    },
+    {
+      "id": "4636d934-5d36-47ff-a56a-fc6873eb79cd",
+      "name": "Machete",
+      "category": "Ships",
+      "hullCode": "DD",
+      "cost": 5,
+      "isd": "3002",
+      "dv": 3,
+      "as": 5,
+      "af": 2,
+      "cr": 5,
+      "cc": 2,
+      "traits": []
+    },
+    {
+      "id": "89f44cd9-6fee-4fa7-8ad9-ec1641f546dc",
+      "name": "Scabbard",
+      "category": "Ships",
+      "hullCode": "DD",
+      "cost": 6,
+      "isd": "3003",
+      "dv": 4,
+      "as": 1,
+      "af": 1,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 1
+        },
+        {
+          "name": "Supply",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "b2309386-f3e4-446f-8630-ed25accd0a14",
+      "name": "Bulawa",
+      "category": "Ships",
+      "hullCode": "DD",
+      "cost": 5,
+      "isd": "3004",
+      "dv": 3,
+      "as": 2,
+      "af": 2,
+      "cr": 5,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        },
+        {
+          "name": "Carrier",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "ad076f8d-fd93-4a6d-bafb-4e9cf72fd52e",
+      "name": "Santoku",
+      "category": "Ships",
+      "hullCode": "CL",
+      "cost": 6,
+      "isd": "3005",
+      "dv": 3,
+      "as": 4,
+      "af": 4,
+      "cr": 6,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        }
+      ]
+    },
+    {
+      "id": "da721c88-a0c5-4d41-ab1f-aafd55112742",
+      "name": "Scimitar",
+      "category": "Ships",
+      "hullCode": "CL",
+      "cost": 6,
+      "isd": "3006",
+      "dv": 4,
+      "as": 4,
+      "af": 4,
+      "cr": 6,
+      "cc": 3,
+      "traits": []
+    },
+    {
+      "id": "bdf9e6ad-a345-4f30-92da-d971ea624e4b",
+      "name": "Talwar",
+      "category": "Ships",
+      "hullCode": "CW",
+      "cost": 7,
+      "isd": "3007",
+      "dv": 6,
+      "as": 6,
+      "af": 0,
+      "cr": 7,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Jammer",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "bc6e4637-9a52-40ca-8e42-e08421ec5fa2",
+      "name": "Sheath",
+      "category": "Ships",
+      "hullCode": "CW",
+      "cost": 8,
+      "isd": "3008",
+      "dv": 5,
+      "as": 3,
+      "af": 2,
+      "cr": 7,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "9fda0659-ea97-46b2-9a12-8c753e447ee3",
+      "name": "Shiv",
+      "category": "Ships",
+      "hullCode": "CT",
+      "cost": 3,
+      "isd": "3009",
+      "dv": 2,
+      "as": 3,
+      "af": 0,
+      "cr": 3,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Stealth"
+        }
+      ]
+    },
+    {
+      "id": "97b05886-68b2-4158-97b3-37bcb383bb72",
+      "name": "Firangi",
+      "category": "Ships",
+      "hullCode": "FF",
+      "cost": 4,
+      "isd": "3010",
+      "dv": 3,
+      "as": 1,
+      "af": 2,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "398da552-ff39-43cd-821a-0a55611efa71",
+      "name": "Mattock",
+      "category": "Ships",
+      "hullCode": "CL",
+      "cost": 6,
+      "isd": "3011",
+      "dv": 4,
+      "as": 6,
+      "af": 2,
+      "cr": 6,
+      "cc": 3,
+      "traits": []
+    },
+    {
+      "id": "35f44e35-5bb7-47c7-97fc-fd1100d9c5a9",
+      "name": "Xiphos",
+      "category": "Ships",
+      "hullCode": "FF",
+      "cost": 4,
+      "isd": "3012",
+      "dv": 2,
+      "as": 2,
+      "af": 2,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Jammer",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "621cc5d5-7379-4f0e-8143-cc6f7b5c1052",
+      "name": "Cutlass",
+      "category": "Ships",
+      "hullCode": "CA",
+      "cost": 8,
+      "isd": "3013",
+      "dv": 5,
+      "as": 5,
+      "af": 4,
+      "cr": 8,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Scout",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "bab85d86-4561-4611-b0c5-dfbdba710dfc",
+      "name": "Switchblade",
+      "category": "Ships",
+      "hullCode": "FF",
+      "cost": 4,
+      "isd": "3014",
+      "dv": 3,
+      "as": 2,
+      "af": 2,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Q-Ship"
+        }
+      ]
+    },
+    {
+      "id": "afcdd3dc-a23f-42c0-91ee-cabe4f5a8d5e",
+      "name": "Broadsword",
+      "category": "Ships",
+      "hullCode": "BB",
+      "cost": 10,
+      "isd": "3015",
+      "dv": 7,
+      "as": 7,
+      "af": 6,
+      "cr": 10,
+      "cc": 5,
+      "traits": []
+    },
+    {
+      "id": "071c9325-23fc-450e-a0f1-f28342581468",
+      "name": "Rapier",
+      "category": "Ships",
+      "hullCode": "CW",
+      "cost": 7,
+      "isd": "3016",
+      "dv": 5,
+      "as": 6,
+      "af": 3,
+      "cr": 7,
+      "cc": 3,
+      "traits": []
+    },
+    {
+      "id": "46538211-26bb-4856-b7a7-8d6cc208b97f",
+      "name": "Scythe",
+      "category": "Ships",
+      "hullCode": "CW",
+      "cost": 7,
+      "isd": "3017",
+      "dv": 5,
+      "as": 6,
+      "af": 1,
+      "cr": 7,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Gunship"
+        }
+      ]
+    },
+    {
+      "id": "9beda173-5816-4fe0-a193-e63ed7a975c6",
+      "name": "Khanda",
+      "category": "Ships",
+      "hullCode": "CL",
+      "cost": 7,
+      "isd": "3018",
+      "dv": 6,
+      "as": 0,
+      "af": 0,
+      "cr": 5,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Supply",
+          "factor": 3
+        }
+      ]
+    },
+    {
+      "id": "ffd0d9a6-861b-4686-ae28-a5f99366c740",
+      "name": "Spathe",
+      "category": "Ships",
+      "hullCode": "CA",
+      "cost": 9,
+      "isd": "3019",
+      "dv": 6,
+      "as": 3,
+      "af": 3,
+      "cr": 8,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "f989d349-023a-4713-b469-3937361cbcb8",
+      "name": "Akrafena",
+      "category": "Ships",
+      "hullCode": "CA",
+      "cost": 9,
+      "isd": "3020",
+      "dv": 5,
+      "as": 3,
+      "af": 2,
+      "cr": 6,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Scout",
+          "factor": 3
+        }
+      ]
+    },
+    {
+      "id": "59321e75-49e1-4992-b78f-af90c98c7ea1",
+      "name": "Gladius",
+      "category": "Ships",
+      "hullCode": "FF",
+      "cost": 4,
+      "isd": "3021",
+      "dv": 3,
+      "as": 2,
+      "af": 2,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Fast"
+        }
+      ]
+    },
+    {
+      "id": "d1a6ac0d-0048-42a1-89f3-5719471c2b55",
+      "name": "Nimcha",
+      "category": "Ships",
+      "hullCode": "CW",
+      "cost": 7,
+      "isd": "3022",
+      "dv": 4,
+      "as": 4,
+      "af": 5,
+      "cr": 7,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        }
+      ]
+    },
+    {
+      "id": "2fed3a67-64e6-4853-b332-4779ff124799",
+      "name": "Estoc",
+      "category": "Ships",
+      "hullCode": "BC",
+      "cost": 10,
+      "isd": "3023",
+      "dv": 7,
+      "as": 7,
+      "af": 0,
+      "cr": 9,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Jammer",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "61f34b72-456c-444f-96e1-b6051162a001",
+      "name": "Katana",
+      "category": "Ships",
+      "hullCode": "CA",
+      "cost": 9,
+      "isd": "3024",
+      "dv": 4,
+      "as": 5,
+      "af": 3,
+      "cr": 8,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 1
+        },
+        {
+          "name": "Jammer",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "16397049-0d88-4751-9c24-45beb99f55f7",
+      "name": "Claymore",
+      "category": "Ships",
+      "hullCode": "DN",
+      "cost": 12,
+      "isd": "3025",
+      "dv": 7,
+      "as": 8,
+      "af": 7,
+      "cr": 10,
+      "cc": 5,
+      "traits": [
+        {
+          "name": "Disruptor",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "3ea4b7ee-49ee-4fc5-a493-5526953cd4d8",
+      "name": "Epee",
+      "category": "Fighters",
+      "hullCode": "LF",
+      "cost": 2,
+      "isd": "3000",
+      "dv": 2,
+      "as": 3,
+      "af": 0,
+      "cr": 2,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        }
+      ]
+    },
+    {
+      "id": "8904a27d-16cd-4169-b0a9-14079e0a6215",
+      "name": "Stiletto",
+      "category": "Fighters",
+      "hullCode": "MF",
+      "cost": 3,
+      "isd": "3005",
+      "dv": 3,
+      "as": 0,
+      "af": 3,
+      "cr": 3,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        },
+        {
+          "name": "Carronade"
+        }
+      ]
+    },
+    {
+      "id": "e9251110-a0da-4896-9966-0e1472527988",
+      "name": "Foil",
+      "category": "Fighters",
+      "hullCode": "HF",
+      "cost": 4,
+      "isd": "3010",
+      "dv": 3,
+      "as": 3,
+      "af": 3,
+      "cr": 4,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        }
+      ]
+    },
+    {
+      "id": "2169f82b-f1a6-4dde-9260-d419e4dde61b",
+      "name": "Morningstar",
+      "category": "Fighters",
+      "hullCode": "MF",
+      "cost": 3,
+      "isd": "3015",
+      "dv": 3,
+      "as": 4,
+      "af": 0,
+      "cr": 3,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Gunship"
+        }
+      ]
+    },
+    {
+      "id": "2f3b6501-a716-4166-99a4-26a0c5ebd201",
+      "name": "Warhammer",
+      "category": "Fighters",
+      "hullCode": "HF",
+      "cost": 4,
+      "isd": "3020",
+      "dv": 4,
+      "as": 2,
+      "af": 1,
+      "cr": 4,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        },
+        {
+          "name": "Jammer",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "38cc6134-820d-4f28-968c-ba88604fdf27",
+      "name": "Lance",
+      "category": "Bases",
+      "hullCode": "OWP",
+      "cost": 4,
+      "isd": "3000",
+      "dv": 2,
+      "as": 3,
+      "af": 3,
+      "cr": 3,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Scout",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "0d159442-de0a-4f24-bc9e-410879626187",
+      "name": "Halberd",
+      "category": "Bases",
+      "hullCode": "BS2",
+      "cost": 14,
+      "isd": "3004",
+      "dv": 10,
+      "as": 8,
+      "af": 4,
+      "cr": 8,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 2
+        },
+        {
+          "name": "Jammer",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "3cd386a9-fadc-4e1e-9b45-aa6a44d863c7",
+      "name": "Pike",
+      "category": "Bases",
+      "hullCode": "BS3",
+      "cost": 19,
+      "isd": "3008",
+      "dv": 14,
+      "as": 9,
+      "af": 5,
+      "cr": 10,
+      "cc": 5,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 4
+        },
+        {
+          "name": "Jammer",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "9e998006-ed41-4f63-9bac-6e35de189615",
+      "name": "Spear",
+      "category": "Bases",
+      "hullCode": "OWP",
+      "cost": 4,
+      "isd": "3011",
+      "dv": 4,
+      "as": 2,
+      "af": 2,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Jammer",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "8f29e8ad-5628-4f2f-abb8-e017211315c8",
+      "name": "Kontarion",
+      "category": "Bases",
+      "hullCode": "BS4",
+      "cost": 23,
+      "isd": "3020",
+      "dv": 16,
+      "as": 13,
+      "af": 7,
+      "cr": 12,
+      "cc": 6,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 5
+        },
+        {
+          "name": "Jammer",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "305b1794-6202-44f7-858d-ef39dac05aa5",
+      "name": "Militia",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 1,
+      "isd": "N/A",
+      "dv": 4,
+      "as": 4,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": [
+        {
+          "name": "Garrison"
+        }
+      ]
+    },
+    {
+      "id": "7a3ac01c-8f5e-444e-9ca5-764ceaafc2d0",
+      "name": "Light Marines",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 2,
+      "isd": "3000",
+      "dv": 4,
+      "as": 4,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": [
+        {
+          "name": "Marines"
+        }
+      ]
+    },
+    {
+      "id": "1f43c34d-bf77-4bcd-b8fd-657773a79f67",
+      "name": "Mobile Infantry",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 2,
+      "isd": "3004",
+      "dv": 4,
+      "as": 8,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": []
+    },
+    {
+      "id": "c77fc530-9d92-46e5-91ac-d270a9f527cf",
+      "name": "Commandos",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 2,
+      "isd": "3009",
+      "dv": 2,
+      "as": 6,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": [
+        {
+          "name": "Special Forces"
+        }
+      ]
+    },
+    {
+      "id": "991c1368-bc56-4e98-ad70-9d266ebf2b5f",
+      "name": "Heavy Infantry",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 3,
+      "isd": "3015",
+      "dv": 6,
+      "as": 12,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": []
+    },
+    {
+      "id": "301aaea4-346e-46c0-9a9d-fca1787589e6",
+      "name": "Imperial Rangers",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 3,
+      "isd": "3022",
+      "dv": 4,
+      "as": 8,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": [
+        {
+          "name": "Special Forces"
+        }
+      ]
+    }
+  ],
+  "recommendedEP": 200,
+  "recommendedYear": 3005,
+  "recommendedForces": [
+    { "name": "Bayonet", "count": 3 },
+    { "name": "Dagger", "count": 6 },
+    { "name": "Poniard", "count": 5 },
+    { "name": "Machete", "count": 3 },
+    { "name": "Scabbard", "count": 3 },
+    { "name": "Bulawa", "count": 3 },
+    { "name": "Santoku", "count": 2 },
+    { "name": "Epee", "count": 4 },
+    { "name": "Stiletto", "count": 5 },
+    { "name": "Lance", "count": 2 },
+    { "name": "Halberd", "count": 1 },
+    { "name": "Militia", "count": 6 },
+    { "name": "Light Marines", "count": 2 },
+    { "name": "Mobile Infantry", "count": 2 },
+    { "name": "Convoy", "count": 1 },
+    { "name": "Shipyard", "count": 1 }
+  ]
+}

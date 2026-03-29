@@ -1,0 +1,855 @@
+{
+  "id": "a7f9e986-2c48-45ad-8758-bfbade9bb9df",
+  "name": "Kili Republics",
+  "advantages": [
+    "Brilliant",
+    "Fast Breeders"
+  ],
+  "disadvantage": "Weak Troops",
+  "units": [
+    {
+      "id": "6850c935-8bb2-487a-aa67-b0db6e0c1dfd",
+      "name": "Convoy",
+      "category": "Civilian",
+      "hullCode": "N/A",
+      "cost": 20,
+      "isd": "N/A",
+      "dv": 10,
+      "as": 0,
+      "af": 0,
+      "cr": 0,
+      "cc": 0,
+      "traits": []
+    },
+    {
+      "id": "148bb542-cdf9-4bd0-aa73-424c5afa3565",
+      "name": "Shipyard",
+      "category": "Civilian",
+      "hullCode": "N/A",
+      "cost": 20,
+      "isd": "N/A",
+      "dv": 10,
+      "as": 0,
+      "af": 0,
+      "cr": 0,
+      "cc": 0,
+      "traits": []
+    },
+    {
+      "id": "9471330f-c678-4b58-94e0-99ca06899b93",
+      "name": "Supply Depot",
+      "category": "Civilian",
+      "hullCode": "N/A",
+      "cost": 20,
+      "isd": "N/A",
+      "dv": 10,
+      "as": 0,
+      "af": 0,
+      "cr": 0,
+      "cc": 0,
+      "traits": []
+    },
+    {
+      "id": "38aeabbd-500b-4501-8a0c-e46b00cbfdfd",
+      "name": "Safeguard",
+      "category": "Ships",
+      "hullCode": "DD",
+      "cost": 5,
+      "isd": "3000",
+      "dv": 5,
+      "as": 1,
+      "af": 2,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Scout",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "1d573924-899c-4a7f-a0d4-1fb20ef06026",
+      "name": "Canteen",
+      "category": "Ships",
+      "hullCode": "FF",
+      "cost": 4,
+      "isd": "3000",
+      "dv": 3,
+      "as": 1,
+      "af": 2,
+      "cr": 3,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Supply",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "ad6fe140-caa0-4abe-aa7c-37d1488a3ac4",
+      "name": "Riposte",
+      "category": "Ships",
+      "hullCode": "CT",
+      "cost": 3,
+      "isd": "3001",
+      "dv": 2,
+      "as": 1,
+      "af": 2,
+      "cr": 3,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Fast"
+        }
+      ]
+    },
+    {
+      "id": "b18d98a8-0f41-4b7c-9678-9caf84fefcf9",
+      "name": "Vanguard",
+      "category": "Ships",
+      "hullCode": "FF",
+      "cost": 4,
+      "isd": "3002",
+      "dv": 4,
+      "as": 2,
+      "af": 2,
+      "cr": 4,
+      "cc": 2,
+      "traits": []
+    },
+    {
+      "id": "b2e13313-3f22-4227-934e-f7f7e97a2e41",
+      "name": "Shield",
+      "category": "Ships",
+      "hullCode": "DD",
+      "cost": 5,
+      "isd": "3003",
+      "dv": 3,
+      "as": 1,
+      "af": 4,
+      "cr": 5,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Guardian",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "7767b5a6-8777-4beb-9e36-a863016722a1",
+      "name": "Caisson",
+      "category": "Ships",
+      "hullCode": "DD",
+      "cost": 5,
+      "isd": "3004",
+      "dv": 4,
+      "as": 2,
+      "af": 2,
+      "cr": 5,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "ceb65398-44a4-4bc5-a25e-d029502f6a93",
+      "name": "Warden",
+      "category": "Ships",
+      "hullCode": "CL",
+      "cost": 6,
+      "isd": "3005",
+      "dv": 6,
+      "as": 3,
+      "af": 1,
+      "cr": 6,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "79f6da55-4d67-48e9-8bb2-f8df0c9becd3",
+      "name": "Monitor",
+      "category": "Ships",
+      "hullCode": "FF",
+      "cost": 4,
+      "isd": "3006",
+      "dv": 2,
+      "as": 2,
+      "af": 1,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        },
+        {
+          "name": "Carrier",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "bd4b2f5d-4ceb-45a9-8cae-fbcb8cca6c07",
+      "name": "Protector",
+      "category": "Ships",
+      "hullCode": "CA",
+      "cost": 8,
+      "isd": "3007",
+      "dv": 8,
+      "as": 5,
+      "af": 1,
+      "cr": 8,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "75c38fd8-c4d6-4eb6-b5c5-8361b1c9523d",
+      "name": "Vault",
+      "category": "Ships",
+      "hullCode": "CL",
+      "cost": 7,
+      "isd": "3008",
+      "dv": 6,
+      "as": 0,
+      "af": 2,
+      "cr": 6,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "a7bea24e-c406-4991-98ba-e4f2e6083196",
+      "name": "Custodian",
+      "category": "Ships",
+      "hullCode": "FF",
+      "cost": 4,
+      "isd": "3009",
+      "dv": 3,
+      "as": 2,
+      "af": 2,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Police"
+        }
+      ]
+    },
+    {
+      "id": "72e9d41c-1f5e-440c-a774-d0bab7abd91b",
+      "name": "Wall",
+      "category": "Ships",
+      "hullCode": "CL",
+      "cost": 6,
+      "isd": "3010",
+      "dv": 6,
+      "as": 1,
+      "af": 3,
+      "cr": 6,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Guardian",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "fb01d17c-fba8-436a-9d7e-4ddf2b91215a",
+      "name": "Gauntlet",
+      "category": "Ships",
+      "hullCode": "FF",
+      "cost": 4,
+      "isd": "3011",
+      "dv": 3,
+      "as": 0,
+      "af": 4,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        }
+      ]
+    },
+    {
+      "id": "e6f6bce6-654b-40ad-8a58-0d7edf060728",
+      "name": "Delegate",
+      "category": "Ships",
+      "hullCode": "CL",
+      "cost": 7,
+      "isd": "3012",
+      "dv": 6,
+      "as": 0,
+      "af": 2,
+      "cr": 6,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Armored"
+        },
+        {
+          "name": "Diplomatic"
+        }
+      ]
+    },
+    {
+      "id": "8d52dcf5-9787-4c24-9aff-b2f51db0bd17",
+      "name": "Aegis",
+      "category": "Ships",
+      "hullCode": "CW",
+      "cost": 8,
+      "isd": "3013",
+      "dv": 6,
+      "as": 1,
+      "af": 3,
+      "cr": 7,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Guardian",
+          "factor": 1
+        },
+        {
+          "name": "Scout",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "6e3fd5fb-1893-4d39-b0f0-38a4cf970eeb",
+      "name": "Superintendent",
+      "category": "Ships",
+      "hullCode": "BB",
+      "cost": 10,
+      "isd": "3014",
+      "dv": 9,
+      "as": 5,
+      "af": 3,
+      "cr": 10,
+      "cc": 5,
+      "traits": [
+        {
+          "name": "Police"
+        }
+      ]
+    },
+    {
+      "id": "93807d4c-e00d-499f-9bb0-971934cb2532",
+      "name": "Stolovaya",
+      "category": "Ships",
+      "hullCode": "CL",
+      "cost": 7,
+      "isd": "3015",
+      "dv": 5,
+      "as": 1,
+      "af": 2,
+      "cr": 5,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Supply",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "09190676-dbb0-47ce-8001-a9ebc103fa99",
+      "name": "Chamber",
+      "category": "Ships",
+      "hullCode": "CA",
+      "cost": 9,
+      "isd": "3016",
+      "dv": 7,
+      "as": 4,
+      "af": 1,
+      "cr": 8,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "b3b0bc8e-a7d1-4450-83bc-e48a7056b1e6",
+      "name": "Sentinel",
+      "category": "Ships",
+      "hullCode": "BC",
+      "cost": 9,
+      "isd": "3017",
+      "dv": 9,
+      "as": 6,
+      "af": 3,
+      "cr": 9,
+      "cc": 4,
+      "traits": []
+    },
+    {
+      "id": "99981174-57d6-4120-a1dd-ab3015500250",
+      "name": "Palanquin",
+      "category": "Ships",
+      "hullCode": "FF",
+      "cost": 5,
+      "isd": "3018",
+      "dv": 4,
+      "as": 0,
+      "af": 0,
+      "cr": 3,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Hospital",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "c87f62cc-81d8-4d93-bbbb-6141b9f2e710",
+      "name": "Repository",
+      "category": "Ships",
+      "hullCode": "CA",
+      "cost": 9,
+      "isd": "3019",
+      "dv": 7,
+      "as": 2,
+      "af": 1,
+      "cr": 8,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 3
+        }
+      ]
+    },
+    {
+      "id": "f6b1bf54-0853-4adc-a312-e465832450a4",
+      "name": "Bulwark",
+      "category": "Ships",
+      "hullCode": "BB",
+      "cost": 10,
+      "isd": "3020",
+      "dv": 10,
+      "as": 6,
+      "af": 4,
+      "cr": 10,
+      "cc": 5,
+      "traits": []
+    },
+    {
+      "id": "c51ab944-d7e3-42bf-94a0-018a959fc863",
+      "name": "Watchman",
+      "category": "Ships",
+      "hullCode": "BC",
+      "cost": 10,
+      "isd": "3021",
+      "dv": 9,
+      "as": 2,
+      "af": 3,
+      "cr": 9,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Guardian",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "1c1810be-f2bc-47cc-941b-16f5c1f6aa1e",
+      "name": "Caretaker",
+      "category": "Ships",
+      "hullCode": "BC",
+      "cost": 9,
+      "isd": "3022",
+      "dv": 9,
+      "as": 6,
+      "af": 1,
+      "cr": 9,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "199285ab-7ca8-4da5-95e1-2c7ce99a73b1",
+      "name": "Vedette",
+      "category": "Ships",
+      "hullCode": "CA",
+      "cost": 9,
+      "isd": "3023",
+      "dv": 8,
+      "as": 2,
+      "af": 2,
+      "cr": 6,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Scout",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "f3a6597c-21e2-426d-ab5f-cd28cbbbb88e",
+      "name": "Vallum",
+      "category": "Ships",
+      "hullCode": "DN",
+      "cost": 12,
+      "isd": "3024",
+      "dv": 13,
+      "as": 7,
+      "af": 4,
+      "cr": 10,
+      "cc": 5,
+      "traits": []
+    },
+    {
+      "id": "a28c636f-5e23-43b1-8919-38a91a589ed2",
+      "name": "Auspice",
+      "category": "Ships",
+      "hullCode": "CL",
+      "cost": 7,
+      "isd": "3025",
+      "dv": 5,
+      "as": 0,
+      "af": 3,
+      "cr": 6,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Guardian",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "5168487b-83e9-487c-88a7-1581a61846c6",
+      "name": "Dart",
+      "category": "Fighters",
+      "hullCode": "LF",
+      "cost": 2,
+      "isd": "3000",
+      "dv": 4,
+      "as": 0,
+      "af": 2,
+      "cr": 2,
+      "cc": 1,
+      "traits": []
+    },
+    {
+      "id": "1e78f333-07e4-4286-8de8-e66273d3c4e0",
+      "name": "Bolt",
+      "category": "Fighters",
+      "hullCode": "MF",
+      "cost": 3,
+      "isd": "3007",
+      "dv": 4,
+      "as": 1,
+      "af": 3,
+      "cr": 3,
+      "cc": 1,
+      "traits": []
+    },
+    {
+      "id": "69fb293e-1d22-4627-bc0d-272d34d31418",
+      "name": "Hook",
+      "category": "Fighters",
+      "hullCode": "MF",
+      "cost": 3,
+      "isd": "3014",
+      "dv": 3,
+      "as": 0,
+      "af": 4,
+      "cr": 3,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Carronade"
+        }
+      ]
+    },
+    {
+      "id": "a4f8c41f-fa52-4fb3-8bcb-51d202236713",
+      "name": "Deadlock",
+      "category": "Fighters",
+      "hullCode": "HF",
+      "cost": 4,
+      "isd": "3021",
+      "dv": 4,
+      "as": 3,
+      "af": 2,
+      "cr": 4,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Armored"
+        }
+      ]
+    },
+    {
+      "id": "5477ab29-404f-4c1b-9260-eebd59f308af",
+      "name": "Buckler",
+      "category": "Bases",
+      "hullCode": "OWP",
+      "cost": 4,
+      "isd": "3000",
+      "dv": 5,
+      "as": 3,
+      "af": 2,
+      "cr": 4,
+      "cc": 2,
+      "traits": []
+    },
+    {
+      "id": "ededb66f-1d96-42c0-a868-6fa30b725850",
+      "name": "Palisade",
+      "category": "Bases",
+      "hullCode": "BS2",
+      "cost": 14,
+      "isd": "3000",
+      "dv": 13,
+      "as": 6,
+      "af": 3,
+      "cr": 8,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 2
+        },
+        {
+          "name": "Guardian",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "8a930d59-e41d-498c-b53b-483c7041d6e2",
+      "name": "Rampart",
+      "category": "Bases",
+      "hullCode": "BS1",
+      "cost": 9,
+      "isd": "3006",
+      "dv": 9,
+      "as": 5,
+      "af": 2,
+      "cr": 6,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 1
+        },
+        {
+          "name": "Guardian",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "a2c1640a-0a73-42b6-b1e8-f24527bc3089",
+      "name": "Bastion",
+      "category": "Bases",
+      "hullCode": "BS3",
+      "cost": 18,
+      "isd": "3013",
+      "dv": 18,
+      "as": 9,
+      "af": 5,
+      "cr": 10,
+      "cc": 5,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 2
+        },
+        {
+          "name": "Guardian",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "ffbefb1c-82b9-4429-a020-fd6eea78c40f",
+      "name": "Screen",
+      "category": "Bases",
+      "hullCode": "OWP",
+      "cost": 4,
+      "isd": "3018",
+      "dv": 6,
+      "as": 0,
+      "af": 2,
+      "cr": 3,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Scout",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "e2664644-4e54-4cb7-9a64-e259bb72dd1f",
+      "name": "Stronghold",
+      "category": "Bases",
+      "hullCode": "BS4",
+      "cost": 22,
+      "isd": "3024",
+      "dv": 24,
+      "as": 10,
+      "af": 6,
+      "cr": 12,
+      "cc": 6,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 3
+        },
+        {
+          "name": "Guardian",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "be545d3a-50ff-4b8f-8ad0-17e9ba05e111",
+      "name": "Militia",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 1,
+      "isd": "N/A",
+      "dv": 4,
+      "as": 4,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": [
+        {
+          "name": "Garrison"
+        }
+      ]
+    },
+    {
+      "id": "6c91fc9f-a8a8-43c5-82a7-1b79dfb9a721",
+      "name": "Peacekeepers",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 2,
+      "isd": "3000",
+      "dv": 6,
+      "as": 2,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": [
+        {
+          "name": "Peacekeepers"
+        }
+      ]
+    },
+    {
+      "id": "2df46c47-e66c-4055-91d6-793018b62fec",
+      "name": "Mobile Infantry",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 2,
+      "isd": "3003",
+      "dv": 4,
+      "as": 8,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": []
+    },
+    {
+      "id": "90afdbc3-7e40-4f31-a7ac-044a8e6927a6",
+      "name": "Heavy Militia",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 2,
+      "isd": "3008",
+      "dv": 8,
+      "as": 6,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": [
+        {
+          "name": "Garrison"
+        }
+      ]
+    },
+    {
+      "id": "032a2044-10dd-4279-8fda-245356d5d896",
+      "name": "Light Armor",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 2,
+      "isd": "3014",
+      "dv": 8,
+      "as": 4,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": []
+    },
+    {
+      "id": "633ad598-1695-4f0e-8d28-58ef61092db9",
+      "name": "Mechanized Infantry",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 3,
+      "isd": "3020",
+      "dv": 9,
+      "as": 9,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": []
+    }
+  ],
+  "recommendedEP": 200,
+  "recommendedYear": 3005,
+  "recommendedForces": [
+    { "name": "Safeguard", "count": 3 },
+    { "name": "Canteen", "count": 3 },
+    { "name": "Riposte", "count": 4 },
+    { "name": "Vanguard", "count": 4 },
+    { "name": "Shield", "count": 4 },
+    { "name": "Caisson", "count": 3 },
+    { "name": "Warden", "count": 2 },
+    { "name": "Dart", "count": 7 },
+    { "name": "Buckler", "count": 4 },
+    { "name": "Palisade", "count": 1 },
+    { "name": "Militia", "count": 6 },
+    { "name": "Peacekeepers", "count": 2 },
+    { "name": "Mobile Infantry", "count": 2 },
+    { "name": "Convoy", "count": 1 },
+    { "name": "Shipyard", "count": 1 }
+  ]
+}

@@ -1,0 +1,894 @@
+{
+  "id": "cc56be5f-c91b-4213-9446-56b2d5706890",
+  "name": "Loran Dominion",
+  "advantages": [
+    "Natural Pilots",
+    "Ecologists"
+  ],
+  "disadvantage": "Xenophobic",
+  "units": [
+    {
+      "id": "bb0cb54d-e7a4-41df-adfb-960029113cfe",
+      "name": "Convoy",
+      "category": "Civilian",
+      "hullCode": "N/A",
+      "cost": 20,
+      "isd": "N/A",
+      "dv": 10,
+      "as": 0,
+      "af": 0,
+      "cr": 0,
+      "cc": 0,
+      "traits": []
+    },
+    {
+      "id": "2813cd8a-6d50-4715-95f5-98b8187c13d8",
+      "name": "Shipyard",
+      "category": "Civilian",
+      "hullCode": "N/A",
+      "cost": 20,
+      "isd": "N/A",
+      "dv": 10,
+      "as": 0,
+      "af": 0,
+      "cr": 0,
+      "cc": 0,
+      "traits": []
+    },
+    {
+      "id": "946edf7a-9bdc-4354-83ab-730a15ea76bc",
+      "name": "Supply Depot",
+      "category": "Civilian",
+      "hullCode": "N/A",
+      "cost": 20,
+      "isd": "N/A",
+      "dv": 10,
+      "as": 0,
+      "af": 0,
+      "cr": 0,
+      "cc": 0,
+      "traits": []
+    },
+    {
+      "id": "493eed57-39d3-4efc-aa3d-71dac10295d2",
+      "name": "Master",
+      "category": "Ships",
+      "hullCode": "CL",
+      "cost": 7,
+      "isd": "3000",
+      "dv": 5,
+      "as": 2,
+      "af": 1,
+      "cr": 6,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 1
+        },
+        {
+          "name": "Scout",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "c1f4c730-639c-4f51-be51-f6954199173f",
+      "name": "Hero",
+      "category": "Ships",
+      "hullCode": "AB",
+      "cost": 2,
+      "isd": "3000",
+      "dv": 2,
+      "as": 2,
+      "af": 2,
+      "cr": 2,
+      "cc": 1,
+      "traits": []
+    },
+    {
+      "id": "2132ec8c-76ef-49ad-8e71-a716e067af83",
+      "name": "Defiance",
+      "category": "Ships",
+      "hullCode": "FF",
+      "cost": 4,
+      "isd": "3001",
+      "dv": 3,
+      "as": 3,
+      "af": 0,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Disruptor",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "2f29589b-158d-49c5-b868-e2806fc92db9",
+      "name": "Justice",
+      "category": "Ships",
+      "hullCode": "FF",
+      "cost": 4,
+      "isd": "3002",
+      "dv": 3,
+      "as": 1,
+      "af": 2,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "5a2e5c17-30ed-40f3-96b6-c6203281d06f",
+      "name": "Comrade",
+      "category": "Ships",
+      "hullCode": "CL",
+      "cost": 7,
+      "isd": "3003",
+      "dv": 6,
+      "as": 0,
+      "af": 0,
+      "cr": 5,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 1
+        },
+        {
+          "name": "Supply",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "a711719e-9218-4770-b8d1-9baba59137e3",
+      "name": "Response",
+      "category": "Ships",
+      "hullCode": "CL",
+      "cost": 7,
+      "isd": "3004",
+      "dv": 5,
+      "as": 2,
+      "af": 1,
+      "cr": 6,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "1513a2e9-7011-4a1d-8231-7de9fc6585e0",
+      "name": "Liberator",
+      "category": "Ships",
+      "hullCode": "DD",
+      "cost": 5,
+      "isd": "3005",
+      "dv": 3,
+      "as": 2,
+      "af": 2,
+      "cr": 5,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        },
+        {
+          "name": "Assault",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "26a3fbe6-12bc-469f-a982-111368e7cb1f",
+      "name": "Retribution",
+      "category": "Ships",
+      "hullCode": "CA",
+      "cost": 8,
+      "isd": "3006",
+      "dv": 6,
+      "as": 7,
+      "af": 3,
+      "cr": 8,
+      "cc": 4,
+      "traits": []
+    },
+    {
+      "id": "ef64006e-e162-40cd-84f2-86984e25fe49",
+      "name": "Wrath",
+      "category": "Ships",
+      "hullCode": "CA",
+      "cost": 9,
+      "isd": "3007",
+      "dv": 6,
+      "as": 4,
+      "af": 2,
+      "cr": 8,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "8ec1d05c-4153-4300-9636-242a5837e44c",
+      "name": "Furious",
+      "category": "Ships",
+      "hullCode": "DD",
+      "cost": 5,
+      "isd": "3008",
+      "dv": 4,
+      "as": 4,
+      "af": 0,
+      "cr": 5,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        },
+        {
+          "name": "Gunship"
+        }
+      ]
+    },
+    {
+      "id": "a8401aff-ad26-49bc-a29b-6d2acf1b33c2",
+      "name": "Revenge",
+      "category": "Ships",
+      "hullCode": "DD",
+      "cost": 5,
+      "isd": "3009",
+      "dv": 3,
+      "as": 4,
+      "af": 1,
+      "cr": 5,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Disruptor",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "db3a0324-ebc9-46c2-8224-db2e36fc53e5",
+      "name": "Commander",
+      "category": "Ships",
+      "hullCode": "CA",
+      "cost": 9,
+      "isd": "3010",
+      "dv": 7,
+      "as": 3,
+      "af": 2,
+      "cr": 8,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 1
+        },
+        {
+          "name": "Scout",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "e9220153-d637-4f3a-9095-efedbc875992",
+      "name": "Amnesty",
+      "category": "Ships",
+      "hullCode": "CT",
+      "cost": 3,
+      "isd": "3011",
+      "dv": 2,
+      "as": 1,
+      "af": 2,
+      "cr": 2,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Police"
+        }
+      ]
+    },
+    {
+      "id": "037a4ff0-1e5a-4a36-93cd-bace3753e06f",
+      "name": "Vengeance",
+      "category": "Ships",
+      "hullCode": "BC",
+      "cost": 10,
+      "isd": "3012",
+      "dv": 6,
+      "as": 6,
+      "af": 2,
+      "cr": 9,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "8c5f65a4-c90b-43ea-8cb4-bd64662c92f2",
+      "name": "Emancipator",
+      "category": "Ships",
+      "hullCode": "CW",
+      "cost": 8,
+      "isd": "3013",
+      "dv": 5,
+      "as": 3,
+      "af": 2,
+      "cr": 7,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Assault",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "2c2553e0-c0ff-4b87-8910-19cbfd0972ad",
+      "name": "Vindicator",
+      "category": "Ships",
+      "hullCode": "BB",
+      "cost": 12,
+      "isd": "3014",
+      "dv": 7,
+      "as": 3,
+      "af": 2,
+      "cr": 10,
+      "cc": 5,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 4
+        }
+      ]
+    },
+    {
+      "id": "4cfdbf10-ea44-417b-9278-5ccbd29e4829",
+      "name": "Reckoning",
+      "category": "Ships",
+      "hullCode": "CA",
+      "cost": 8,
+      "isd": "3015",
+      "dv": 6,
+      "as": 7,
+      "af": 1,
+      "cr": 8,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Disruptor",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "a04f67fa-8a65-4a03-ab01-5fd0e4d510ab",
+      "name": "Punishment",
+      "category": "Ships",
+      "hullCode": "BC",
+      "cost": 9,
+      "isd": "3016",
+      "dv": 7,
+      "as": 8,
+      "af": 3,
+      "cr": 9,
+      "cc": 4,
+      "traits": []
+    },
+    {
+      "id": "307de988-ce1e-40e8-b0fb-4f847817851e",
+      "name": "Retaliation",
+      "category": "Ships",
+      "hullCode": "DN",
+      "cost": 14,
+      "isd": "3017",
+      "dv": 9,
+      "as": 5,
+      "af": 2,
+      "cr": 10,
+      "cc": 5,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 4
+        }
+      ]
+    },
+    {
+      "id": "40dfc2d8-0359-4aeb-9bee-c9c66580f980",
+      "name": "Manumitter",
+      "category": "Ships",
+      "hullCode": "CA",
+      "cost": 9,
+      "isd": "3018",
+      "dv": 5,
+      "as": 4,
+      "af": 3,
+      "cr": 8,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Assault",
+          "factor": 1
+        },
+        {
+          "name": "Carrier",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "ebe1a232-bf9c-43e4-8a06-4f6ed91887de",
+      "name": "Freedom",
+      "category": "Ships",
+      "hullCode": "CW",
+      "cost": 8,
+      "isd": "3019",
+      "dv": 5,
+      "as": 2,
+      "af": 1,
+      "cr": 7,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Fast"
+        },
+        {
+          "name": "Carrier",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "cc8aebfa-ed89-4bed-82a2-9c0539093042",
+      "name": "Judgment",
+      "category": "Ships",
+      "hullCode": "BC",
+      "cost": 10,
+      "isd": "3020",
+      "dv": 6,
+      "as": 7,
+      "af": 1,
+      "cr": 9,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Disruptor",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "1ab87158-bb18-425e-a713-bde5e0401b4d",
+      "name": "Overseer",
+      "category": "Ships",
+      "hullCode": "BB",
+      "cost": 11,
+      "isd": "3021",
+      "dv": 9,
+      "as": 3,
+      "af": 2,
+      "cr": 10,
+      "cc": 5,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 1
+        },
+        {
+          "name": "Scout",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "5b2d0762-26be-441e-9e8e-952b6007d4fd",
+      "name": "Presage",
+      "category": "Ships",
+      "hullCode": "CL",
+      "cost": 6,
+      "isd": "3022",
+      "dv": 5,
+      "as": 2,
+      "af": 3,
+      "cr": 6,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Diplomatic"
+        }
+      ]
+    },
+    {
+      "id": "b2ea2972-f001-4463-8641-f04d32b8fdf2",
+      "name": "Rescuer",
+      "category": "Ships",
+      "hullCode": "DD",
+      "cost": 6,
+      "isd": "3023",
+      "dv": 4,
+      "as": 0,
+      "af": 2,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Supply",
+          "factor": 1
+        },
+        {
+          "name": "Hospital",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "27d144a6-b324-41a3-bf05-eec8f7ee18b7",
+      "name": "Ultion",
+      "category": "Ships",
+      "hullCode": "SD",
+      "cost": 17,
+      "isd": "3024",
+      "dv": 12,
+      "as": 7,
+      "af": 3,
+      "cr": 12,
+      "cc": 6,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 4
+        }
+      ]
+    },
+    {
+      "id": "945d6066-da85-45c2-8837-889e19aca697",
+      "name": "Salvation",
+      "category": "Ships",
+      "hullCode": "BB",
+      "cost": 11,
+      "isd": "3025",
+      "dv": 7,
+      "as": 6,
+      "af": 1,
+      "cr": 10,
+      "cc": 5,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 2
+        },
+        {
+          "name": "Disruptor",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "45a43bd5-4290-4355-9189-846e3cba71ee",
+      "name": "Avenger",
+      "category": "Fighters",
+      "hullCode": "LF",
+      "cost": 2,
+      "isd": "3000",
+      "dv": 2,
+      "as": 0,
+      "af": 3,
+      "cr": 2,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        }
+      ]
+    },
+    {
+      "id": "1b26e856-0ee4-48f2-9ecd-252e8d5885aa",
+      "name": "Nemesis",
+      "category": "Fighters",
+      "hullCode": "MF",
+      "cost": 3,
+      "isd": "3002",
+      "dv": 3,
+      "as": 3,
+      "af": 1,
+      "cr": 3,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        }
+      ]
+    },
+    {
+      "id": "620a1e36-cca4-46db-adde-d7852e3f4dc4",
+      "name": "Adversary",
+      "category": "Fighters",
+      "hullCode": "HF",
+      "cost": 4,
+      "isd": "3006",
+      "dv": 3,
+      "as": 3,
+      "af": 2,
+      "cr": 4,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Disruptor",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "b413c11f-2765-414c-a0a5-7a35661f1a1e",
+      "name": "Challenger",
+      "category": "Fighters",
+      "hullCode": "MF",
+      "cost": 3,
+      "isd": "3010",
+      "dv": 3,
+      "as": 4,
+      "af": 0,
+      "cr": 3,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Gunship"
+        }
+      ]
+    },
+    {
+      "id": "b43f66b7-3343-469b-a403-377b59206971",
+      "name": "Champion",
+      "category": "Fighters",
+      "hullCode": "HF",
+      "cost": 4,
+      "isd": "3015",
+      "dv": 4,
+      "as": 5,
+      "af": 1,
+      "cr": 4,
+      "cc": 1,
+      "traits": []
+    },
+    {
+      "id": "96351289-19b2-4584-b750-c248d77cf130",
+      "name": "Invader",
+      "category": "Fighters",
+      "hullCode": "SHF",
+      "cost": 5,
+      "isd": "3020",
+      "dv": 4,
+      "as": 4,
+      "af": 3,
+      "cr": 5,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        }
+      ]
+    },
+    {
+      "id": "4eff96e0-4de9-4cd4-911c-83e2ae3da0ea",
+      "name": "Beacon",
+      "category": "Bases",
+      "hullCode": "BS1",
+      "cost": 10,
+      "isd": "3000",
+      "dv": 6,
+      "as": 2,
+      "af": 4,
+      "cr": 6,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 4
+        }
+      ]
+    },
+    {
+      "id": "54207548-65dd-41e5-b8d2-1ef9d50b3d0e",
+      "name": "Watchtower",
+      "category": "Bases",
+      "hullCode": "BS2",
+      "cost": 15,
+      "isd": "3006",
+      "dv": 10,
+      "as": 3,
+      "af": 5,
+      "cr": 8,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 6
+        }
+      ]
+    },
+    {
+      "id": "c06d0202-b1ac-4902-a661-25dfaf6a2e8f",
+      "name": "Lamplighter",
+      "category": "Bases",
+      "hullCode": "OWP",
+      "cost": 5,
+      "isd": "3010",
+      "dv": 3,
+      "as": 1,
+      "af": 2,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 1
+        },
+        {
+          "name": "Scout",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "6f549bd8-9903-46d8-8808-d5ef4be288df",
+      "name": "Pharos",
+      "category": "Bases",
+      "hullCode": "BS1",
+      "cost": 9,
+      "isd": "3016",
+      "dv": 7,
+      "as": 5,
+      "af": 4,
+      "cr": 6,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Scout",
+          "factor": 1
+        },
+        {
+          "name": "Disruptor",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "721d53a1-4476-4e96-bb1d-49d3f32aaec5",
+      "name": "Promontory",
+      "category": "Bases",
+      "hullCode": "BS3",
+      "cost": 20,
+      "isd": "3021",
+      "dv": 12,
+      "as": 6,
+      "af": 6,
+      "cr": 10,
+      "cc": 5,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 8
+        }
+      ]
+    },
+    {
+      "id": "f674e999-de01-4625-83ec-f0da17dc3158",
+      "name": "Militia",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 1,
+      "isd": "N/A",
+      "dv": 4,
+      "as": 4,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": [
+        {
+          "name": "Garrison"
+        }
+      ]
+    },
+    {
+      "id": "e4ed73c8-602d-4774-9393-f07f47d602bb",
+      "name": "Light Armor",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 2,
+      "isd": "3000",
+      "dv": 8,
+      "as": 4,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": []
+    },
+    {
+      "id": "d1aebb62-3d28-4af9-844c-39b6db799464",
+      "name": "Marines",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 3,
+      "isd": "3005",
+      "dv": 6,
+      "as": 6,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": [
+        {
+          "name": "Marines"
+        }
+      ]
+    },
+    {
+      "id": "dcec1b53-6ee9-4e89-8a75-44a8ce82243a",
+      "name": "Heavy Armor",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 3,
+      "isd": "3012",
+      "dv": 12,
+      "as": 6,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": []
+    },
+    {
+      "id": "c7e83548-9b58-4bf9-8155-a5a43e38ae65",
+      "name": "Heavy Marines",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 4,
+      "isd": "3019",
+      "dv": 8,
+      "as": 8,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": [
+        {
+          "name": "Marines"
+        }
+      ]
+    }
+  ],
+  "recommendedEP": 200,
+  "recommendedYear": 3005,
+  "recommendedForces": [
+    { "name": "Master", "count": 3 },
+    { "name": "Hero", "count": 4 },
+    { "name": "Defiance", "count": 4 },
+    { "name": "Justice", "count": 3 },
+    { "name": "Comrade", "count": 2 },
+    { "name": "Response", "count": 2 },
+    { "name": "Liberator", "count": 2 },
+    { "name": "Avenger", "count": 9 },
+    { "name": "Nemesis", "count": 7 },
+    { "name": "Beacon", "count": 1 },
+    { "name": "Militia", "count": 6 },
+    { "name": "Light Armor", "count": 2 },
+    { "name": "Marines", "count": 2 },
+    { "name": "Convoy", "count": 1 },
+    { "name": "Shipyard", "count": 1 }
+  ]
+}

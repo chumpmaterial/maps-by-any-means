@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import type { GameMap, System, JumpLane, HexCoordinate, LaneType } from '../types';
 import { hexKey } from '../utils/hexUtils';
 import { generateRandomTeamColor } from '../utils/colorUtils';
@@ -83,12 +83,14 @@ export function useMapState(initialMap?: GameMap) {
   const canRedo = history.future.length > 0;
 
   // Clear selection if the selected item was removed (e.g., by undo)
-  if (selectedSystemId && !map.systems.some(s => s.id === selectedSystemId)) {
-    setSelectedSystemId(null);
-  }
-  if (selectedLaneId && !map.jumpLanes.some(l => l.id === selectedLaneId)) {
-    setSelectedLaneId(null);
-  }
+  useEffect(() => {
+    if (selectedSystemId && !map.systems.some(s => s.id === selectedSystemId)) {
+      setSelectedSystemId(null);
+    }
+    if (selectedLaneId && !map.jumpLanes.some(l => l.id === selectedLaneId)) {
+      setSelectedLaneId(null);
+    }
+  }, [selectedSystemId, selectedLaneId, map.systems, map.jumpLanes]);
 
   // Get system by ID
   const getSystem = useCallback((id: string): System | undefined => {

@@ -3,10 +3,17 @@ import type { useMapState } from './useMapState';
 
 type ConfirmFn = (options: { title: string; message: string }) => Promise<boolean>;
 
+interface KeyboardShortcutOptions {
+  campaignMode?: boolean;
+  mapEditingMode?: boolean;
+}
+
 export function useKeyboardShortcuts(
   mapState: ReturnType<typeof useMapState>,
   confirm: ConfirmFn,
+  options: KeyboardShortcutOptions = {},
 ) {
+  const { campaignMode = false, mapEditingMode = false } = options;
   const {
     selectedSystemId,
     selectedLaneId,
@@ -34,8 +41,11 @@ export function useKeyboardShortcuts(
       }
 
       // Delete/Backspace: Remove selected item (with confirmation)
+      // In campaign mode without map editing: no system/lane deletion
       if (e.key === 'Delete' || e.key === 'Backspace') {
-        if (selectedSystemId) {
+        const restrictDelete = campaignMode && !mapEditingMode;
+
+        if (selectedSystemId && !restrictDelete) {
           const system = getSystem(selectedSystemId);
           const name = system?.name || 'Unnamed';
           const laneCount = getLanesForSystem(selectedSystemId).length;
@@ -46,7 +56,7 @@ export function useKeyboardShortcuts(
           if (confirmed) {
             removeSystem(selectedSystemId);
           }
-        } else if (selectedLaneId) {
+        } else if (selectedLaneId && !restrictDelete) {
           const confirmed = await confirm({ title: 'Delete Lane', message: 'Delete this jump lane?' });
           if (confirmed) {
             removeJumpLane(selectedLaneId);
@@ -54,17 +64,19 @@ export function useKeyboardShortcuts(
         }
       }
 
-      // Ctrl+Z: Undo
+      // Ctrl+Z: Undo (disabled in campaign mode outside of map editing)
       if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        if (campaignMode && !mapEditingMode) return;
         e.preventDefault();
         undo();
       }
 
-      // Ctrl+Y or Ctrl+Shift+Z: Redo
+      // Ctrl+Y or Ctrl+Shift+Z: Redo (disabled in campaign mode outside of map editing)
       if (
         (e.ctrlKey || e.metaKey) &&
         (e.key === 'y' || (e.key === 'Z' && e.shiftKey) || (e.key === 'z' && e.shiftKey))
       ) {
+        if (campaignMode && !mapEditingMode) return;
         e.preventDefault();
         redo();
       }
@@ -90,5 +102,7 @@ export function useKeyboardShortcuts(
     undo,
     redo,
     confirm,
+    campaignMode,
+    mapEditingMode,
   ]);
 }

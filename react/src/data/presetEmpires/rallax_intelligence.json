@@ -1,0 +1,928 @@
+{
+  "id": "c68d339a-5f98-4bb4-850f-ed4d2872f701",
+  "name": "Rallax Intelligence",
+  "advantages": [
+    "Industrious",
+    "Enigmatic"
+  ],
+  "disadvantage": "Disorganized",
+  "units": [
+    {
+      "id": "1faf4f70-6a48-471e-acd8-f690f6e6d3dd",
+      "name": "Convoy",
+      "category": "Civilian",
+      "hullCode": "N/A",
+      "cost": 20,
+      "isd": "N/A",
+      "dv": 10,
+      "as": 0,
+      "af": 0,
+      "cr": 0,
+      "cc": 0,
+      "traits": []
+    },
+    {
+      "id": "52b1bc4f-422c-4e19-bde8-63888c3aa6dd",
+      "name": "Shipyard",
+      "category": "Civilian",
+      "hullCode": "N/A",
+      "cost": 20,
+      "isd": "N/A",
+      "dv": 10,
+      "as": 0,
+      "af": 0,
+      "cr": 0,
+      "cc": 0,
+      "traits": []
+    },
+    {
+      "id": "9431f46f-bb16-47c9-b81f-c8434d061e7a",
+      "name": "Supply Depot",
+      "category": "Civilian",
+      "hullCode": "N/A",
+      "cost": 20,
+      "isd": "N/A",
+      "dv": 10,
+      "as": 0,
+      "af": 0,
+      "cr": 0,
+      "cc": 0,
+      "traits": []
+    },
+    {
+      "id": "f6127de8-18cd-4242-a63b-794fe8aa2c09",
+      "name": "Inspector",
+      "category": "Ships",
+      "hullCode": "CA",
+      "cost": 9,
+      "isd": "3000",
+      "dv": 6,
+      "as": 2,
+      "af": 4,
+      "cr": 8,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        },
+        {
+          "name": "Scout",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "a272fc94-aa96-43bb-adf7-d7ee931cf8c9",
+      "name": "Alcalde",
+      "category": "Ships",
+      "hullCode": "AB",
+      "cost": 2,
+      "isd": "3000",
+      "dv": 2,
+      "as": 1,
+      "af": 3,
+      "cr": 2,
+      "cc": 1,
+      "traits": []
+    },
+    {
+      "id": "8e913246-04b3-4903-be88-68366001097d",
+      "name": "Arbiter",
+      "category": "Ships",
+      "hullCode": "CT",
+      "cost": 3,
+      "isd": "3001",
+      "dv": 2,
+      "as": 2,
+      "af": 2,
+      "cr": 3,
+      "cc": 1,
+      "traits": []
+    },
+    {
+      "id": "545269fc-bb9a-47f8-9e66-01058a89f75a",
+      "name": "Surrogate",
+      "category": "Ships",
+      "hullCode": "FF",
+      "cost": 5,
+      "isd": "3002",
+      "dv": 2,
+      "as": 0,
+      "af": 2,
+      "cr": 3,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Supply",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "ebf4874e-cd17-4485-92db-576c42c03154",
+      "name": "Arbitrator",
+      "category": "Ships",
+      "hullCode": "CL",
+      "cost": 6,
+      "isd": "3003",
+      "dv": 4,
+      "as": 4,
+      "af": 1,
+      "cr": 6,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Armored"
+        },
+        {
+          "name": "Tender",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "de14182a-2ab5-430f-8514-c292849ae4d8",
+      "name": "Jurat",
+      "category": "Ships",
+      "hullCode": "CW",
+      "cost": 8,
+      "isd": "3004",
+      "dv": 5,
+      "as": 3,
+      "af": 2,
+      "cr": 7,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "052029c4-69fb-4939-a605-3ccb3f3b573f",
+      "name": "Lawkeeper",
+      "category": "Ships",
+      "hullCode": "CA",
+      "cost": 8,
+      "isd": "3005",
+      "dv": 6,
+      "as": 6,
+      "af": 2,
+      "cr": 8,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Armored"
+        }
+      ]
+    },
+    {
+      "id": "57a820d5-ad9f-4494-93ce-64710ae2418c",
+      "name": "Justiciar",
+      "category": "Ships",
+      "hullCode": "BC",
+      "cost": 10,
+      "isd": "3006",
+      "dv": 7,
+      "as": 5,
+      "af": 2,
+      "cr": 9,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Armored"
+        },
+        {
+          "name": "Tender",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "fa2e4107-feb7-40b5-8ec8-4da1192ab428",
+      "name": "Solicitor",
+      "category": "Ships",
+      "hullCode": "AB",
+      "cost": 2,
+      "isd": "3007",
+      "dv": 3,
+      "as": 0,
+      "af": 2,
+      "cr": 2,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Police"
+        }
+      ]
+    },
+    {
+      "id": "26d594c2-816a-42a9-83be-97207a6b7579",
+      "name": "Peacemaker",
+      "category": "Ships",
+      "hullCode": "BB",
+      "cost": 11,
+      "isd": "3008",
+      "dv": 8,
+      "as": 6,
+      "af": 2,
+      "cr": 10,
+      "cc": 5,
+      "traits": [
+        {
+          "name": "Armored"
+        },
+        {
+          "name": "Tender",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "c53394a0-9b78-474d-a7a5-4c7e8b1cab47",
+      "name": "Negotiator",
+      "category": "Ships",
+      "hullCode": "FF",
+      "cost": 4,
+      "isd": "3009",
+      "dv": 4,
+      "as": 1,
+      "af": 0,
+      "cr": 3,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Diplomatic"
+        },
+        {
+          "name": "Supply",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "17f681a1-43da-44b1-864b-c86263a58dd5",
+      "name": "Concilliator",
+      "category": "Ships",
+      "hullCode": "DN",
+      "cost": 13,
+      "isd": "3010",
+      "dv": 9,
+      "as": 4,
+      "af": 4,
+      "cr": 10,
+      "cc": 5,
+      "traits": [
+        {
+          "name": "Armored"
+        },
+        {
+          "name": "Carrier",
+          "factor": 1
+        },
+        {
+          "name": "Tender",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "ec21fb95-5570-40bb-a9f4-35ade10846d9",
+      "name": "Advocate",
+      "category": "Ships",
+      "hullCode": "CA",
+      "cost": 9,
+      "isd": "3011",
+      "dv": 6,
+      "as": 2,
+      "af": 2,
+      "cr": 8,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Armored"
+        },
+        {
+          "name": "Assault",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "61a02cc6-61fa-4dbc-9840-6a217c191fa5",
+      "name": "Provost",
+      "category": "Ships",
+      "hullCode": "AB",
+      "cost": 2,
+      "isd": "3012",
+      "dv": 2,
+      "as": 3,
+      "af": 1,
+      "cr": 2,
+      "cc": 1,
+      "traits": []
+    },
+    {
+      "id": "e38517d6-fc4b-45a9-becb-1bd71801cc96",
+      "name": "Assizes",
+      "category": "Ships",
+      "hullCode": "DD",
+      "cost": 5,
+      "isd": "3013",
+      "dv": 4,
+      "as": 2,
+      "af": 2,
+      "cr": 5,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Armored"
+        },
+        {
+          "name": "Diplomatic"
+        }
+      ]
+    },
+    {
+      "id": "9ce25727-498e-4ed4-8f09-de47a91f7de7",
+      "name": "Chancery",
+      "category": "Ships",
+      "hullCode": "BB",
+      "cost": 10,
+      "isd": "3014",
+      "dv": 8,
+      "as": 8,
+      "af": 2,
+      "cr": 10,
+      "cc": 5,
+      "traits": [
+        {
+          "name": "Armored"
+        }
+      ]
+    },
+    {
+      "id": "6e28b244-a772-46b5-9e62-82c3cb2fbad7",
+      "name": "Tribunal",
+      "category": "Ships",
+      "hullCode": "DN",
+      "cost": 13,
+      "isd": "3015",
+      "dv": 10,
+      "as": 5,
+      "af": 2,
+      "cr": 10,
+      "cc": 5,
+      "traits": [
+        {
+          "name": "Armored"
+        },
+        {
+          "name": "Carrier",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "c86322f7-a590-4265-a3b0-ffa0222c0422",
+      "name": "Magistrate",
+      "category": "Ships",
+      "hullCode": "SD",
+      "cost": 16,
+      "isd": "3016",
+      "dv": 12,
+      "as": 5,
+      "af": 6,
+      "cr": 12,
+      "cc": 6,
+      "traits": [
+        {
+          "name": "Armored"
+        },
+        {
+          "name": "Tender",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "45e6ebd4-7b66-4fa0-9347-a6be032cac8a",
+      "name": "Chancellor",
+      "category": "Ships",
+      "hullCode": "TN",
+      "cost": 22,
+      "isd": "3017",
+      "dv": 14,
+      "as": 12,
+      "af": 6,
+      "cr": 12,
+      "cc": 6,
+      "traits": [
+        {
+          "name": "Armored"
+        },
+        {
+          "name": "Tender",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "9f944144-757d-46d3-bec6-91e50b95505b",
+      "name": "Defender",
+      "category": "Ships",
+      "hullCode": "CL",
+      "cost": 7,
+      "isd": "3018",
+      "dv": 6,
+      "as": 0,
+      "af": 2,
+      "cr": 6,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 1
+        },
+        {
+          "name": "Guardian",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "b1445430-f61e-473e-8a54-fccefb7a7e19",
+      "name": "Expounder",
+      "category": "Ships",
+      "hullCode": "BC",
+      "cost": 10,
+      "isd": "3019",
+      "dv": 8,
+      "as": 2,
+      "af": 2,
+      "cr": 9,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Armored"
+        },
+        {
+          "name": "Assault",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "50a1889c-d00b-49e0-a29f-c478f9951e3d",
+      "name": "Bailiff",
+      "category": "Ships",
+      "hullCode": "AB",
+      "cost": 2,
+      "isd": "3020",
+      "dv": 2,
+      "as": 0,
+      "af": 3,
+      "cr": 2,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Carronade"
+        }
+      ]
+    },
+    {
+      "id": "88d58390-476c-4fb7-9a89-f2112d3c29b4",
+      "name": "Hospitalier",
+      "category": "Ships",
+      "hullCode": "CL",
+      "cost": 7,
+      "isd": "3021",
+      "dv": 4,
+      "as": 1,
+      "af": 2,
+      "cr": 5,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Armored"
+        },
+        {
+          "name": "Hospital",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "6da9b3b8-bc5c-4f29-a8bb-b0647312400a",
+      "name": "Executioner",
+      "category": "Ships",
+      "hullCode": "TN",
+      "cost": 21,
+      "isd": "3022",
+      "dv": 16,
+      "as": 14,
+      "af": 6,
+      "cr": 12,
+      "cc": 6,
+      "traits": [
+        {
+          "name": "Armored"
+        }
+      ]
+    },
+    {
+      "id": "5759aafd-e37c-4a75-9db7-1f79fcf9dddc",
+      "name": "Hangman",
+      "category": "Ships",
+      "hullCode": "CW",
+      "cost": 7,
+      "isd": "3023",
+      "dv": 4,
+      "as": 7,
+      "af": 0,
+      "cr": 7,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Armored"
+        },
+        {
+          "name": "Bombardment"
+        }
+      ]
+    },
+    {
+      "id": "fc2e8b54-5608-4d86-97b1-b7d2da629446",
+      "name": "Steward",
+      "category": "Ships",
+      "hullCode": "SD",
+      "cost": 17,
+      "isd": "3024",
+      "dv": 12,
+      "as": 6,
+      "af": 3,
+      "cr": 12,
+      "cc": 6,
+      "traits": [
+        {
+          "name": "Armored"
+        },
+        {
+          "name": "Carrier",
+          "factor": 3
+        }
+      ]
+    },
+    {
+      "id": "1bedc899-d6f0-41be-9de3-5aace76d5a4f",
+      "name": "Inquest",
+      "category": "Ships",
+      "hullCode": "AB",
+      "cost": 2,
+      "isd": "3025",
+      "dv": 4,
+      "as": 0,
+      "af": 0,
+      "cr": 2,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Scout",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "b2f11bb0-ab17-4de1-93d4-af3c36ade79a",
+      "name": "Decoy",
+      "category": "Fighters",
+      "hullCode": "LF",
+      "cost": 2,
+      "isd": "3000",
+      "dv": 4,
+      "as": 0,
+      "af": 2,
+      "cr": 2,
+      "cc": 1,
+      "traits": []
+    },
+    {
+      "id": "4e7ec7d1-131a-481f-adf1-8a57c5f79010",
+      "name": "Recorder",
+      "category": "Fighters",
+      "hullCode": "MF",
+      "cost": 4,
+      "isd": "3007",
+      "dv": 4,
+      "as": 0,
+      "af": 0,
+      "cr": 2,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Supply",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "98eb55f1-4aa3-4254-a947-19c895e44aa9",
+      "name": "Lure",
+      "category": "Fighters",
+      "hullCode": "MF",
+      "cost": 3,
+      "isd": "3010",
+      "dv": 6,
+      "as": 0,
+      "af": 2,
+      "cr": 3,
+      "cc": 1,
+      "traits": []
+    },
+    {
+      "id": "a0e2df95-8b5c-4b37-ba10-8f5a0c11a830",
+      "name": "Probe",
+      "category": "Fighters",
+      "hullCode": "MF",
+      "cost": 4,
+      "isd": "3013",
+      "dv": 4,
+      "as": 0,
+      "af": 0,
+      "cr": 2,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Scout",
+          "factor": 1
+        },
+        {
+          "name": "Jammer",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "73ab9023-73ef-4316-aa5c-cb71f740c6ac",
+      "name": "Obstruction",
+      "category": "Fighters",
+      "hullCode": "HF",
+      "cost": 4,
+      "isd": "3020",
+      "dv": 8,
+      "as": 0,
+      "af": 2,
+      "cr": 4,
+      "cc": 1,
+      "traits": []
+    },
+    {
+      "id": "55de40c4-1701-4665-809d-0bd85f293860",
+      "name": "Reeve",
+      "category": "Bases",
+      "hullCode": "OWP",
+      "cost": 5,
+      "isd": "3000",
+      "dv": 3,
+      "as": 3,
+      "af": 0,
+      "cr": 3,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 1
+        },
+        {
+          "name": "Tender",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "d1bce441-2e8f-4cb4-bad3-8fb28dc78e62",
+      "name": "Constable",
+      "category": "Bases",
+      "hullCode": "BS2",
+      "cost": 14,
+      "isd": "3005",
+      "dv": 8,
+      "as": 6,
+      "af": 6,
+      "cr": 6,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Armored"
+        },
+        {
+          "name": "Carrier",
+          "factor": 2
+        },
+        {
+          "name": "Tender",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "9ad67914-efd8-494b-bbf5-675e0b50dea5",
+      "name": "Ombudsman",
+      "category": "Bases",
+      "hullCode": "BS3",
+      "cost": 19,
+      "isd": "3010",
+      "dv": 10,
+      "as": 9,
+      "af": 8,
+      "cr": 8,
+      "cc": 5,
+      "traits": [
+        {
+          "name": "Armored"
+        },
+        {
+          "name": "Carrier",
+          "factor": 2
+        },
+        {
+          "name": "Tender",
+          "factor": 3
+        }
+      ]
+    },
+    {
+      "id": "bb3089d9-fe69-4b2a-8e16-e6d05012bf2d",
+      "name": "Lord Justice",
+      "category": "Bases",
+      "hullCode": "BS4",
+      "cost": 23,
+      "isd": "3015",
+      "dv": 12,
+      "as": 13,
+      "af": 10,
+      "cr": 10,
+      "cc": 6,
+      "traits": [
+        {
+          "name": "Armored"
+        },
+        {
+          "name": "Carrier",
+          "factor": 3
+        },
+        {
+          "name": "Tender",
+          "factor": 3
+        }
+      ]
+    },
+    {
+      "id": "5c753af2-1ecf-4dfe-a6ec-725cc1e7682f",
+      "name": "Sheriff",
+      "category": "Bases",
+      "hullCode": "OWP",
+      "cost": 5,
+      "isd": "3018",
+      "dv": 3,
+      "as": 0,
+      "af": 3,
+      "cr": 3,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Scout",
+          "factor": 1
+        },
+        {
+          "name": "Tender",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "2f6e1f5a-e3b9-47c7-8859-8a541f576885",
+      "name": "Estoppel",
+      "category": "Bases",
+      "hullCode": "BS4",
+      "cost": 26,
+      "isd": "3023",
+      "dv": 16,
+      "as": 3,
+      "af": 7,
+      "cr": 10,
+      "cc": 6,
+      "traits": [
+        {
+          "name": "Armored"
+        },
+        {
+          "name": "Carrier",
+          "factor": 5
+        },
+        {
+          "name": "Tender",
+          "factor": 5
+        }
+      ]
+    },
+    {
+      "id": "7d5ec30c-579d-45be-b52d-5b1037452ffd",
+      "name": "Militia",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 1,
+      "isd": "N/A",
+      "dv": 4,
+      "as": 4,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": [
+        {
+          "name": "Garrison"
+        }
+      ]
+    },
+    {
+      "id": "160cea69-db26-4e58-a30b-a7483e4211d1",
+      "name": "Light Armor",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 2,
+      "isd": "3000",
+      "dv": 8,
+      "as": 4,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": []
+    },
+    {
+      "id": "a91c59ee-e4fd-463f-80ba-a6fb2841c9bc",
+      "name": "Heavy Armor",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 3,
+      "isd": "3005",
+      "dv": 12,
+      "as": 6,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": []
+    },
+    {
+      "id": "6ab26b78-ea55-49ce-b438-0885eed09a27",
+      "name": "Heavy Militia",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 2,
+      "isd": "3012",
+      "dv": 8,
+      "as": 6,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": [
+        {
+          "name": "Garrison"
+        }
+      ]
+    },
+    {
+      "id": "0eeef554-aa4c-42d6-aac5-adcaf0d2e778",
+      "name": "Mechanized Infantry",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 3,
+      "isd": "3019",
+      "dv": 9,
+      "as": 9,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": []
+    }
+  ],
+  "recommendedEP": 200,
+  "recommendedYear": 3005,
+  "recommendedForces": [
+    { "name": "Inspector", "count": 3 },
+    { "name": "Alcalde", "count": 7 },
+    { "name": "Arbiter", "count": 3 },
+    { "name": "Surrogate", "count": 2 },
+    { "name": "Arbitrator", "count": 2 },
+    { "name": "Jurat", "count": 2 },
+    { "name": "Lawkeeper", "count": 2 },
+    { "name": "Decoy", "count": 8 },
+    { "name": "Reeve", "count": 2 },
+    { "name": "Constable", "count": 1 },
+    { "name": "Militia", "count": 6 },
+    { "name": "Light Armor", "count": 2 },
+    { "name": "Heavy Armor", "count": 2 },
+    { "name": "Convoy", "count": 1 },
+    { "name": "Shipyard", "count": 1 }
+  ]
+}

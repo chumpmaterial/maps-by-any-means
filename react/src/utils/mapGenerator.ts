@@ -331,6 +331,9 @@ function placeLanes(
     const currentConnections = connectionCount.get(gs.system.id) || 0;
     neededLanes -= currentConnections;
 
+    // Enforce minimum 1 total connection per system (outer ring -1 modifier cannot reduce below 1)
+    if (currentConnections === 0 && neededLanes < 1) neededLanes = 1;
+
     if (neededLanes <= 0) {
       log.push(`${gs.system.name}: ${gs.desiredLaneCount} desired, ${currentConnections} existing${systemRing === finalRing ? ', -1 outer ring' : ''} → no new lanes needed`);
       continue;

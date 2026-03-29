@@ -7,10 +7,20 @@ interface CaptureButtonProps {
   disabled?: boolean;
   /** Override the trigger button's className. Defaults to pill-style (white icon on dark bg). */
   buttonClassName?: string;
+  /** Controlled open state. When provided, onOpenChange must also be provided. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function CaptureButton({ onFullMap, onClipMode, disabled = false, buttonClassName }: CaptureButtonProps) {
-  const [open, setOpen] = useState(false);
+export function CaptureButton({ onFullMap, onClipMode, disabled = false, buttonClassName, open: controlledOpen, onOpenChange }: CaptureButtonProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = (val: boolean | ((prev: boolean) => boolean)) => {
+    const next = typeof val === 'function' ? val(open) : val;
+    if (isControlled) onOpenChange?.(next);
+    else setInternalOpen(next);
+  };
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -24,7 +34,8 @@ export function CaptureButton({ onFullMap, onClipMode, disabled = false, buttonC
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
-  const btnClass = buttonClassName ?? 'flex items-center justify-center rounded p-0.5 text-white hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40';
+  const isIconOnly = buttonClassName !== undefined;
+  const btnClass = buttonClassName ?? 'flex items-center gap-1.5 rounded px-3 py-1 text-sm hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-gray-800';
 
   return (
     <div ref={containerRef} className="relative">
@@ -34,7 +45,8 @@ export function CaptureButton({ onFullMap, onClipMode, disabled = false, buttonC
         onClick={() => { if (!disabled) setOpen(o => !o); }}
         className={btnClass}
       >
-        <Camera size={20} />
+        <Camera size={isIconOnly ? 20 : 16} />
+        {!isIconOnly && 'Capture'}
       </button>
       {open && (
         <div className="absolute right-0 top-full z-50 mt-1 w-36 rounded border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900">

@@ -1,0 +1,899 @@
+{
+  "id": "32c0ad50-e9f0-4972-a978-aca395eab976",
+  "name": "Graal Star Kingdoms",
+  "advantages": [
+    "Fast Drive Systems",
+    "Expansionist"
+  ],
+  "disadvantage": "Corrupt",
+  "units": [
+    {
+      "id": "92a839ab-1c32-4487-955a-17f0ad5b21da",
+      "name": "Convoy",
+      "category": "Civilian",
+      "hullCode": "N/A",
+      "cost": 10,
+      "isd": "N/A",
+      "dv": 10,
+      "as": 0,
+      "af": 0,
+      "cr": 0,
+      "cc": 0,
+      "traits": []
+    },
+    {
+      "id": "03ba0027-f49e-40da-8620-f80572912455",
+      "name": "Shipyard",
+      "category": "Civilian",
+      "hullCode": "N/A",
+      "cost": 20,
+      "isd": "N/A",
+      "dv": 10,
+      "as": 0,
+      "af": 0,
+      "cr": 0,
+      "cc": 0,
+      "traits": []
+    },
+    {
+      "id": "79e6098d-63d5-419b-9a7f-49db1be791f2",
+      "name": "Supply Depot",
+      "category": "Civilian",
+      "hullCode": "N/A",
+      "cost": 20,
+      "isd": "N/A",
+      "dv": 10,
+      "as": 0,
+      "af": 0,
+      "cr": 0,
+      "cc": 0,
+      "traits": []
+    },
+    {
+      "id": "4d36d2e8-e570-4728-887a-1f6b742b1d5e",
+      "name": "Eostrix",
+      "category": "Ships",
+      "hullCode": "CA",
+      "cost": 9,
+      "isd": "3000",
+      "dv": 5,
+      "as": 2,
+      "af": 3,
+      "cr": 6,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 1
+        },
+        {
+          "name": "Scout",
+          "factor": 1
+        },
+        {
+          "name": "Supply",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "8b411b5d-cea6-48f7-8e7c-8800ff0fc077",
+      "name": "Canary",
+      "category": "Ships",
+      "hullCode": "AB",
+      "cost": 2,
+      "isd": "3000",
+      "dv": 1,
+      "as": 2,
+      "af": 2,
+      "cr": 2,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        }
+      ]
+    },
+    {
+      "id": "7d892ddf-ab2c-4fdd-9481-8e57103ce42b",
+      "name": "Woodpecker",
+      "category": "Ships",
+      "hullCode": "CT",
+      "cost": 3,
+      "isd": "3001",
+      "dv": 2,
+      "as": 2,
+      "af": 1,
+      "cr": 3,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Fast"
+        }
+      ]
+    },
+    {
+      "id": "dbb80e6f-4a59-4093-9cc0-c26c45a720a9",
+      "name": "Falcon",
+      "category": "Ships",
+      "hullCode": "FF",
+      "cost": 4,
+      "isd": "3002",
+      "dv": 3,
+      "as": 2,
+      "af": 2,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Fast"
+        }
+      ]
+    },
+    {
+      "id": "291c58bd-9764-431a-b3d1-f167b82d218c",
+      "name": "Shrike",
+      "category": "Ships",
+      "hullCode": "DD",
+      "cost": 5,
+      "isd": "3003",
+      "dv": 3,
+      "as": 4,
+      "af": 3,
+      "cr": 5,
+      "cc": 2,
+      "traits": []
+    },
+    {
+      "id": "1d937d4b-6497-479a-b078-e4544d1ac688",
+      "name": "Eagle",
+      "category": "Ships",
+      "hullCode": "CL",
+      "cost": 6,
+      "isd": "3004",
+      "dv": 4,
+      "as": 3,
+      "af": 3,
+      "cr": 6,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "97cc39fe-d40c-4581-a155-27944b14bc42",
+      "name": "Stork",
+      "category": "Ships",
+      "hullCode": "DD",
+      "cost": 6,
+      "isd": "3005",
+      "dv": 3,
+      "as": 0,
+      "af": 0,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Fast"
+        },
+        {
+          "name": "Carrier",
+          "factor": 2
+        },
+        {
+          "name": "Supply",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "898ef0c2-a7e2-4d9d-8f06-a0068aad4c4d",
+      "name": "Vulture",
+      "category": "Ships",
+      "hullCode": "BB",
+      "cost": 11,
+      "isd": "3006",
+      "dv": 8,
+      "as": 6,
+      "af": 2,
+      "cr": 10,
+      "cc": 5,
+      "traits": [
+        {
+          "name": "Assault",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "4220018b-bb88-42b3-93fd-d4c6db34e9b1",
+      "name": "Condor",
+      "category": "Ships",
+      "hullCode": "CW",
+      "cost": 7,
+      "isd": "3007",
+      "dv": 6,
+      "as": 4,
+      "af": 2,
+      "cr": 7,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Fast"
+        }
+      ]
+    },
+    {
+      "id": "6961eeb1-9638-463a-a9bc-2ffede4e2fe7",
+      "name": "Sparrow",
+      "category": "Ships",
+      "hullCode": "AB",
+      "cost": 2,
+      "isd": "3008",
+      "dv": 2,
+      "as": 2,
+      "af": 0,
+      "cr": 2,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        },
+        {
+          "name": "Police"
+        }
+      ]
+    },
+    {
+      "id": "876478b5-4899-49ac-8740-147887f07b66",
+      "name": "Butcherbird",
+      "category": "Ships",
+      "hullCode": "DD",
+      "cost": 5,
+      "isd": "3009",
+      "dv": 3,
+      "as": 3,
+      "af": 3,
+      "cr": 5,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Fast"
+        }
+      ]
+    },
+    {
+      "id": "6b7689c6-7e85-4b51-9609-692378b24776",
+      "name": "Barn Owl",
+      "category": "Ships",
+      "hullCode": "BC",
+      "cost": 10,
+      "isd": "3010",
+      "dv": 6,
+      "as": 3,
+      "af": 3,
+      "cr": 7,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Scout",
+          "factor": 2
+        },
+        {
+          "name": "Supply",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "d3bbf133-d628-4e03-83a8-192b25078952",
+      "name": "Albatross",
+      "category": "Ships",
+      "hullCode": "BB",
+      "cost": 11,
+      "isd": "3011",
+      "dv": 8,
+      "as": 2,
+      "af": 4,
+      "cr": 10,
+      "cc": 5,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 3
+        }
+      ]
+    },
+    {
+      "id": "b6ef28ec-630f-47aa-ba70-999c31d659cc",
+      "name": "Thrush",
+      "category": "Ships",
+      "hullCode": "CT",
+      "cost": 3,
+      "isd": "3012",
+      "dv": 1,
+      "as": 2,
+      "af": 1,
+      "cr": 2,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Fast"
+        },
+        {
+          "name": "Police"
+        }
+      ]
+    },
+    {
+      "id": "d823f2c6-39cf-4424-bd63-a03b3f641230",
+      "name": "Pelican",
+      "category": "Ships",
+      "hullCode": "CW",
+      "cost": 8,
+      "isd": "3013",
+      "dv": 5,
+      "as": 1,
+      "af": 2,
+      "cr": 7,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Fast"
+        },
+        {
+          "name": "Carrier",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "0834e2c2-2b09-4361-a6de-5000dfa4c5a3",
+      "name": "Merlin",
+      "category": "Ships",
+      "hullCode": "CT",
+      "cost": 3,
+      "isd": "3014",
+      "dv": 2,
+      "as": 0,
+      "af": 2,
+      "cr": 3,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Assault",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "6e404904-8621-4b15-a238-a3bac6815704",
+      "name": "Heron",
+      "category": "Ships",
+      "hullCode": "CA",
+      "cost": 9,
+      "isd": "3015",
+      "dv": 6,
+      "as": 3,
+      "af": 3,
+      "cr": 8,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Fast"
+        },
+        {
+          "name": "Carrier",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "2c86f628-3f85-4824-bfc7-77feb61a2804",
+      "name": "Cormorant",
+      "category": "Ships",
+      "hullCode": "CT",
+      "cost": 3,
+      "isd": "3016",
+      "dv": 2,
+      "as": 0,
+      "af": 2,
+      "cr": 3,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "d3c60a55-58cc-4431-a73e-c7acf721bbff",
+      "name": "Roc",
+      "category": "Ships",
+      "hullCode": "DN",
+      "cost": 13,
+      "isd": "3017",
+      "dv": 9,
+      "as": 9,
+      "af": 2,
+      "cr": 10,
+      "cc": 5,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "b1aaa941-5b49-45e5-b965-8b3221227019",
+      "name": "Gryphon",
+      "category": "Ships",
+      "hullCode": "BC",
+      "cost": 9,
+      "isd": "3018",
+      "dv": 7,
+      "as": 5,
+      "af": 4,
+      "cr": 9,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Fast"
+        }
+      ]
+    },
+    {
+      "id": "d6384bcf-1e25-4d2f-8f02-1cc3aafc79dc",
+      "name": "Raptor",
+      "category": "Ships",
+      "hullCode": "FF",
+      "cost": 4,
+      "isd": "3019",
+      "dv": 3,
+      "as": 3,
+      "af": 0,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Fast"
+        },
+        {
+          "name": "Stealth"
+        }
+      ]
+    },
+    {
+      "id": "03d008aa-b0af-4cb7-8a17-8b50e5996c95",
+      "name": "Swan",
+      "category": "Ships",
+      "hullCode": "CW",
+      "cost": 8,
+      "isd": "3020",
+      "dv": 4,
+      "as": 3,
+      "af": 3,
+      "cr": 6,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Tender",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "cc6c59a8-085f-4a15-b6ce-4fb9c9511409",
+      "name": "Chickenhawk",
+      "category": "Ships",
+      "hullCode": "FF",
+      "cost": 4,
+      "isd": "3021",
+      "dv": 2,
+      "as": 3,
+      "af": 1,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Bombardment"
+        },
+        {
+          "name": "Fast"
+        }
+      ]
+    },
+    {
+      "id": "a502d54e-6069-49db-a6a4-bb2349d26c2e",
+      "name": "Harpy",
+      "category": "Ships",
+      "hullCode": "BB",
+      "cost": 10,
+      "isd": "3022",
+      "dv": 8,
+      "as": 6,
+      "af": 4,
+      "cr": 10,
+      "cc": 5,
+      "traits": [
+        {
+          "name": "Fast"
+        }
+      ]
+    },
+    {
+      "id": "22cb9f86-d43a-4096-95ca-ac582ac4a202",
+      "name": "Puffin",
+      "category": "Ships",
+      "hullCode": "DD",
+      "cost": 5,
+      "isd": "3023",
+      "dv": 3,
+      "as": 2,
+      "af": 2,
+      "cr": 5,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Fast"
+        },
+        {
+          "name": "Assault",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "fe6c4ee4-fe8b-454c-b8dd-35099c91cae2",
+      "name": "Crane",
+      "category": "Ships",
+      "hullCode": "DN",
+      "cost": 14,
+      "isd": "3024",
+      "dv": 10,
+      "as": 2,
+      "af": 4,
+      "cr": 10,
+      "cc": 5,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 4
+        }
+      ]
+    },
+    {
+      "id": "829f51da-513b-4209-98d5-deb66b8fa9ba",
+      "name": "Kiwi",
+      "category": "Ships",
+      "hullCode": "DD",
+      "cost": 6,
+      "isd": "3025",
+      "dv": 3,
+      "as": 1,
+      "af": 2,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Scout",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "eb6628ee-298e-4007-9d28-e348faeb0a73",
+      "name": "Talon",
+      "category": "Fighters",
+      "hullCode": "MF",
+      "cost": 3,
+      "isd": "3000",
+      "dv": 3,
+      "as": 1,
+      "af": 3,
+      "cr": 3,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        }
+      ]
+    },
+    {
+      "id": "6085f2f4-2508-43b3-bdc4-2905a07140b7",
+      "name": "Claw",
+      "category": "Fighters",
+      "hullCode": "HF",
+      "cost": 4,
+      "isd": "3002",
+      "dv": 3,
+      "as": 3,
+      "af": 3,
+      "cr": 4,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        }
+      ]
+    },
+    {
+      "id": "ab70cc41-2f84-43a1-87d7-33a165bbb5dc",
+      "name": "Chela",
+      "category": "Fighters",
+      "hullCode": "HF",
+      "cost": 4,
+      "isd": "3008",
+      "dv": 3,
+      "as": 2,
+      "af": 4,
+      "cr": 4,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        }
+      ]
+    },
+    {
+      "id": "16e7faf5-956c-4ac1-874e-27c3f25367be",
+      "name": "Beak",
+      "category": "Fighters",
+      "hullCode": "HF",
+      "cost": 4,
+      "isd": "3015",
+      "dv": 3,
+      "as": 4,
+      "af": 1,
+      "cr": 4,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        },
+        {
+          "name": "Gunship"
+        }
+      ]
+    },
+    {
+      "id": "e2a9348c-513d-4092-b2d7-3be407b82cb7",
+      "name": "Spur",
+      "category": "Fighters",
+      "hullCode": "MF",
+      "cost": 3,
+      "isd": "3020",
+      "dv": 2,
+      "as": 0,
+      "af": 4,
+      "cr": 3,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        },
+        {
+          "name": "Carronade"
+        }
+      ]
+    },
+    {
+      "id": "59864939-546d-4bc7-9f9e-b926737e0210",
+      "name": "Roost",
+      "category": "Bases",
+      "hullCode": "BS1",
+      "cost": 9,
+      "isd": "3000",
+      "dv": 8,
+      "as": 6,
+      "af": 2,
+      "cr": 6,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "f3dd690d-47c3-4cec-8134-60458b8f9ba7",
+      "name": "Parrock",
+      "category": "Bases",
+      "hullCode": "OWP",
+      "cost": 4,
+      "isd": "3006",
+      "dv": 3,
+      "as": 3,
+      "af": 2,
+      "cr": 3,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Scout",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "0491b374-f7fd-4052-94e4-bfe613b0eb22",
+      "name": "Nest",
+      "category": "Bases",
+      "hullCode": "BS2",
+      "cost": 13,
+      "isd": "3010",
+      "dv": 10,
+      "as": 8,
+      "af": 6,
+      "cr": 8,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 3
+        }
+      ]
+    },
+    {
+      "id": "93d28e8a-ed93-4f8d-9db6-80e1a3640062",
+      "name": "Aviary",
+      "category": "Bases",
+      "hullCode": "BS3",
+      "cost": 18,
+      "isd": "3016",
+      "dv": 14,
+      "as": 11,
+      "af": 7,
+      "cr": 10,
+      "cc": 5,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 4
+        }
+      ]
+    },
+    {
+      "id": "15077b23-1f5e-4cfd-920e-02f61b0cd38d",
+      "name": "Volary",
+      "category": "Bases",
+      "hullCode": "BS4",
+      "cost": 22,
+      "isd": "3020",
+      "dv": 17,
+      "as": 14,
+      "af": 9,
+      "cr": 12,
+      "cc": 6,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 5
+        }
+      ]
+    },
+    {
+      "id": "55dc6ca7-c07f-45bc-b499-930150f73f0e",
+      "name": "Militia",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 1,
+      "isd": "N/A",
+      "dv": 4,
+      "as": 4,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": [
+        {
+          "name": "Garrison"
+        }
+      ]
+    },
+    {
+      "id": "5ca7bcdc-0470-44b0-9790-42f895539fc0",
+      "name": "Light Marines",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 2,
+      "isd": "3000",
+      "dv": 4,
+      "as": 4,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": [
+        {
+          "name": "Marines"
+        }
+      ]
+    },
+    {
+      "id": "68c8d3fb-ea84-47ee-b77c-cbe9967f8d02",
+      "name": "Praetorians",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 2,
+      "isd": "3005",
+      "dv": 6,
+      "as": 6,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": []
+    },
+    {
+      "id": "0e08d17f-a159-49dd-84d7-7179ee25ac73",
+      "name": "Marines",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 3,
+      "isd": "3010",
+      "dv": 6,
+      "as": 6,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": [
+        {
+          "name": "Marines"
+        }
+      ]
+    },
+    {
+      "id": "6554fef7-91a0-4978-aac5-60bcba687048",
+      "name": "Heavy Armor",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 3,
+      "isd": "3015",
+      "dv": 12,
+      "as": 6,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": []
+    },
+    {
+      "id": "8eb5b04d-c1f6-48d4-aeed-a120d4fa52f4",
+      "name": "Heavy Marines",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 4,
+      "isd": "3020",
+      "dv": 8,
+      "as": 8,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": [
+        {
+          "name": "Marines"
+        }
+      ]
+    }
+  ],
+  "recommendedEP": 200,
+  "recommendedYear": 3005,
+  "recommendedForces": [
+    { "name": "Eostrix", "count": 3 },
+    { "name": "Canary", "count": 6 },
+    { "name": "Woodpecker", "count": 4 },
+    { "name": "Falcon", "count": 4 },
+    { "name": "Shrike", "count": 4 },
+    { "name": "Eagle", "count": 3 },
+    { "name": "Talon", "count": 4 },
+    { "name": "Claw", "count": 4 },
+    { "name": "Roost", "count": 1 },
+    { "name": "Militia", "count": 6 },
+    { "name": "Light Marines", "count": 4 },
+    { "name": "Praetorians", "count": 2 },
+    { "name": "Shipyard", "count": 1 },
+    { "name": "Convoy", "count": 2 }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "id": "harbinger",
+  "name": "Harbinger Force List",
+  "units": [
+    { "id": "harbinger-sovereign", "name": "Sovereign", "category": "Ships", "hullCode": "TN", "cost": 20, "isd": "N/A", "dv": 28, "as": 26, "af": 12, "cr": 13, "cc": 6, "traits": [{ "name": "Bombardment" }, { "name": "Regenerating" }] },
+    { "id": "harbinger-emperor",   "name": "Emperor",   "category": "Ships", "hullCode": "SD", "cost": 15, "isd": "N/A", "dv": 20, "as": 20, "af": 10, "cr": 13, "cc": 6, "traits": [{ "name": "Bombardment" }, { "name": "Regenerating" }] },
+    { "id": "harbinger-monarch",   "name": "Monarch",   "category": "Ships", "hullCode": "BB", "cost": 10, "isd": "N/A", "dv": 13, "as": 12, "af": 8,  "cr": 11, "cc": 5, "traits": [{ "name": "Bombardment" }, { "name": "Regenerating" }] },
+    { "id": "harbinger-suzerain",  "name": "Suzerain",  "category": "Ships", "hullCode": "CA", "cost": 8,  "isd": "N/A", "dv": 10, "as": 10, "af": 6,  "cr": 9,  "cc": 4, "traits": [{ "name": "Bombardment" }, { "name": "Regenerating" }] },
+    { "id": "harbinger-overlord",  "name": "Overlord",  "category": "Ships", "hullCode": "CL", "cost": 6,  "isd": "N/A", "dv": 8,  "as": 7,  "af": 5,  "cr": 7,  "cc": 3, "traits": [{ "name": "Bombardment" }, { "name": "Regenerating" }] },
+    { "id": "harbinger-potentate", "name": "Potentate", "category": "Ships", "hullCode": "DD", "cost": 5,  "isd": "N/A", "dv": 6,  "as": 6,  "af": 4,  "cr": 6,  "cc": 2, "traits": [{ "name": "Bombardment" }, { "name": "Regenerating" }] },
+    { "id": "harbinger-dynast",    "name": "Dynast",    "category": "Ships", "hullCode": "FF", "cost": 4,  "isd": "N/A", "dv": 5,  "as": 4,  "af": 4,  "cr": 5,  "cc": 2, "traits": [{ "name": "Bombardment" }, { "name": "Regenerating" }] },
+    { "id": "harbinger-herald",    "name": "Herald",    "category": "Ships", "hullCode": "CT", "cost": 3,  "isd": "N/A", "dv": 4,  "as": 3,  "af": 3,  "cr": 4,  "cc": 1, "traits": [{ "name": "Bombardment" }, { "name": "Regenerating" }] }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "id": "independent",
+  "name": "Independent System Force List",
+  "units": [
+    { "id": "independent-war-cruiser",     "name": "War Cruiser",     "category": "Ships",   "hullCode": "CW",  "cost": 7,  "isd": "N/A", "dv": 5, "as": 5, "af": 3, "cr": 6, "cc": 3, "traits": [] },
+    { "id": "independent-light-cruiser",   "name": "Light Cruiser",   "category": "Ships",   "hullCode": "CL",  "cost": 6,  "isd": "N/A", "dv": 4, "as": 4, "af": 3, "cr": 5, "cc": 3, "traits": [] },
+    { "id": "independent-destroyer",       "name": "Destroyer",       "category": "Ships",   "hullCode": "DD",  "cost": 5,  "isd": "N/A", "dv": 3, "as": 3, "af": 3, "cr": 4, "cc": 2, "traits": [] },
+    { "id": "independent-frigate",         "name": "Frigate",         "category": "Ships",   "hullCode": "FF",  "cost": 4,  "isd": "N/A", "dv": 2, "as": 2, "af": 2, "cr": 3, "cc": 2, "traits": [{ "name": "Atmospheric" }] },
+    { "id": "independent-corvette",        "name": "Corvette",        "category": "Ships",   "hullCode": "CT",  "cost": 3,  "isd": "N/A", "dv": 2, "as": 1, "af": 1, "cr": 2, "cc": 1, "traits": [{ "name": "Atmospheric" }] },
+    { "id": "independent-attack-boat",     "name": "Attack Boat",     "category": "Ships",   "hullCode": "AB",  "cost": 2,  "isd": "N/A", "dv": 1, "as": 1, "af": 1, "cr": 2, "cc": 1, "traits": [{ "name": "Atmospheric" }] },
+    { "id": "independent-war-carrier",     "name": "War Carrier",     "category": "Ships",   "hullCode": "CW",  "cost": 8,  "isd": "N/A", "dv": 5, "as": 0, "af": 2, "cr": 6, "cc": 3, "traits": [{ "name": "Carrier", "factor": 3 }] },
+    { "id": "independent-light-carrier",   "name": "Light Carrier",   "category": "Ships",   "hullCode": "CL",  "cost": 7,  "isd": "N/A", "dv": 4, "as": 1, "af": 2, "cr": 5, "cc": 3, "traits": [{ "name": "Carrier", "factor": 2 }] },
+    { "id": "independent-escort-carrier",  "name": "Escort Carrier",  "category": "Ships",   "hullCode": "DD",  "cost": 6,  "isd": "N/A", "dv": 3, "as": 1, "af": 2, "cr": 4, "cc": 2, "traits": [{ "name": "Atmospheric" }, { "name": "Carrier", "factor": 1 }] },
+    { "id": "independent-free-trader",     "name": "Free Trader",     "category": "Ships",   "hullCode": "CT",  "cost": 3,  "isd": "N/A", "dv": 2, "as": 0, "af": 0, "cr": 2, "cc": 1, "traits": [{ "name": "Atmospheric" }, { "name": "Supply", "factor": 1 }] },
+    { "id": "independent-interceptor",     "name": "Interceptor",     "category": "Fighters","hullCode": "LF",  "cost": 2,  "isd": "N/A", "dv": 2, "as": 0, "af": 2, "cr": 2, "cc": 1, "traits": [{ "name": "Atmospheric" }] },
+    { "id": "independent-bomber",          "name": "Bomber",          "category": "Fighters","hullCode": "LF",  "cost": 2,  "isd": "N/A", "dv": 2, "as": 2, "af": 0, "cr": 2, "cc": 1, "traits": [{ "name": "Atmospheric" }] },
+    { "id": "independent-shuttle",         "name": "Shuttle",         "category": "Fighters","hullCode": "LF",  "cost": 2,  "isd": "N/A", "dv": 2, "as": 0, "af": 0, "cr": 2, "cc": 1, "traits": [{ "name": "Atmospheric" }, { "name": "Supply", "factor": 1 }] },
+    { "id": "independent-gun-platform",    "name": "Gun Platform",    "category": "Bases",   "hullCode": "OWP", "cost": 4,  "isd": "N/A", "dv": 3, "as": 3, "af": 3, "cr": 2, "cc": 1, "traits": [] },
+    { "id": "independent-small-base",      "name": "Small Base",      "category": "Bases",   "hullCode": "BS1", "cost": 8,  "isd": "N/A", "dv": 7, "as": 4, "af": 3, "cr": 5, "cc": 3, "traits": [{ "name": "Carrier", "factor": 2 }] },
+    { "id": "independent-large-base",      "name": "Large Base",      "category": "Bases",   "hullCode": "BS2", "cost": 12, "isd": "N/A", "dv": 9, "as": 7, "af": 5, "cr": 7, "cc": 4, "traits": [{ "name": "Carrier", "factor": 3 }] },
+    { "id": "independent-early-militia",   "name": "Early Militia",   "category": "Troops",  "hullCode": "N/A", "cost": 1,  "isd": "N/A", "dv": 3, "as": 3, "af": "-", "cr": "-", "cc": "-", "traits": [{ "name": "Garrison" }] },
+    { "id": "independent-early-marines",   "name": "Early Marines",   "category": "Troops",  "hullCode": "N/A", "cost": 2,  "isd": "N/A", "dv": 3, "as": 3, "af": "-", "cr": "-", "cc": "-", "traits": [{ "name": "Marines" }] },
+    { "id": "independent-early-armor",     "name": "Early Armor",     "category": "Troops",  "hullCode": "N/A", "cost": 2,  "isd": "N/A", "dv": 7, "as": 3, "af": "-", "cr": "-", "cc": "-", "traits": [] },
+    { "id": "independent-early-infantry",  "name": "Early Infantry",  "category": "Troops",  "hullCode": "N/A", "cost": 2,  "isd": "N/A", "dv": 3, "as": 7, "af": "-", "cr": "-", "cc": "-", "traits": [] }
+  ]
+}

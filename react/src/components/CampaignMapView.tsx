@@ -16,6 +16,7 @@ import type { FleetOwnerIndicator, FleetSummaryInfo } from './MapViewport';
 import { PropertyPanel } from './PropertyPanel';
 import { EditFleetView } from './EditFleetView';
 import { FleetManagerView, CM_TAB_ID } from './FleetManagerView';
+import { TransferUnitView } from './TransferUnitView';
 import { TradeRouteManagerView } from './TradeRouteManagerView';
 import { AddUnitsView } from './AddUnitsView';
 import { CombatScenarioView } from './CombatScenarioView';
@@ -28,7 +29,7 @@ import { useMapCapture } from '../hooks/useMapCapture';
 import { CaptureButton } from './CaptureButton';
 import { ClipModePanel } from './ClipModePanel';
 import { generateRandomTeamColor } from '../utils/colorUtils';
-import { computeFleetBadges, computeMovementPoints, findFleetPaths, canJoinSystemFleet, getCarryCapacity } from '../utils/fleetUtils';
+import { computeFleetBadges, computeMovementPoints, findFleetPaths, canJoinSystemFleet, getCarryCapacity, resolveUnitTemplate } from '../utils/fleetUtils';
 import { isEffectivelyBlockaded, isBlockadedAgainst, diplomacyKey as supplyDiplomacyKey } from '../utils/supplyUtils';
 import { saveCampaignToStorage, exportCampaignToFile } from '../utils/fileUtils';
 import { computeTAC, getUpgradePoints, getTotalAP, nextTechLevel, nextTLIterator, TECH_LEVEL_TABLE, STANDARD_TRAITS, FACTOR_TRAITS, TROOP_TRAITS, DEFAULT_UNITS } from '../data/unitData';
@@ -64,15 +65,27 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
   const [phase, setPhase] = useState<CampaignPhase>('homeworld_selection');
   const [players, setPlayers] = useState<CampaignPlayer[]>([]);
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
+  const [tradeRoutePickChain, setTradeRoutePickChain] = useState<string[]>([]);
 
   const { tradeRouteLaneIds, tradeRouteSystemIds } = useMemo(() => {
-    if (!mapSettings.showTradeRoutes) return { tradeRouteLaneIds: undefined, tradeRouteSystemIds: undefined };
-    const laneIds = new Set<string>();
-    const systemIds = new Set<string>();
     const lanes = mapState.map.jumpLanes;
+    const pickSet = new Set(tradeRoutePickChain);
+
+    // Compute lane IDs for consecutive pairs in the pick chain
+    const pickLaneIds = new Set<string>();
+    for (let i = 0; i + 1 < tradeRoutePickChain.length; i++) {
+      const a = tradeRoutePickChain[i], b = tradeRoutePickChain[i + 1];
+      const lane = lanes.find(l => (l.from === a && l.to === b) || (l.from === b && l.to === a));
+      if (lane) pickLaneIds.add(lane.id);
+    }
+
+    if (!mapSettings.showTradeRoutes && pickSet.size === 0) return { tradeRouteLaneIds: undefined, tradeRouteSystemIds: undefined };
+    if (!mapSettings.showTradeRoutes) return { tradeRouteLaneIds: pickLaneIds, tradeRouteSystemIds: pickSet };
+
+    const laneIds = new Set<string>(pickLaneIds);
+    const systemIds = new Set<string>(pickSet);
     for (const player of players) {
       for (const route of player.tradeRoutes ?? []) {
-        // Mark all systems on this route
         for (const sid of route.systemIds) systemIds.add(sid);
         // Check ALL pairs (not just consecutive) to handle hub-spoke layouts
         for (let i = 0; i < route.systemIds.length; i++) {
@@ -87,7 +100,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
       }
     }
     return { tradeRouteLaneIds: laneIds, tradeRouteSystemIds: systemIds };
-  }, [mapSettings.showTradeRoutes, players, mapState.map.jumpLanes]);
+  }, [mapSettings.showTradeRoutes, players, mapState.map.jumpLanes, tradeRoutePickChain]);
 
   // Campaign play mode state
   const [currentTurnPhase, setCurrentTurnPhase] = useState<TurnPhase>('economic');
@@ -187,7 +200,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
         let highestCR: number | null = null;
 
         for (const unit of fleetUnits) {
-          const tmpl = player.empire.units.find(t => t.id === unit.unitTemplateId);
+          const tmpl = resolveUnitTemplate(player, unit.unitTemplateId, players);
           if (tmpl) {
             addCategory(unitsByCategory, tmpl.category);
             totalEP += tmpl.cost;
@@ -197,7 +210,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
           }
         }
 
-        const badges = computeFleetBadges(fleet, fleetUnits, player);
+        const badges = computeFleetBadges(fleet, fleetUnits, player, players);
         const fleetSummary: FleetSummaryInfo = {
           id: fleet.id,
           name: fleet.name,
@@ -240,7 +253,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
       const UNTASKED_FLEET_IDS = new Set(['On-Planet', 'Untasked Ships', 'Untasked Civilians']);
       for (const unit of player.units) {
         if (!unit.systemId || !unit.fleetId || !UNTASKED_FLEET_IDS.has(unit.fleetId)) continue;
-        const tmpl = player.empire.units.find(t => t.id === unit.unitTemplateId);
+        const tmpl = resolveUnitTemplate(player, unit.unitTemplateId, players);
         if (!tmpl) continue;
         const suffix = unit.fleetId === 'On-Planet' ? 'On-Planet' : 'Untasked';
         const catKey = `${tmpl.category} (${suffix})`;
@@ -406,7 +419,15 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
       const initialPlayers: CampaignPlayer[] = settings.players.map((p) => ({
         id: Math.random().toString(36).substring(2, 11),
         name: p.name,
-        empire: p.empire,
+        empire: {
+          ...p.empire,
+          units: p.empire.units.map(u => ({
+            ...u,
+            researched:
+              u.isd === 'N/A' ||
+              (!isNaN(parseInt(u.isd)) && parseInt(u.isd) <= settings.startingYear),
+          })),
+        },
         teamColor: undefined,
         homeworldId: undefined,
         ownedSystemIds: [],
@@ -753,7 +774,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
       const systemId = player.ownedSystemIds[0];
       const units = player.units.map(u => {
         if (u.systemId) return u;
-        const template = player.empire.units.find(t => t.id === u.unitTemplateId);
+        const template = resolveUnitTemplate(player, u.unitTemplateId, prev);
         if (!template) return u;
         return { ...u, systemId, fleetId: getFleetForUnit(template.category, template.name) };
       });
@@ -770,12 +791,34 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
   }, []);
 
   // Set or overwrite a trade route for a Convoy
-  const handleSetTradeRoute = useCallback((convoyUnitId: string, systemIds: string[]) => {
-    setPlayers(prev => prev.map((player, i) => {
-      if (i !== currentPlayerIndex) return player;
+  const handleSetTradeRoute = useCallback((playerId: string, convoyUnitId: string, systemIds: string[]) => {
+    setPlayers(prev => prev.map(player => {
+      if (player.id !== playerId) return player;
+
+      // Remember the convoy's old fleet before clearing it
+      const convoy = player.units.find(u => u.id === convoyUnitId);
+      const oldFleetId = convoy?.fleetId;
+
+      // Remove convoy from its fleet / system (it now belongs to the trade route)
+      const updatedUnits = player.units.map(u =>
+        u.id === convoyUnitId ? { ...u, fleetId: undefined, systemId: undefined } : u
+      );
+
+      // Delete the old named fleet if it's now empty (system fleets are implicit — skip them)
+      const isSystemFleet = !oldFleetId || (SYSTEM_FLEET_NAMES as readonly string[]).includes(oldFleetId);
+      let updatedFleets = player.fleets ?? [];
+      if (!isSystemFleet) {
+        const remainingInFleet = updatedUnits.filter(u => u.fleetId === oldFleetId);
+        if (remainingInFleet.length === 0) {
+          updatedFleets = updatedFleets.filter(f => f.id !== oldFleetId);
+        }
+      }
+
       const existing = (player.tradeRoutes ?? []).filter(r => r.convoyUnitId !== convoyUnitId);
       return {
         ...player,
+        units: updatedUnits,
+        fleets: updatedFleets,
         tradeRoutes: [...existing, {
           id: Math.random().toString(36).substring(2, 11),
           convoyUnitId,
@@ -783,32 +826,48 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
         }],
       };
     }));
-  }, [currentPlayerIndex]);
+  }, []);
 
   // Clear a trade route for a Convoy
-  const handleClearTradeRoute = useCallback((convoyUnitId: string) => {
-    setPlayers(prev => prev.map((player, i) => {
-      if (i !== currentPlayerIndex) return player;
+  const handleClearTradeRoute = useCallback((playerId: string, convoyUnitId: string) => {
+    setPlayers(prev => prev.map(player => {
+      if (player.id !== playerId) return player;
       return {
         ...player,
         tradeRoutes: (player.tradeRoutes ?? []).filter(r => r.convoyUnitId !== convoyUnitId),
       };
     }));
-  }, [currentPlayerIndex]);
+  }, []);
 
   // Recall a Convoy from a trade route to a specific system (dissolves the route)
-  const handleRecallConvoy = useCallback((convoyUnitId: string, toSystemId: string) => {
-    setPlayers(prev => prev.map((player, i) => {
-      if (i !== currentPlayerIndex) return player;
+  const handleRecallConvoy = useCallback((playerId: string, convoyUnitId: string, toSystemId: string) => {
+    setPlayers(prev => prev.map(player => {
+      if (player.id !== playerId) return player;
+
+      const convoy = player.units.find(u => u.id === convoyUnitId);
+      const oldFleetId = convoy?.fleetId;
+
+      const updatedUnits = player.units.map(u =>
+        u.id === convoyUnitId ? { ...u, fleetId: undefined, systemId: toSystemId } : u
+      );
+
+      const isSystemFleet = !oldFleetId || (SYSTEM_FLEET_NAMES as readonly string[]).includes(oldFleetId);
+      let updatedFleets = player.fleets ?? [];
+      if (!isSystemFleet) {
+        const remainingInFleet = updatedUnits.filter(u => u.fleetId === oldFleetId);
+        if (remainingInFleet.length === 0) {
+          updatedFleets = updatedFleets.filter(f => f.id !== oldFleetId);
+        }
+      }
+
       return {
         ...player,
+        units: updatedUnits,
+        fleets: updatedFleets,
         tradeRoutes: (player.tradeRoutes ?? []).filter(r => r.convoyUnitId !== convoyUnitId),
-        units: player.units.map(u =>
-          u.id === convoyUnitId ? { ...u, fleetId: undefined, systemId: toSystemId } : u
-        ),
       };
     }));
-  }, [currentPlayerIndex]);
+  }, []);
 
   // Finish trade routes: transition to in_progress, capture initialIntel for all players
   const handleFinishTradeRoutes = useCallback(() => {
@@ -989,7 +1048,11 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
     setPlayers(prev => prev.map(p => {
       if (p.id !== playerId) return p;
       const newUnits: CampaignUnit[] = units.map(u => {
-        const template = p.empire.units.find(t => t.id === u.templateId);
+        // Look up template: own empire first, then stolen designs, then any other player's empire (allied units)
+        const template: EmpireUnit | undefined =
+          p.empire.units.find(t => t.id === u.templateId)
+          ?? p.stolenUnits?.find(s => s.unit.id === u.templateId)?.unit
+          ?? prev.flatMap(op => op.id !== p.id ? op.empire.units : []).find(t => t.id === u.templateId);
         const fleetId = template ? getFleetForUnit(template.category, template.name) : undefined;
         return {
           id: crypto.randomUUID(),
@@ -1163,7 +1226,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
       if (p.id !== playerId) return p;
       const unit = p.units.find(u => u.id === unitId);
       if (!unit) return p;
-      const template = p.empire.units.find(t => t.id === unit.unitTemplateId);
+      const template = resolveUnitTemplate(p, unit.unitTemplateId, prev);
       if (!template) return p;
       // Check system fleet category rules
       if ((SYSTEM_FLEET_NAMES as readonly string[]).includes(newFleetId)) {
@@ -1183,7 +1246,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
     // Beachhead check: dropping Troops to On-Planet of a system the player doesn't own and isn't allied to
     if (toFleetKey === 'On-Planet') {
       const player = players.find(p => p.id === playerId);
-      const template = player?.empire.units.find(t => t.id === templateId);
+      const template = player ? resolveUnitTemplate(player, templateId, players) : undefined;
       if (template?.category === 'Troops') {
         const ownerPlayerId = systemOwnership[systemId];
         const isOwner = ownerPlayerId === playerId;
@@ -1214,7 +1277,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
       if (!isNamedTarget) {
         const sampleUnit = p.units.find(u => u.unitTemplateId === templateId && (u.fleetId ?? 'Unassigned') === fromFleetKey && u.systemId === systemId);
         if (sampleUnit) {
-          const template = p.empire.units.find(t => t.id === templateId);
+          const template = resolveUnitTemplate(p, templateId, prev);
           if (template && !canJoinSystemFleet(toFleetKey, template.category, template.name)) return p;
         }
       }
@@ -1262,7 +1325,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
           const totalAS = p.units
             .filter(u => u.fleetId && fleetIds.has(u.fleetId))
             .reduce((sum, u) => {
-              const tmpl = p.empire.units.find(t => t.id === u.unitTemplateId);
+              const tmpl = resolveUnitTemplate(p, u.unitTemplateId, players);
               return sum + (typeof tmpl?.as === 'number' ? tmpl.as : 0);
             }, 0);
           if (totalAS > bestAS) { bestAS = totalAS; bestPlayerId = p.id; }
@@ -1402,7 +1465,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
         setTurnOrders(prev => {
           const next = { ...prev };
           for (const pid of playerIds) {
-            const existing = next[pid] ?? { fleetDeployment: '', intel: '', movement: '', diplomatic: '', construction: '', investment: '' };
+            const existing = next[pid] ?? EMPTY_ORDER_ENTRY;
             const sep = existing.movement ? '\n' : '';
             next[pid] = { ...existing, movement: existing.movement + sep + `[Retreat] ${note}` };
           }
@@ -1432,7 +1495,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
     const mothballedCount = fleetUnits.filter(u => u.mothballed).length;
     if (mothballedCount > 0) warnings.push(`${mothballedCount} mothballed unit(s) in this fleet — mothballed units cannot move.`);
     const garrisonCount = fleetUnits.filter(u => {
-      const t = player.empire.units.find(et => et.id === u.unitTemplateId);
+      const t = resolveUnitTemplate(player, u.unitTemplateId, players);
       return t?.traits.some(tr => tr.name === 'Garrison');
     }).length;
     if (garrisonCount > 0) warnings.push(`${garrisonCount} Garrison troop(s) present — they should not normally move.`);
@@ -1441,20 +1504,20 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
     const fleetUnitIds = new Set(fleetUnits.map(u => u.id));
     const unattachedDeps = fleetUnits.filter(u => {
       if (u.carriedById && fleetUnitIds.has(u.carriedById)) return false;
-      const t = player.empire.units.find(et => et.id === u.unitTemplateId);
+      const t = resolveUnitTemplate(player, u.unitTemplateId, players);
       return t && (t.category === 'Fighters' || t.hullCode === 'AB' || t.category === 'Troops' || t.hullCode === 'OWP');
     }).length;
     if (unattachedDeps > 0) warnings.push(`${unattachedDeps} unit(s) (Fighters/Attack Boats/Troops/OWPs) are unattached — they cannot move without being attached to a carrier.`);
 
     // Attachment rule violations: wrong category or over capacity
     for (const carrier of fleetUnits) {
-      const carrierTmpl = player.empire.units.find(t => t.id === carrier.unitTemplateId);
+      const carrierTmpl = resolveUnitTemplate(player, carrier.unitTemplateId, players);
       if (!carrierTmpl) continue;
       const carried = fleetUnits.filter(cu => cu.carriedById === carrier.id);
       if (carried.length === 0) continue;
       const carriedWithTemplates = carried
         .map(cu => {
-          const t = player.empire.units.find(et => et.id === cu.unitTemplateId);
+          const t = resolveUnitTemplate(player, cu.unitTemplateId, players);
           return t ? { unit: cu, template: t } : null;
         })
         .filter((x): x is { unit: CampaignUnit; template: EmpireUnit } => x !== null);
@@ -1504,17 +1567,17 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
     if (dstSystemId === fleet.systemId) { setFleetMoveMode(null); return; }
 
     const fleetUnits = player.units.filter(u => u.fleetId === fleetId);
-    const movementPoints = computeMovementPoints(fleet, fleetUnits, player);
-    const badges = computeFleetBadges(fleet, fleetUnits, player);
+    const movementPoints = computeMovementPoints(fleet, fleetUnits, player, players);
+    const badges = computeFleetBadges(fleet, fleetUnits, player, players);
 
     // Check if fleet contains only immovable Bases (hard block).
     // OWPs (hullCode 'OWP') are transportable and do not count as immovable Bases.
     const hasNonBase = fleetUnits.some(u => {
-      const t = player.empire.units.find(et => et.id === u.unitTemplateId);
+      const t = resolveUnitTemplate(player, u.unitTemplateId, players);
       return t && t.category !== 'Bases';
     });
     const hasImmovableBase = fleetUnits.some(u => {
-      const t = player.empire.units.find(et => et.id === u.unitTemplateId);
+      const t = resolveUnitTemplate(player, u.unitTemplateId, players);
       return t?.category === 'Bases' && t.hullCode !== 'OWP';
     });
     const hasBase = hasImmovableBase; // used by confirmAndMoveFleet for the "Bases cannot move" warning
@@ -1555,7 +1618,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
     if (!fleet) { setPathSelectModal(null); return; }
     const fleetUnits = player.units.filter(u => u.fleetId === fleetId);
     const hasBase = fleetUnits.some(u => {
-      const t = player.empire.units.find(et => et.id === u.unitTemplateId);
+      const t = resolveUnitTemplate(player, u.unitTemplateId, players);
       return t?.category === 'Bases' && t.hullCode !== 'OWP'; // OWPs are transportable
     });
     setPathSelectModal(null);
@@ -1582,7 +1645,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
   // Advance Economic Phase: save snapshot, apply income for ALL players, clear Industrial Sabotage, move to Turn Orders
   const handleAdvanceEconomicPhase = useCallback(() => {
     setPlayers(prev => prev.map(player => {
-      const result = calcEconomicIncome(player, mapState.map, systemStatuses);
+      const result = calcEconomicIncome(player, mapState.map, systemStatuses, prev);
       return { ...player, ep: player.ep + result.net, currentMiscEP: 0, currentTurnSystemIncome: result.systemTotal };
     }));
     // Auto-remove Industrial Sabotage from all systems after economic income is resolved
@@ -1615,7 +1678,10 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
       return {
         ...p,
         techPool: Math.max(0, (p.techPool ?? 0) - tac),
-        unlockedUnitIds: [...(p.unlockedUnitIds ?? []), unitId],
+        empire: {
+          ...p.empire,
+          units: p.empire.units.map(u => u.id !== unitId ? u : { ...u, researched: true }),
+        },
       };
     }));
   }, []);
@@ -1641,6 +1707,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
         techLevel: nextTL,
         parentUnitId: oldUnit.id,
         isSuperseded: false,
+        researched: true,
         dv: oldUnit.dv + dvDelta,
         as: typeof oldUnit.as === 'number' ? oldUnit.as + asDelta : oldUnit.as,
         af: typeof oldUnit.af === 'number' ? oldUnit.af + afDelta : oldUnit.af,
@@ -1662,10 +1729,54 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
     }));
   }, []);
 
+  // Tech Phase: upgrade a stolen unit design (deducts TAC; replaces the stolenUnits entry with the upgraded version)
+  const handleTechUpgradeStolenUnit = useCallback((playerId: string, sourceEmpireId: string, unitId: string, dvDelta: number, asDelta: number, afDelta: number, traitFactorDeltas: Record<string, number>) => {
+    setPlayers(prev => prev.map(p => {
+      if (p.id !== playerId) return p;
+      const tac = computeTAC(p.currentTurnSystemIncome ?? 0, p.empire.advantages as string[], p.empire.disadvantage);
+      const stolenEntry = (p.stolenUnits ?? []).find(s => s.sourceEmpireId === sourceEmpireId && s.unit.id === unitId);
+      if (!stolenEntry) return p;
+      const oldUnit = stolenEntry.unit;
+      const currentTL = typeof oldUnit.techLevel === 'number' ? oldUnit.techLevel : 1;
+      const nextTL = nextTechLevel(currentTL as TechLevelType);
+      if (nextTL === null) return p;
+      const iteratorMatch = oldUnit.name.match(/^(.*?)(-[IVX]+)$/);
+      const baseName = iteratorMatch ? iteratorMatch[1] : oldUnit.name;
+      const newUnitName = `${baseName}${nextTLIterator(currentTL as TechLevelType)}`;
+      const upgradedUnit: EmpireUnit = {
+        ...oldUnit,
+        id: crypto.randomUUID(),
+        name: newUnitName,
+        techLevel: nextTL,
+        parentUnitId: oldUnit.id,
+        isSuperseded: false,
+        researched: true,
+        dv: oldUnit.dv + dvDelta,
+        as: typeof oldUnit.as === 'number' ? oldUnit.as + asDelta : oldUnit.as,
+        af: typeof oldUnit.af === 'number' ? oldUnit.af + afDelta : oldUnit.af,
+        traits: oldUnit.traits.map(tr =>
+          tr.factor !== undefined && traitFactorDeltas[tr.name]
+            ? { ...tr, factor: tr.factor + traitFactorDeltas[tr.name] }
+            : tr
+        ),
+      };
+      const updatedStolen = (p.stolenUnits ?? [])
+        .filter(s => !(s.sourceEmpireId === sourceEmpireId && s.unit.id === unitId))
+        .concat({ sourceEmpireId, unit: upgradedUnit });
+      return { ...p, techPool: Math.max(0, (p.techPool ?? 0) - tac), stolenUnits: updatedStolen };
+    }));
+  }, []);
+
   // Force Tech Advancement: same as above but does NOT deduct TAC from techPool
   const handleForceTechUnlockUnit = useCallback((playerId: string, unitId: string) => {
     setPlayers(prev => prev.map(p =>
-      p.id !== playerId ? p : { ...p, unlockedUnitIds: [...(p.unlockedUnitIds ?? []), unitId] }
+      p.id !== playerId ? p : {
+        ...p,
+        empire: {
+          ...p.empire,
+          units: p.empire.units.map(u => u.id !== unitId ? u : { ...u, researched: true }),
+        },
+      }
     ));
   }, []);
 
@@ -1688,6 +1799,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
         techLevel: nextTL,
         parentUnitId: oldUnit.id,
         isSuperseded: false,
+        researched: true,
         dv: oldUnit.dv + dvDelta,
         as: typeof oldUnit.as === 'number' ? oldUnit.as + asDelta : oldUnit.as,
         af: typeof oldUnit.af === 'number' ? oldUnit.af + afDelta : oldUnit.af,
@@ -1788,33 +1900,36 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
   }, []);
 
   // Transfer a unit from one empire to another (voluntary, no EP cost)
-  const handleTransferUnit = useCallback((unitId: string, fromPlayerId: string, toPlayerId: string) => {
+  const handleTransferUnit = useCallback((unitIds: string[], fromPlayerId: string, toPlayerId: string) => {
     setPlayers(prev => {
       const fromPlayer = prev.find(p => p.id === fromPlayerId);
       if (!fromPlayer) return prev;
-      const unit = fromPlayer.units.find(u => u.id === unitId);
-      if (!unit) return prev;
 
-      // Resolve destination systemId: use unit.systemId or look up fleet.systemId
-      let destSystemId: string | undefined = unit.systemId;
-      if (!destSystemId && unit.fleetId) {
-        const fleet = (fromPlayer.fleets ?? []).find(f => f.id === unit.fleetId);
-        destSystemId = fleet?.systemId;
-      }
+      const unitsToTransfer = fromPlayer.units.filter(u => unitIds.includes(u.id));
+      if (unitsToTransfer.length === 0) return prev;
 
-      const transferredUnit = {
-        ...unit,
-        id: Math.random().toString(36).substring(2, 11), // new ID to avoid collisions
-        fleetId: undefined,
-        systemId: destSystemId,
-      };
+      const transferredUnits = unitsToTransfer.map(unit => {
+        // Resolve destination systemId: use unit.systemId or look up fleet.systemId
+        let destSystemId: string | undefined = unit.systemId;
+        if (!destSystemId && unit.fleetId) {
+          const fleet = (fromPlayer.fleets ?? []).find(f => f.id === unit.fleetId);
+          destSystemId = fleet?.systemId;
+        }
+        return {
+          ...unit,
+          id: Math.random().toString(36).substring(2, 11), // new ID to avoid collisions
+          fleetId: undefined,
+          systemId: destSystemId,
+        };
+      });
 
+      const transferredSourceIds = new Set(unitsToTransfer.map(u => u.id));
       return prev.map(p => {
         if (p.id === fromPlayerId) {
-          return { ...p, units: p.units.filter(u => u.id !== unitId) };
+          return { ...p, units: p.units.filter(u => !transferredSourceIds.has(u.id)) };
         }
         if (p.id === toPlayerId) {
-          return { ...p, units: [...p.units, transferredUnit] };
+          return { ...p, units: [...p.units, ...transferredUnits] };
         }
         return p;
       });
@@ -1987,7 +2102,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
 
           for (const unit of fleetUnits) {
             const tmpl =
-              player.empire.units.find(t => t.id === unit.unitTemplateId) ??
+              resolveUnitTemplate(player, unit.unitTemplateId, players) ??
               DEFAULT_UNITS.find(t => t.id === unit.unitTemplateId);
             if (tmpl) {
               unitsByCategory[tmpl.category] = (unitsByCategory[tmpl.category] ?? 0) + 1;
@@ -2165,7 +2280,43 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
         pendingMiscEntries: [],
         fleets: (p.fleets ?? []).map(f => ({ ...f, movedThisTurn: false })),
       })));
-      setTurnOrders({});
+      // Carry forward pending order lines (neither checked nor X'd); CM notes always carry entirely
+      const filterOrderLines = (
+        text: string,
+        checksArr: Array<{ checked: boolean; xed: boolean }>,
+      ) =>
+        text.split('\n')
+          .filter(l => l.trim() !== '')
+          .filter((_, i) => { const c = checksArr[i]; return !c?.checked && !c?.xed; })
+          .join('\n');
+
+      setTurnOrders(prev => {
+        const next: Record<string, TurnOrderEntry> = {};
+        for (const [key, entry] of Object.entries(prev)) {
+          if (key === 'cm') {
+            next[key] = { ...entry, epSpent: 0 };
+          } else {
+            const carried: TurnOrderEntry = {
+              fleetDeployment: entry.fleetDeployment,
+              intel:        filterOrderLines(entry.intel,        intelChecks[key]        ?? []),
+              movement:     filterOrderLines(entry.movement,     movementChecks[key]     ?? []),
+              diplomatic:   filterOrderLines(entry.diplomatic,   diplomacyChecks[key]    ?? []),
+              construction: filterOrderLines(entry.construction, constructionChecks[key] ?? []),
+              investment:   filterOrderLines(entry.investment,   investmentChecks[key]   ?? []),
+              epSpent: 0,
+            };
+            const hasContent = (['fleetDeployment', 'intel', 'movement', 'diplomatic', 'construction', 'investment'] as const)
+              .some(k => carried[k] !== '');
+            if (hasContent) next[key] = carried;
+          }
+        }
+        return next;
+      });
+      setIntelChecks({});
+      setMovementChecks({});
+      setConstructionChecks({});
+      setInvestmentChecks({});
+      setDiplomacyChecks({});
       setCurrentTurnPhase('economic');
     } else {
       if (currentTurnPhase === 'diplomacy') {
@@ -2185,7 +2336,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
       if (next) setCurrentTurnPhase(next);
     }
     setTurnPhaseMapView(false);
-  }, [currentTurnPhase, players, turnOrders, mapState.map, currentTurn, confirm, diplomacyCooldownsRaisedThisTurn, checkTradeRouteWarnings]);
+  }, [currentTurnPhase, players, turnOrders, mapState.map, currentTurn, confirm, diplomacyCooldownsRaisedThisTurn, checkTradeRouteWarnings, intelChecks, movementChecks, constructionChecks, investmentChecks, diplomacyChecks]);
 
   const handleAcknowledgeTradeRouteWarnings = useCallback(() => {
     setShowTradeRouteWarningModal(false);
@@ -2257,14 +2408,13 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
     setPlayers(prev => {
       const next = [...prev];
       const player = next[currentPlayerIndex];
-      const empire = player.empire;
 
       // Get all template IDs in this category in their current order (by first appearance)
       const seen = new Set<string>();
       const categoryTemplateOrder: string[] = [];
       for (const u of player.units) {
         if (!seen.has(u.unitTemplateId)) {
-          const t = empire.units.find(eu => eu.id === u.unitTemplateId);
+          const t = resolveUnitTemplate(player, u.unitTemplateId, prev);
           if (t?.category === category) {
             categoryTemplateOrder.push(u.unitTemplateId);
           }
@@ -2282,7 +2432,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
       // Rebuild the units array: non-category units stay in place,
       // category units are reordered by the new template order
       const categoryUnits = player.units.filter(u => {
-        const t = empire.units.find(eu => eu.id === u.unitTemplateId);
+        const t = resolveUnitTemplate(player, u.unitTemplateId, prev);
         return t?.category === category;
       });
       // Sort category units by new template order
@@ -2296,7 +2446,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
       const newUnits = [...player.units];
       let catIdx = 0;
       for (let i = 0; i < newUnits.length; i++) {
-        const t = empire.units.find(eu => eu.id === newUnits[i].unitTemplateId);
+        const t = resolveUnitTemplate(player, newUnits[i].unitTemplateId, prev);
         if (t?.category === category) {
           newUnits[i] = sortedCategoryUnits[catIdx++];
         }
@@ -2312,7 +2462,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
     setPlayers(prev => {
       const next = [...prev];
       const player = next[currentPlayerIndex];
-      const template = player.empire.units.find(u => u.id === unitTemplateId);
+      const template = resolveUnitTemplate(player, unitTemplateId, prev);
       if (!template) return prev;
       const fleetId = getFleetForUnit(template.category, template.name);
       let deployed = 0;
@@ -2371,6 +2521,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
           onOpenSystems={phase === 'in_progress' ? () => setShowSystemsOverview(true) : undefined}
           onExportSave={() => exportCampaignToFile(buildCampaignObject())}
           onOpenHistory={() => setShowHistoryBrowser(true)}
+          onOpenStealUnitTech={phase === 'in_progress' ? () => setShowStealUnitTechModal(true) : undefined}
         />
       )}
 
@@ -2445,6 +2596,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
           canRevert={canRevert}
           onUnlockUnit={handleTechUnlockUnit}
           onUpgradeUnit={handleTechUpgradeUnit}
+          onUpgradeStolenUnit={handleTechUpgradeStolenUnit}
         />
       ) : phase === 'in_progress' && !mapEditingMode && !turnPhaseMapView && currentTurnPhase !== 'intel' && currentTurnPhase !== 'movement' && currentTurnPhase !== 'construction' && currentTurnPhase !== 'diplomacy' && currentTurnPhase !== 'combat' && currentTurnPhase !== 'supply' && currentTurnPhase !== 'tech' && currentTurnPhase !== 'end_of_turn' ? (
         <TurnPhaseView
@@ -2843,18 +2995,21 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
       {(showTradeRouteManager || tradeRoutePickMode) && (
         <TradeRouteManagerView
           players={players}
-          currentPlayerIndex={currentPlayerIndex}
+          initialPlayerId={players[currentPlayerIndex]?.id}
           map={mapState.map}
           diplomacyRelations={diplomacyRelations}
           systemOwnership={systemOwnership}
+          systemStatuses={systemStatuses}
           inPickMode={tradeRoutePickMode}
           pickedSystemId={tradeRoutePickedSystemId}
-          onEnterPickMode={() => { setTradeRoutePickMode(true); setTradeRoutePickedSystemId(null); setShowTradeRouteManager(false); }}
+          onEnterPickMode={() => { setTradeRoutePickMode(true); setTradeRoutePickedSystemId(null); setShowTradeRouteManager(false); mapState.setSelectedSystemId(null); }}
           onExitPickMode={() => { setTradeRoutePickMode(false); setTradeRoutePickedSystemId(null); setShowTradeRouteManager(true); }}
           onSetTradeRoute={handleSetTradeRoute}
           onClearTradeRoute={handleClearTradeRoute}
           onRecallConvoy={handleRecallConvoy}
-          onClose={() => { setShowTradeRouteManager(false); setTradeRoutePickMode(false); }}
+          onPickChainChange={setTradeRoutePickChain}
+          onCenterSystem={(id) => { setShowTradeRouteManager(false); setTradeRoutePickMode(false); setTradeRoutePickChain([]); handleCenterAndSelectSystem(id); }}
+          onClose={() => { setShowTradeRouteManager(false); setTradeRoutePickMode(false); setTradeRoutePickChain([]); }}
         />
       )}
 
@@ -3035,9 +3190,9 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
 
       {/* Transfer Unit modal */}
       {showTransferUnitModal && (
-        <TransferUnitModal
+        <TransferUnitView
           players={players}
-          currentPlayerIndex={currentPlayerIndex}
+          map={mapState.map}
           onTransfer={handleTransferUnit}
           onClose={() => setShowTransferUnitModal(false)}
         />
@@ -3226,6 +3381,7 @@ interface CampaignToolbarProps {
   onOpenSystems?: () => void;
   onExportSave?: () => void;
   onOpenHistory?: () => void;
+  onOpenStealUnitTech?: () => void;
 }
 
 function CampaignToolbar({
@@ -3248,6 +3404,7 @@ function CampaignToolbar({
   onOpenSystems,
   onExportSave,
   onOpenHistory,
+  onOpenStealUnitTech,
 }: CampaignToolbarProps) {
   const [activeDropdown, setActiveDropdown] = useState<'economy' | 'intel' | 'fleets' | 'tech' | null>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
@@ -3457,7 +3614,7 @@ function CampaignToolbar({
                       Apply Espionage Mission
                     </button>
                     <button
-                      onClick={() => { setActiveDropdown(null); setShowStealUnitTechModal(true); }}
+                      onClick={() => { setActiveDropdown(null); onOpenStealUnitTech?.(); }}
                       className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
                     >
                       Steal Unit Tech
@@ -3573,7 +3730,7 @@ function computeDiplomaticContact(
     const targets = new Set(atPlayer.ownedSystemIds);
     return owner.units.some(u => {
       if (!u.systemId || !targets.has(u.systemId)) return false;
-      return owner.empire.units.find(t => t.id === u.unitTemplateId)?.traits.some(tr => tr.name === 'Diplomatic') ?? false;
+      return resolveUnitTemplate(owner, u.unitTemplateId, allPlayers)?.traits.some(tr => tr.name === 'Diplomatic') ?? false;
     });
   };
   if (hasDiplUnit(p1, p2) || hasDiplUnit(p2, p1)) return 'limited';
@@ -3704,9 +3861,12 @@ function TurnOrdersPhaseView({
             }`}
           >
             {p.teamColor && (
-              <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: p.teamColor }} />
+              <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: p.teamColor }} />
             )}
-            {p.name}
+            <span className="flex flex-col items-start leading-tight">
+              <span>{p.name}</span>
+              <span className="text-[11px] font-normal opacity-60">{p.empire.name}</span>
+            </span>
           </button>
         ))}
         <button
@@ -3732,7 +3892,7 @@ function TurnOrdersPhaseView({
               </label>
               <textarea
                 className="h-20 w-full resize-y rounded border border-gray-300 p-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-                value={entry[field.key]}
+                value={entry[field.key as keyof TurnOrderEntry] as string}
                 onChange={e => onUpdateOrders(activeKey, { ...entry, [field.key]: e.target.value })}
                 placeholder={isCM ? `${field.cmLabel}…` : `${field.playerLabel}…`}
               />
@@ -3885,6 +4045,7 @@ function IntelPhasePanel({
           <button
             key={p.id}
             onClick={() => setActiveTab(i)}
+            title={`${p.name} (${p.empire.name})`}
             className={`flex flex-shrink-0 items-center gap-1.5 px-3 py-2 text-xs ${
               activeTab === i
                 ? 'border-b-2 border-blue-600 font-medium text-blue-600 dark:text-blue-400'
@@ -4097,6 +4258,7 @@ function EndOfTurnPhasePanel({
           <button
             key={p.id}
             onClick={() => setActiveTab(i)}
+            title={`${p.name} (${p.empire.name})`}
             className={`flex flex-shrink-0 items-center gap-1.5 px-3 py-2 text-xs ${
               activeTab === i
                 ? 'border-b-2 border-blue-600 font-medium text-blue-600 dark:text-blue-400'
@@ -4331,6 +4493,7 @@ function MovementPhasePanel({
           <button
             key={p.id}
             onClick={() => setActiveTab(i)}
+            title={`${p.name} (${p.empire.name})`}
             className={`flex flex-shrink-0 items-center gap-1.5 px-3 py-2 text-xs ${
               activeTab === i
                 ? 'border-b-2 border-blue-600 font-medium text-blue-600 dark:text-blue-400'
@@ -4375,7 +4538,7 @@ function MovementPhasePanel({
                 const atRiskMap = new Map<string, Set<string>>();
                 for (const unit of player.units) {
                   if (!unit.systemId) continue;
-                  const t = player.empire.units.find(et => et.id === unit.unitTemplateId);
+                  const t = resolveUnitTemplate(player, unit.unitTemplateId, players);
                   if (t?.category === 'Civilian' && t?.name === 'Convoy') {
                     if (!atRiskMap.has(unit.systemId)) atRiskMap.set(unit.systemId, new Set());
                     atRiskMap.get(unit.systemId)!.add('Convoy');
@@ -4398,7 +4561,7 @@ function MovementPhasePanel({
                   for (const p of players) {
                     for (const u of p.units) {
                       if (u.systemId !== sid) continue;
-                      const t = p.empire.units.find(et => et.id === u.unitTemplateId);
+                      const t = resolveUnitTemplate(p, u.unitTemplateId, players);
                       if (t?.traits.some(tr => tr.name === 'Police')) policeTotal += t.cost;
                     }
                   }
@@ -4719,6 +4882,7 @@ function DiplomacyPhaseView({
                     ? 'border-b-2 border-blue-600 font-medium text-blue-600 dark:text-blue-400'
                     : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
                 }`}
+                title={`${p.name} (${p.empire.name})`}
               >
                 {p.teamColor && (
                   <span className="inline-block h-2 w-2 flex-shrink-0 rounded-full" style={{ backgroundColor: p.teamColor }} />
@@ -5079,6 +5243,7 @@ function ConstructionPhasePanel({ players, turnOrders, onUpdateOrders, construct
           <button
             key={p.id}
             onClick={() => setActiveTab(i)}
+            title={`${p.name} (${p.empire.name})`}
             className={`flex flex-shrink-0 items-center gap-1.5 px-3 py-2 text-xs ${
               activeTab === i
                 ? 'border-b-2 border-blue-600 font-medium text-blue-600 dark:text-blue-400'
@@ -5268,7 +5433,7 @@ function CombatPhasePanel({ players, diplomacyRelations, map, onSelectSystem, on
         let asTotal = 0;
         let dvTotal = 0;
         for (const unit of unitsHere) {
-          const tmpl = player.empire.units.find(eu => eu.id === unit.unitTemplateId);
+          const tmpl = resolveUnitTemplate(player, unit.unitTemplateId, players);
           if (tmpl && tmpl.category !== 'Troops') {
             if (typeof tmpl.as === 'number') asTotal += tmpl.as;
             dvTotal += tmpl.dv;
@@ -5568,17 +5733,19 @@ function TechUnitHeader() {
   );
 }
 
-function TechUnitRow({ unit, badge, onClick }: {
+function TechUnitRow({ unit, badge, onClick, selected, disabled }: {
   unit: EmpireUnit;
   badge?: React.ReactNode;
   onClick?: () => void;
+  selected?: boolean;
+  disabled?: boolean;
 }) {
   return (
     <div
-      role={onClick ? 'button' : undefined}
-      onClick={onClick}
+      role={onClick && !disabled ? 'button' : undefined}
+      onClick={disabled ? undefined : onClick}
       style={{ gridTemplateColumns: TECH_UNIT_COLS }}
-      className={`grid items-center gap-x-2 px-3 py-1.5 ${onClick ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800' : ''}`}
+      className={`grid items-center gap-x-2 px-3 py-1.5 ${onClick && !disabled ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800' : ''} ${selected ? 'bg-blue-50 dark:bg-blue-900/20' : ''} ${disabled ? 'opacity-40' : ''}`}
     >
       <span className="truncate text-sm font-medium text-gray-800 dark:text-gray-100">{unit.name}</span>
       <span className="text-sm font-medium text-gray-800 dark:text-gray-100">
@@ -5598,10 +5765,12 @@ function TechUnitRow({ unit, badge, onClick }: {
   );
 }
 
-function TechUnitList({ units, getBadge, onClickUnit }: {
+function TechUnitList({ units, getBadge, onClickUnit, selectedUnitId, getDisabled }: {
   units: EmpireUnit[];
   getBadge: (unit: EmpireUnit) => React.ReactNode;
   onClickUnit: (unit: EmpireUnit) => void;
+  selectedUnitId?: string;
+  getDisabled?: (unit: EmpireUnit) => boolean;
 }) {
   const byCategory = UNIT_CATEGORY_ORDER
     .map(cat => ({ cat, units: units.filter(u => u.category === cat) }))
@@ -5636,6 +5805,8 @@ function TechUnitList({ units, getBadge, onClickUnit }: {
               unit={unit}
               badge={getBadge(unit)}
               onClick={() => onClickUnit(unit)}
+              selected={selectedUnitId === unit.id}
+              disabled={getDisabled?.(unit)}
             />
           ))}
         </Fragment>
@@ -5764,6 +5935,7 @@ interface TechPhaseViewProps {
   canRevert: boolean;
   onUnlockUnit: (playerId: string, unitId: string) => void;
   onUpgradeUnit: (playerId: string, unitId: string, dvDelta: number, asDelta: number, afDelta: number, traitFactorDeltas: Record<string, number>) => void;
+  onUpgradeStolenUnit: (playerId: string, sourceEmpireId: string, unitId: string, dvDelta: number, asDelta: number, afDelta: number, traitFactorDeltas: Record<string, number>) => void;
 }
 
 function TechPhaseView({
@@ -5775,11 +5947,13 @@ function TechPhaseView({
   canRevert,
   onUnlockUnit,
   onUpgradeUnit,
+  onUpgradeStolenUnit,
 }: TechPhaseViewProps) {
   const [activeTab, setActiveTab] = useState(0);
   type SubMode = 'overview' | 'choosing' | 'unlock' | 'upgrade';
   const [subMode, setSubMode] = useState<SubMode>('overview');
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
+  const [selectedStolenEntry, setSelectedStolenEntry] = useState<{ sourceEmpireId: string; unit: EmpireUnit } | null>(null);
 
   const player = players[activeTab];
   const income = player?.currentTurnSystemIncome ?? 0;
@@ -5792,37 +5966,37 @@ function TechPhaseView({
     setActiveTab(idx);
     setSubMode('overview');
     setSelectedUnitId(null);
+    setSelectedStolenEntry(null);
   };
 
   if (!player) return null;
 
-  // Locked units = in force list but ISD too high and not in unlockedUnitIds
-  const lockedUnits = player.empire.units.filter(unit => {
-    if (unit.isSuperseded) return false;
-    if (unit.isd === 'N/A') return false;
-    const isd = parseInt(unit.isd);
-    if (!isNaN(isd) && isd <= settings.startingYear) return false;
-    if ((player.unlockedUnitIds ?? []).includes(unit.id)) return false;
-    return true;
-  });
+  // Locked units = in force list but not yet researched
+  const lockedUnits = player.empire.units.filter(unit =>
+    !unit.isSuperseded && !unit.researched
+  );
 
-  // Upgradeable units = available (unlocked), not superseded, techLevel < 5
+  // Upgradeable own units = researched, not superseded, techLevel < 5
   const upgradeableUnits = player.empire.units.filter(unit => {
     if (unit.isSuperseded) return false;
-    // Must be available (same logic as "not locked")
-    if (unit.isd !== 'N/A') {
-      const isd = parseInt(unit.isd);
-      if (!isNaN(isd) && isd > settings.startingYear && !(player.unlockedUnitIds ?? []).includes(unit.id)) return false;
-    }
+    if (!unit.researched) return false;
     const tl = typeof unit.techLevel === 'number' ? unit.techLevel : (unit.techLevel === 'E' ? 0 : 1);
     return tl < 5;
   });
 
-  const selectedUnit = selectedUnitId ? player.empire.units.find(u => u.id === selectedUnitId) : null;
-  const selectedUnitTL = selectedUnit ? (typeof selectedUnit.techLevel === 'number' ? selectedUnit.techLevel : 1) : 1;
-  const selectedUnitNextTL = selectedUnit ? nextTechLevel(selectedUnitTL as TechLevelType) : null;
-  const upgradePoints = selectedUnit && selectedUnitNextTL
-    ? getUpgradePoints(selectedUnit.hullCode, selectedUnit.category, selectedUnitNextTL)
+  // Upgradeable stolen units = not superseded, techLevel < 5
+  const upgradeableStolenEntries = (player.stolenUnits ?? []).filter(s => {
+    if (s.unit.isSuperseded) return false;
+    const tl = typeof s.unit.techLevel === 'number' ? s.unit.techLevel : 1;
+    return tl < 5;
+  });
+
+  // Active unit for the upgrade allocator (own or stolen)
+  const activeUpgradeUnit = selectedStolenEntry?.unit ?? (selectedUnitId ? player.empire.units.find(u => u.id === selectedUnitId) : null) ?? null;
+  const activeUpgradeTL = activeUpgradeUnit ? (typeof activeUpgradeUnit.techLevel === 'number' ? activeUpgradeUnit.techLevel : 1) : 1;
+  const activeUpgradeNextTL = activeUpgradeUnit ? nextTechLevel(activeUpgradeTL as TechLevelType) : null;
+  const upgradePoints = activeUpgradeUnit && activeUpgradeNextTL
+    ? getUpgradePoints(activeUpgradeUnit.hullCode, activeUpgradeUnit.category, activeUpgradeNextTL)
     : 0;
 
   const handleConfirmUnlock = (unitId: string) => {
@@ -5832,10 +6006,14 @@ function TechPhaseView({
   };
 
   const handleConfirmUpgrade = (dvDelta: number, asDelta: number, afDelta: number, traitFactorDeltas: Record<string, number>) => {
-    if (!selectedUnitId) return;
-    onUpgradeUnit(player.id, selectedUnitId, dvDelta, asDelta, afDelta, traitFactorDeltas);
+    if (selectedStolenEntry) {
+      onUpgradeStolenUnit(player.id, selectedStolenEntry.sourceEmpireId, selectedStolenEntry.unit.id, dvDelta, asDelta, afDelta, traitFactorDeltas);
+      setSelectedStolenEntry(null);
+    } else if (selectedUnitId) {
+      onUpgradeUnit(player.id, selectedUnitId, dvDelta, asDelta, afDelta, traitFactorDeltas);
+      setSelectedUnitId(null);
+    }
     setSubMode('overview');
-    setSelectedUnitId(null);
   };
 
   return (
@@ -5858,8 +6036,11 @@ function TechPhaseView({
             onClick={() => handleTabChange(i)}
             className={`flex items-center gap-2 px-4 py-2 text-sm ${activeTab === i ? 'border-b-2 border-blue-600 font-medium text-blue-600 dark:text-blue-400' : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'}`}
           >
-            {p.teamColor && <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: p.teamColor }} />}
-            {p.name}
+            {p.teamColor && <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: p.teamColor }} />}
+            <span className="flex flex-col items-start leading-tight">
+              <span>{p.name}</span>
+              <span className="text-[11px] font-normal opacity-60">{p.empire.name}</span>
+            </span>
           </button>
         ))}
       </div>
@@ -5922,11 +6103,11 @@ function TechPhaseView({
                 </button>
                 <button
                   onClick={() => setSubMode('upgrade')}
-                  disabled={upgradeableUnits.length === 0}
+                  disabled={upgradeableUnits.length === 0 && upgradeableStolenEntries.length === 0}
                   className="flex-1 rounded border border-blue-300 bg-white px-4 py-3 text-sm font-medium text-blue-700 hover:bg-blue-50 disabled:opacity-40 dark:border-blue-700 dark:bg-gray-900 dark:text-blue-300 dark:hover:bg-blue-950"
                 >
                   Upgrade a Unit
-                  <span className="ml-1 text-xs text-blue-400">({upgradeableUnits.length} available)</span>
+                  <span className="ml-1 text-xs text-blue-400">({upgradeableUnits.length + upgradeableStolenEntries.length} available)</span>
                 </button>
               </div>
               <button onClick={() => setSubMode('overview')} className="text-xs text-gray-500 hover:underline dark:text-gray-400">← Back</button>
@@ -5952,7 +6133,7 @@ function TechPhaseView({
           )}
 
           {/* Upgrade list */}
-          {subMode === 'upgrade' && !selectedUnitId && (
+          {subMode === 'upgrade' && !selectedUnitId && !selectedStolenEntry && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Select a unit to upgrade:</p>
@@ -5973,24 +6154,48 @@ function TechPhaseView({
                 }}
                 onClickUnit={unit => setSelectedUnitId(unit.id)}
               />
+              {upgradeableStolenEntries.length > 0 && (
+                <>
+                  <p className="pt-1 text-xs font-semibold uppercase tracking-wide text-purple-600 dark:text-purple-400">Stolen Designs</p>
+                  <TechUnitList
+                    units={upgradeableStolenEntries.map(s => s.unit)}
+                    getBadge={unit => {
+                      const currentTL = typeof unit.techLevel === 'number' ? unit.techLevel : 1;
+                      const nextTL = nextTechLevel(currentTL as TechLevelType);
+                      const pts = nextTL ? getUpgradePoints(unit.hullCode, unit.category, nextTL) : 0;
+                      return (
+                        <div className="flex flex-col items-end gap-0.5">
+                          <span className="whitespace-nowrap text-xs text-blue-500">TL{currentTL}→{nextTL}</span>
+                          <span className="whitespace-nowrap text-xs text-green-600 dark:text-green-400">+{pts} AP</span>
+                        </div>
+                      );
+                    }}
+                    onClickUnit={unit => {
+                      const entry = (player.stolenUnits ?? []).find(s => s.unit.id === unit.id);
+                      if (entry) setSelectedStolenEntry(entry);
+                    }}
+                  />
+                </>
+              )}
             </div>
           )}
 
           {/* Upgrade allocator */}
-          {subMode === 'upgrade' && selectedUnit && (
+          {subMode === 'upgrade' && activeUpgradeUnit && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Upgrading: <span className="font-bold">{selectedUnit.name}</span>
-                  <span className="ml-2 text-xs text-blue-500">TL{selectedUnitTL} → TL{selectedUnitNextTL} (+{upgradePoints} AP)</span>
+                  Upgrading: <span className="font-bold">{activeUpgradeUnit.name}</span>
+                  {selectedStolenEntry && <span className="ml-2 text-xs text-purple-500">Stolen Design</span>}
+                  <span className="ml-2 text-xs text-blue-500">TL{activeUpgradeTL} → TL{activeUpgradeNextTL} (+{upgradePoints} AP)</span>
                 </p>
-                <button onClick={() => setSelectedUnitId(null)} className="text-xs text-gray-500 hover:underline dark:text-gray-400">← Back</button>
+                <button onClick={() => { setSelectedUnitId(null); setSelectedStolenEntry(null); }} className="text-xs text-gray-500 hover:underline dark:text-gray-400">← Back</button>
               </div>
               <UpgradeAllocator
-                unit={selectedUnit}
+                unit={activeUpgradeUnit}
                 upgradePoints={upgradePoints}
                 onConfirm={handleConfirmUpgrade}
-                onCancel={() => { setSelectedUnitId(null); setSubMode('choosing'); }}
+                onCancel={() => { setSelectedUnitId(null); setSelectedStolenEntry(null); setSubMode('choosing'); }}
               />
             </div>
           )}
@@ -6089,6 +6294,7 @@ function calcEconomicIncome(
   player: CampaignPlayer,
   map: GameMap,
   systemStatuses: Record<string, SystemCampaignStatus>,
+  allPlayers?: CampaignPlayer[],
 ): EconomicIncomeResult {
   // System Income
   const systemRows: SystemIncomeRow[] = [];
@@ -6157,7 +6363,7 @@ function calcEconomicIncome(
   let maintenanceCost = 0;
   for (const unit of player.units) {
     if (unit.mothballed) continue;
-    const template = player.empire.units.find(t => t.id === unit.unitTemplateId);
+    const template = resolveUnitTemplate(player, unit.unitTemplateId, allPlayers);
     maintenanceCost += template?.cost ?? 0;
   }
   const maintenance = Math.ceil(maintenanceCost * 0.1);
@@ -6243,19 +6449,19 @@ function EconomicPhaseView({
   const [copied, setCopied] = useState<number | null>(null);
   const player = players[currentPlayerIndex];
   if (!player) return null;
-  const result = calcEconomicIncome(player, mapState.map, systemStatuses);
+  const result = calcEconomicIncome(player, mapState.map, systemStatuses, players);
   const newEP = player.ep + result.net;
 
   // Check if any player would go negative after advancing
   const anyNegative = players.some(p => {
-    const r = calcEconomicIncome(p, mapState.map, systemStatuses);
+    const r = calcEconomicIncome(p, mapState.map, systemStatuses, players);
     return p.ep + r.net < 0;
   });
 
   const handleCopy = (idx: number) => {
     const p = players[idx];
     if (!p) return;
-    const r = calcEconomicIncome(p, mapState.map, systemStatuses);
+    const r = calcEconomicIncome(p, mapState.map, systemStatuses, players);
     const text = buildEconomicCopyText(p, r, currentTurn);
     navigator.clipboard.writeText(text).then(() => {
       setCopied(idx);
@@ -6303,7 +6509,7 @@ function EconomicPhaseView({
       {/* Player Tabs */}
       <div className="flex border-b border-gray-300 bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
         {players.map((p, i) => {
-          const r = calcEconomicIncome(p, mapState.map, systemStatuses);
+          const r = calcEconomicIncome(p, mapState.map, systemStatuses, players);
           const nextEP = p.ep + r.net;
           return (
             <button
@@ -6316,9 +6522,12 @@ function EconomicPhaseView({
               }`}
             >
               {p.teamColor && (
-                <span className="h-2.5 w-2.5 rounded-full" style={{ background: p.teamColor }} />
+                <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: p.teamColor }} />
               )}
-              <span>{p.name}</span>
+              <span className="flex flex-col items-start leading-tight">
+                <span>{p.name}</span>
+                <span className="text-[11px] font-normal opacity-60">{p.empire.name}</span>
+              </span>
               <span className={`text-xs ${nextEP < 0 ? 'text-red-500 dark:text-red-400' : 'opacity-75'}`}>
                 EP: {p.ep} → {nextEP}
               </span>
@@ -6330,9 +6539,10 @@ function EconomicPhaseView({
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-6">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl font-semibold dark:text-gray-100">
-            {player.name}
-          </h2>
+          <div>
+            <h2 className="text-xl font-semibold dark:text-gray-100">{player.name}</h2>
+            <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{player.empire.name}</p>
+          </div>
           <button
             onClick={() => handleCopy(currentPlayerIndex)}
             className="rounded border border-gray-300 px-3 py-1 text-xs hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
@@ -6537,7 +6747,84 @@ function AddToTechPoolModal({
   );
 }
 
-// --- Steal Unit Tech Modal ---
+// --- Reusable player picker with color + empire ---
+
+function PlayerPicker({
+  players,
+  value,
+  onChange,
+  placeholder,
+  excludeId,
+}: {
+  players: CampaignPlayer[];
+  value: string;
+  onChange: (id: string) => void;
+  placeholder?: string;
+  excludeId?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const options = excludeId ? players.filter(p => p.id !== excludeId) : players;
+  const selected = players.find(p => p.id === value);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="flex w-full items-center gap-2 rounded border border-gray-300 bg-white px-3 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+      >
+        {selected ? (
+          <>
+            {selected.teamColor && <span className="h-3 w-3 shrink-0 rounded-full" style={{ background: selected.teamColor }} />}
+            <span className="flex-1 text-left">{selected.name}</span>
+            <span className="text-xs text-gray-400 dark:text-gray-500">{selected.empire.name}</span>
+          </>
+        ) : (
+          <span className="flex-1 text-left text-gray-400">{placeholder ?? '— Select —'}</span>
+        )}
+        <svg className={`h-3 w-3 shrink-0 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+        </svg>
+      </button>
+      {open && (
+        <div className="absolute left-0 z-10 mt-1 w-full rounded border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900">
+          {placeholder && (
+            <button
+              type="button"
+              onClick={() => { onChange(''); setOpen(false); }}
+              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
+            >
+              {placeholder}
+            </button>
+          )}
+          {options.map(p => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => { onChange(p.id); setOpen(false); }}
+              className={`flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800 ${p.id === value ? 'bg-blue-50 dark:bg-blue-950/30' : ''}`}
+            >
+              {p.teamColor && <span className="h-3 w-3 shrink-0 rounded-full" style={{ background: p.teamColor }} />}
+              <span className="flex-1 text-left">{p.name}</span>
+              <span className="text-xs text-gray-400 dark:text-gray-500">{p.empire.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// --- Steal Unit Tech View (fullscreen) ---
 
 function StealUnitTechModal({
   players,
@@ -6554,218 +6841,138 @@ function StealUnitTechModal({
 
   const receivingPlayer = players.find(p => p.id === receivingPlayerId);
   const targetPlayer = players.find(p => p.id === targetPlayerId);
-  const targetUnits = targetPlayer?.empire.units ?? [];
+
+  // Own unit designs from target (researched, not superseded)
+  const targetOwnUnits = (targetPlayer?.empire.units ?? [])
+    .filter(u => u.researched === true && !u.isSuperseded);
+
+  // Stolen designs the target holds (with original sourceEmpireId), not superseded
+  const targetStolenUnits = (targetPlayer?.stolenUnits ?? [])
+    .filter(s => !s.unit.isSuperseded);
+
+  // Lookup map: unit.id → stolen entry (only for stolen units)
+  const stolenById = new Map(targetStolenUnits.map(s => [s.unit.id, s]));
+
+  // Combined list: own first, then stolen — TechUnitList preserves within-category order
+  // so stolen units naturally appear at the end of each category group
+  const allUnits = [...targetOwnUnits, ...targetStolenUnits.map(s => s.unit)];
+
+  const getEffectiveSourceId = (unit: EmpireUnit) =>
+    stolenById.get(unit.id)?.sourceEmpireId ?? targetPlayerId;
 
   const isAlreadyStolen = (unit: EmpireUnit) =>
     (receivingPlayer?.stolenUnits ?? []).some(
-      s => s.sourceEmpireId === targetPlayerId && s.unit.id === unit.id
+      s => s.sourceEmpireId === getEffectiveSourceId(unit) && s.unit.id === unit.id
     );
 
-  const selectedUnit = targetUnits.find(u => u.id === selectedUnitId);
-  const canConfirm = !!receivingPlayerId && !!targetPlayerId && !!selectedUnit;
+  const selectedUnit = allUnits.find(u => u.id === selectedUnitId) ?? null;
+  const canConfirm = !!receivingPlayerId && !!targetPlayerId && !!selectedUnit && !isAlreadyStolen(selectedUnit);
 
   const handleConfirm = () => {
-    if (!selectedUnit || !targetPlayerId) return;
-    onSteal(receivingPlayerId, targetPlayerId, selectedUnit);
+    if (!selectedUnit) return;
+    onSteal(receivingPlayerId, getEffectiveSourceId(selectedUnit), selectedUnit);
     onClose();
   };
 
+  const handleReceiverChange = (id: string) => { setReceivingPlayerId(id); setSelectedUnitId(''); };
+  const handleTargetChange = (id: string) => { setTargetPlayerId(id); setSelectedUnitId(''); };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="w-full max-w-md rounded-lg border border-gray-300 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900">
-        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-3 dark:border-gray-700">
-          <h2 className="text-base font-semibold dark:text-gray-100">Steal Unit Tech</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">✕</button>
-        </div>
-        <div className="p-5 space-y-4">
-          <div>
-            <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Receiving Player</label>
-            <select
-              value={receivingPlayerId}
-              onChange={e => { setReceivingPlayerId(e.target.value); setSelectedUnitId(''); }}
-              className="w-full rounded border border-gray-300 bg-white px-3 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-            >
-              {players.map(p => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
+    <div className="fixed inset-0 z-50 flex flex-col bg-white dark:bg-gray-900">
+      {/* Header */}
+      <div className="flex shrink-0 items-center gap-3 border-b border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-900">
+        <button
+          onClick={onClose}
+          className="flex items-center gap-1 rounded px-2 py-1 text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+        >
+          ← Close
+        </button>
+        <h1 className="flex-1 text-center text-base font-semibold dark:text-gray-100">Steal Unit Tech</h1>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">Receiving:</span>
+            <PlayerPicker players={players} value={receivingPlayerId} onChange={handleReceiverChange} />
           </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Target Empire</label>
-            <select
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">Target:</span>
+            <PlayerPicker
+              players={players}
               value={targetPlayerId}
-              onChange={e => { setTargetPlayerId(e.target.value); setSelectedUnitId(''); }}
-              className="w-full rounded border border-gray-300 bg-white px-3 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-            >
-              <option value="">— Select target —</option>
-              {players.filter(p => p.id !== receivingPlayerId).map(p => (
-                <option key={p.id} value={p.id}>{p.name} ({p.empire.name})</option>
-              ))}
-            </select>
+              onChange={handleTargetChange}
+              placeholder="— Select target —"
+              excludeId={receivingPlayerId}
+            />
           </div>
-          {targetPlayer && (
-            <div>
-              <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Unit Design</label>
-              <select
-                value={selectedUnitId}
-                onChange={e => setSelectedUnitId(e.target.value)}
-                className="w-full rounded border border-gray-300 bg-white px-3 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-              >
-                <option value="">— Select unit —</option>
-                {targetUnits.map(u => (
-                  <option key={u.id} value={u.id}>
-                    {u.name}{isAlreadyStolen(u) ? ' (Already Stolen)' : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-          <div className="flex justify-end gap-2 pt-1">
-            <button onClick={onClose} className="rounded border border-gray-300 px-4 py-1.5 text-sm hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800">Cancel</button>
-            <button
-              onClick={handleConfirm}
-              disabled={!canConfirm}
-              className="rounded bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-            >
-              Steal Design
-            </button>
-          </div>
+          <button
+            onClick={handleConfirm}
+            disabled={!canConfirm}
+            className="rounded bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-40 whitespace-nowrap"
+          >
+            Steal Design →
+          </button>
         </div>
+      </div>
+
+      {/* Body */}
+      <div className="flex-1 overflow-y-auto p-4">
+        {!targetPlayerId ? (
+          <div className="flex h-full items-center justify-center text-gray-400 dark:text-gray-500">
+            Select a target empire to view stealable unit designs.
+          </div>
+        ) : allUnits.length === 0 ? (
+          <div className="flex h-full items-center justify-center text-gray-400 dark:text-gray-500">
+            No stealable unit designs found for this empire.
+          </div>
+        ) : (
+          <div className="mx-auto max-w-5xl">
+            <div className="mb-2 flex items-center gap-2">
+              {targetPlayer?.teamColor && (
+                <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: targetPlayer.teamColor }} />
+              )}
+              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                {targetPlayer?.name} — {targetPlayer?.empire.name}
+              </span>
+              {targetStolenUnits.length > 0 && (
+                <span className="text-xs text-gray-400">
+                  ({targetStolenUnits.length} stolen design{targetStolenUnits.length !== 1 ? 's' : ''} included at end of each category)
+                </span>
+              )}
+            </div>
+            <TechUnitList
+              units={allUnits}
+              selectedUnitId={selectedUnitId}
+              getBadge={unit => {
+                const stolenEntry = stolenById.get(unit.id);
+                const alreadyStolenByReceiver = isAlreadyStolen(unit);
+                const sourceEmpireName = stolenEntry
+                  ? (players.find(p => p.id === stolenEntry.sourceEmpireId)?.empire.name ?? stolenEntry.sourceEmpireId)
+                  : null;
+                return (
+                  <span className="flex items-center gap-1 justify-end">
+                    {sourceEmpireName && (
+                      <span className="rounded bg-purple-100 px-1.5 py-0.5 text-[10px] font-medium text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">
+                        Via: {sourceEmpireName}
+                      </span>
+                    )}
+                    {alreadyStolenByReceiver && (
+                      <span className="rounded bg-gray-200 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 dark:bg-gray-700 dark:text-gray-400">
+                        Already Stolen
+                      </span>
+                    )}
+                  </span>
+                );
+              }}
+              onClickUnit={unit => setSelectedUnitId(prev => prev === unit.id ? '' : unit.id)}
+              getDisabled={unit => isAlreadyStolen(unit)}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
 // --- Transfer Unit Modal ---
-
-function TransferUnitModal({
-  players,
-  currentPlayerIndex,
-  onTransfer,
-  onClose,
-}: {
-  players: CampaignPlayer[];
-  currentPlayerIndex: number;
-  onTransfer: (unitId: string, fromPlayerId: string, toPlayerId: string) => void;
-  onClose: () => void;
-}) {
-  const [step, setStep] = useState<'pick_unit' | 'pick_recipient'>('pick_unit');
-  const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
-  const [recipientPlayerId, setRecipientPlayerId] = useState('');
-
-  const fromPlayer = players[currentPlayerIndex];
-  if (!fromPlayer) return null;
-
-  // Group units by fleet/system for display
-  const unitGroups: { label: string; units: CampaignUnit[] }[] = [];
-  const fleets = fromPlayer.fleets ?? [];
-  for (const fleet of fleets) {
-    const units = fromPlayer.units.filter(u => u.fleetId === fleet.id);
-    if (units.length > 0) unitGroups.push({ label: fleet.name, units });
-  }
-  const untasked = fromPlayer.units.filter(u => !u.fleetId);
-  if (untasked.length > 0) unitGroups.push({ label: 'Untasked', units: untasked });
-
-  const selectedUnit = fromPlayer.units.find(u => u.id === selectedUnitId);
-  const otherPlayers = players.filter(p => p.id !== fromPlayer.id);
-
-  const handleConfirm = () => {
-    if (!selectedUnitId || !recipientPlayerId) return;
-    onTransfer(selectedUnitId, fromPlayer.id, recipientPlayerId);
-    onClose();
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="w-full max-w-lg rounded-lg border border-gray-300 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900">
-        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-3 dark:border-gray-700">
-          <h2 className="text-base font-semibold dark:text-gray-100">
-            Transfer Unit — {step === 'pick_unit' ? 'Select Unit' : 'Select Recipient'}
-          </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">✕</button>
-        </div>
-
-        {step === 'pick_unit' && (
-          <div className="max-h-96 overflow-y-auto p-5 space-y-4">
-            {unitGroups.length === 0 && (
-              <p className="text-sm italic text-gray-400">No units to transfer.</p>
-            )}
-            {unitGroups.map(group => (
-              <div key={group.label}>
-                <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{group.label}</div>
-                <div className="space-y-1">
-                  {group.units.map(unit => (
-                    <button
-                      key={unit.id}
-                      onClick={() => setSelectedUnitId(unit.id)}
-                      className={`flex w-full items-center gap-3 rounded border px-3 py-2 text-left text-sm ${
-                        selectedUnitId === unit.id
-                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                          : 'border-gray-200 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800'
-                      } dark:text-gray-200`}
-                    >
-                      <span className="font-medium">{unit.name ?? unit.unitTemplateId}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {step === 'pick_recipient' && (
-          <div className="p-5 space-y-3">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Transferring: <span className="font-medium dark:text-gray-200">{selectedUnit?.name ?? selectedUnit?.unitTemplateId}</span>
-            </p>
-            <div className="space-y-2">
-              {otherPlayers.map(p => (
-                <button
-                  key={p.id}
-                  onClick={() => setRecipientPlayerId(p.id)}
-                  className={`flex w-full items-center gap-3 rounded border px-4 py-2.5 text-left text-sm ${
-                    recipientPlayerId === p.id
-                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                      : 'border-gray-200 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800'
-                  } dark:text-gray-200`}
-                >
-                  {p.teamColor && <span className="inline-block h-3 w-3 flex-shrink-0 rounded-full" style={{ backgroundColor: p.teamColor }} />}
-                  {p.name} ({p.empire.name})
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="flex justify-end gap-2 border-t border-gray-200 px-5 py-3 dark:border-gray-700">
-          {step === 'pick_recipient' && (
-            <button onClick={() => setStep('pick_unit')} className="rounded border border-gray-300 px-4 py-1.5 text-sm hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800">
-              ← Back
-            </button>
-          )}
-          <button onClick={onClose} className="rounded border border-gray-300 px-4 py-1.5 text-sm hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800">Cancel</button>
-          {step === 'pick_unit' ? (
-            <button
-              onClick={() => setStep('pick_recipient')}
-              disabled={!selectedUnitId}
-              className="rounded bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-            >
-              Next →
-            </button>
-          ) : (
-            <button
-              onClick={handleConfirm}
-              disabled={!recipientPlayerId}
-              className="rounded bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-            >
-              Transfer Unit
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // --- Force Tech Advancement Modal ---
 
@@ -6811,21 +7018,13 @@ function ForceAdvancementModal({
 
   // --- Player tab content ---
   const renderPlayerTab = (player: CampaignPlayer) => {
-    const lockedUnits = player.empire.units.filter(unit => {
-      if (unit.isSuperseded) return false;
-      if (unit.isd === 'N/A') return false;
-      const isd = parseInt(unit.isd);
-      if (!isNaN(isd) && isd <= settings.startingYear) return false;
-      if ((player.unlockedUnitIds ?? []).includes(unit.id)) return false;
-      return true;
-    });
+    const lockedUnits = player.empire.units.filter(unit =>
+      !unit.isSuperseded && !unit.researched
+    );
     const upgradeableUnits = player.empire.units.filter(unit => {
       if (unit.isSuperseded) return false;
-      if (unit.isd !== 'N/A') {
-        const isd = parseInt(unit.isd);
-        if (!isNaN(isd) && isd > settings.startingYear && !(player.unlockedUnitIds ?? []).includes(unit.id)) return false;
-      }
-      const tl = typeof unit.techLevel === 'number' ? unit.techLevel : 1;
+      if (!unit.researched) return false;
+      const tl = typeof unit.techLevel === 'number' ? unit.techLevel : (unit.techLevel === 'E' ? 0 : 1);
       return tl < 5;
     });
     const selectedUnit = selectedUnitId ? player.empire.units.find(u => u.id === selectedUnitId) : null;
@@ -6951,6 +7150,11 @@ function ForceAdvancementModal({
     // overview
     return (
       <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          {player.teamColor && <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: player.teamColor }} />}
+          <h3 className="text-base font-semibold dark:text-gray-100">{player.name}</h3>
+          <span className="text-sm text-gray-500 dark:text-gray-400">— {player.empire.name}</span>
+        </div>
         <div className="rounded border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
           Tech Pool: <span className="font-bold text-gray-900 dark:text-gray-100">{player.techPool ?? 0} EP</span>
         </div>
@@ -7099,9 +7303,14 @@ function ForceAdvancementModal({
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-white dark:bg-gray-900">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-gray-200 px-6 py-3 dark:border-gray-700">
-        <h2 className="text-base font-semibold dark:text-gray-100">Force Tech Advancement</h2>
-        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">✕</button>
+      <div className="flex shrink-0 items-center gap-3 border-b border-gray-200 px-4 py-3 dark:border-gray-700">
+        <button
+          onClick={onClose}
+          className="flex items-center gap-1 rounded px-2 py-1 text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+        >
+          ← Close
+        </button>
+        <h2 className="flex-1 text-center text-base font-semibold dark:text-gray-100">Force Tech Advancement</h2>
       </div>
 
       {/* Tabs: players + CM */}
@@ -7112,8 +7321,11 @@ function ForceAdvancementModal({
             onClick={() => handleTabChange(i)}
             className={`flex items-center gap-2 px-4 py-2 text-sm whitespace-nowrap ${activeTab === i ? 'border-b-2 border-blue-600 font-medium text-blue-600 dark:text-blue-400' : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'}`}
           >
-            {p.teamColor && <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: p.teamColor }} />}
-            {p.name}
+            {p.teamColor && <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: p.teamColor }} />}
+            <span className="flex flex-col items-start leading-tight">
+              <span>{p.name}</span>
+              <span className="text-[11px] font-normal opacity-60">{p.empire.name}</span>
+            </span>
           </button>
         ))}
         <button
@@ -7343,6 +7555,7 @@ function CustomUnitForm({
       hullCode,
       category,
       isd: 'N/A',
+      researched: true,
       dv,
       as: asStr === '-' ? '-' : (parseInt(asStr) || 0),
       af: (isTroops || afStr === '-') ? '-' : (parseInt(afStr) || 0),
@@ -7680,8 +7893,8 @@ interface CampaignPhasePanelProps {
   onDeployUnits: (unitTemplateId: string, systemId: string, count: number) => void;
   onResetDeployment: () => void;
   onFinishDeployment: () => void;
-  onSetTradeRoute: (convoyUnitId: string, systemIds: string[]) => void;
-  onClearTradeRoute: (convoyUnitId: string) => void;
+  onSetTradeRoute: (playerId: string, convoyUnitId: string, systemIds: string[]) => void;
+  onClearTradeRoute: (playerId: string, convoyUnitId: string) => void;
   onFinishTradeRoutes: () => void;
   canRevert: boolean;
   onRevert: () => void;
@@ -8668,7 +8881,7 @@ function UnitPurchaseView({
   const purchasedRowRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const handleBuyUnit = (unitTemplateId: string, unitName: string, unitCost: number) => {
-    const template = currentPlayer.empire.units.find(u => u.id === unitTemplateId);
+    const template = resolveUnitTemplate(currentPlayer, unitTemplateId, players);
     if (template) {
       setPurchasedCategoryOpen(prev => ({ ...prev, [template.category]: true }));
     }
@@ -8736,7 +8949,7 @@ function UnitPurchaseView({
   }, {});
 
   const totalEPSpent = currentPlayer.units.reduce((sum, u) => {
-    const t = currentPlayer.empire.units.find(eu => eu.id === u.unitTemplateId);
+    const t = resolveUnitTemplate(currentPlayer, u.unitTemplateId, players);
     return sum + (t?.cost ?? 0);
   }, 0);
 
@@ -8854,7 +9067,7 @@ function UnitPurchaseView({
             ) : (
               Object.entries(
                 Object.entries(purchasedCounts).reduce<Record<string, { templateId: string; count: number }[]>>((acc, [templateId, count]) => {
-                  const template = currentPlayer.empire.units.find(u => u.id === templateId);
+                  const template = resolveUnitTemplate(currentPlayer, templateId, players);
                   const cat = template?.category || 'Other';
                   if (!acc[cat]) acc[cat] = [];
                   acc[cat].push({ templateId, count });
@@ -8862,7 +9075,7 @@ function UnitPurchaseView({
                 }, {})
               ).map(([category, entries]) => {
                 const categoryCost = entries.reduce((sum, { templateId, count }) => {
-                  const t = currentPlayer.empire.units.find(u => u.id === templateId);
+                  const t = resolveUnitTemplate(currentPlayer, templateId, players);
                   return sum + (t?.cost ?? 0) * count;
                 }, 0);
                 return (
@@ -8875,7 +9088,7 @@ function UnitPurchaseView({
                   >
                     <div className="flex flex-wrap gap-2">
                       {entries.map(({ templateId, count }) => {
-                        const template = currentPlayer.empire.units.find(u => u.id === templateId);
+                        const template = resolveUnitTemplate(currentPlayer, templateId, players);
                         const unitInstance = currentPlayer.units.find(u => u.unitTemplateId === templateId);
                         if (!unitInstance || !template) return null;
                         return (
@@ -9051,7 +9264,7 @@ function UnitDeploymentPanel({
   );
 
   const selectedTemplate = selectedTemplateId
-    ? currentPlayer.empire.units.find(t => t.id === selectedTemplateId)
+    ? resolveUnitTemplate(currentPlayer, selectedTemplateId, players)
     : null;
 
   // Detect when user clicks an owned system on the map
@@ -9062,7 +9275,7 @@ function UnitDeploymentPanel({
     const remaining = undeployedCounts[selectedTemplateId] ?? 0;
     if (remaining === 0) return;
     const sys = mapState.getSystem(systemId);
-    const template = currentPlayer.empire.units.find(t => t.id === selectedTemplateId);
+    const template = resolveUnitTemplate(currentPlayer, selectedTemplateId, players);
     if (!template || !sys) return;
     setPendingDeploy({
       systemId,
@@ -9258,8 +9471,8 @@ interface TradeRoutesPanelProps {
   currentPlayerIndex: number;
   onSelectPlayer: (index: number) => void;
   mapState: ReturnType<typeof useMapState>;
-  onSetTradeRoute: (convoyUnitId: string, systemIds: string[]) => void;
-  onClearTradeRoute: (convoyUnitId: string) => void;
+  onSetTradeRoute: (playerId: string, convoyUnitId: string, systemIds: string[]) => void;
+  onClearTradeRoute: (playerId: string, convoyUnitId: string) => void;
   onFinish: () => void;
 }
 
@@ -9278,7 +9491,7 @@ function TradeRoutesPanel({
 
   // Deployed Convoys for the current player
   const convoys = currentPlayer.units.filter(u => {
-    const template = currentPlayer.empire.units.find(t => t.id === u.unitTemplateId);
+    const template = resolveUnitTemplate(currentPlayer, u.unitTemplateId, players);
     return template?.name === 'Convoy' && u.systemId;
   });
 
@@ -9293,8 +9506,6 @@ function TradeRoutesPanel({
     if (!isEstablishing || !mapState.selectedSystemId || !selectedConvoy?.systemId) return;
     const systemId = mapState.selectedSystemId;
     mapState.setSelectedSystemId(null);
-
-    if (!currentPlayer.ownedSystemIds.includes(systemId)) return;
 
     if (pendingSystemIds.includes(systemId)) {
       // Deselect — but never remove the Convoy's home system
@@ -9323,7 +9534,7 @@ function TradeRoutesPanel({
 
   const confirmRoute = () => {
     if (!selectedConvoyId) return;
-    onSetTradeRoute(selectedConvoyId, pendingSystemIds);
+    onSetTradeRoute(currentPlayer.id, selectedConvoyId, pendingSystemIds);
     setSelectedConvoyId(null);
     setPendingSystemIds([]);
   };
@@ -9355,6 +9566,14 @@ function TradeRoutesPanel({
       warnings.push('Route includes restricted or unexplored lane(s).');
     }
   }
+  const nonOwnedSystems = pendingSystemIds.filter(id => !currentPlayer.ownedSystemIds.includes(id));
+  if (nonOwnedSystems.length > 0) {
+    const names = nonOwnedSystems.map(id => mapState.getSystem(id)?.name ?? id).join(', ');
+    warnings.push(`Route includes systems not owned by this empire: ${names}.`);
+  }
+  if (selectedConvoy?.systemId && !pendingSystemIds.includes(selectedConvoy.systemId)) {
+    warnings.push(`Convoy's home system (${mapState.getSystem(selectedConvoy.systemId)?.name ?? selectedConvoy.systemId}) is not in the route.`);
+  }
 
   const noConvoysDeployed = convoys.length === 0;
   const unrouted = convoys.filter(c =>
@@ -9370,7 +9589,7 @@ function TradeRoutesPanel({
         {players.map((player, i) => {
           const isActive = i === currentPlayerIndex;
           const pConvoys = player.units.filter(u => {
-            const t = player.empire.units.find(et => et.id === u.unitTemplateId);
+            const t = resolveUnitTemplate(player, u.unitTemplateId, players);
             return t?.name === 'Convoy' && u.systemId;
           });
           const pRouted = (player.tradeRoutes ?? []).length;
@@ -9495,7 +9714,7 @@ function TradeRoutesPanel({
                       ))}
                     </div>
                     <button
-                      onClick={() => onClearTradeRoute(convoy.id)}
+                      onClick={() => onClearTradeRoute(currentPlayer.id, convoy.id)}
                       className="mt-1 text-xs text-red-500 hover:underline dark:text-red-400"
                     >
                       Clear route

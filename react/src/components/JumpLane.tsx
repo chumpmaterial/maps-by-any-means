@@ -8,6 +8,7 @@ interface JumpLaneProps {
   toSystem: System;
   isSelected: boolean;
   onClick: (e: React.MouseEvent) => void;
+  isOnTradeRoute?: boolean;
 }
 
 // Visual styles for each lane type
@@ -54,7 +55,9 @@ const laneStylesDark: Record<LaneType, { stroke: string; strokeWidth: number; st
   },
 };
 
-export function JumpLane({ lane, fromSystem, toSystem, isSelected, onClick }: JumpLaneProps) {
+const TRADE_ROUTE_GOLD = '#f59e0b';
+
+export function JumpLane({ lane, fromSystem, toSystem, isSelected, onClick, isOnTradeRoute }: JumpLaneProps) {
   const [isHovered, setIsHovered] = useState(false);
   const from = hexToPixel(fromSystem.position);
   const to = hexToPixel(toSystem.position);
@@ -115,10 +118,10 @@ export function JumpLane({ lane, fromSystem, toSystem, isSelected, onClick }: Ju
         y1={from.y}
         x2={to.x}
         y2={to.y}
-        stroke={style.stroke}
+        stroke={isOnTradeRoute ? TRADE_ROUTE_GOLD : style.stroke}
         strokeWidth={style.strokeWidth}
         strokeDasharray={style.strokeDasharray}
-        opacity={style.opacity}
+        opacity={isOnTradeRoute ? 1 : style.opacity}
         className="dark:hidden"
       />
       {/* Dark mode line */}
@@ -127,10 +130,10 @@ export function JumpLane({ lane, fromSystem, toSystem, isSelected, onClick }: Ju
         y1={from.y}
         x2={to.x}
         y2={to.y}
-        stroke={darkStyle.stroke}
+        stroke={isOnTradeRoute ? TRADE_ROUTE_GOLD : darkStyle.stroke}
         strokeWidth={darkStyle.strokeWidth}
         strokeDasharray={darkStyle.strokeDasharray}
-        opacity={darkStyle.opacity}
+        opacity={isOnTradeRoute ? 1 : darkStyle.opacity}
         className="hidden dark:block"
       />
     </g>

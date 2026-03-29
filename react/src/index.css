@@ -16,6 +16,42 @@ input, textarea, [contenteditable="true"] {
   @apply select-text;
 }
 
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100 dark:bg-gray-800;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 dark:bg-gray-600;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400 dark:bg-gray-500;
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+:root {
+  --scrollbar-thumb: #d1d5db;
+  --scrollbar-track: #f3f4f6;
+}
+
+.dark {
+  --scrollbar-thumb: #4b5563;
+  --scrollbar-track: #1f2937;
+}
+
 /* Custom checkbox checkmark for appearance-none styled checkboxes */
 input[type="checkbox"] {
   @apply relative cursor-pointer;

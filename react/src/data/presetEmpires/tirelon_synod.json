@@ -1,0 +1,886 @@
+{
+  "id": "a403a7b4-a26a-4846-8b39-3a730aece6fc",
+  "name": "Tirelon Synod",
+  "advantages": [
+    "Wolfpacks",
+    "Steadfast"
+  ],
+  "disadvantage": "Uncreative",
+  "units": [
+    {
+      "id": "f89da66c-3eb5-4282-b8ba-615e1f41bc0f",
+      "name": "Convoy",
+      "category": "Civilian",
+      "hullCode": "N/A",
+      "cost": 20,
+      "isd": "N/A",
+      "dv": 10,
+      "as": 0,
+      "af": 0,
+      "cr": 0,
+      "cc": 0,
+      "traits": []
+    },
+    {
+      "id": "22332666-7567-40e2-b949-c091340d9676",
+      "name": "Shipyard",
+      "category": "Civilian",
+      "hullCode": "N/A",
+      "cost": 20,
+      "isd": "N/A",
+      "dv": 10,
+      "as": 0,
+      "af": 0,
+      "cr": 0,
+      "cc": 0,
+      "traits": []
+    },
+    {
+      "id": "4dc3f01a-67c7-4aeb-9387-7614bb214cf8",
+      "name": "Supply Depot",
+      "category": "Civilian",
+      "hullCode": "N/A",
+      "cost": 20,
+      "isd": "N/A",
+      "dv": 10,
+      "as": 0,
+      "af": 0,
+      "cr": 0,
+      "cc": 0,
+      "traits": []
+    },
+    {
+      "id": "5b399f4d-a73d-401a-9b09-e90a3b3f67aa",
+      "name": "Seeker",
+      "category": "Ships",
+      "hullCode": "FF",
+      "cost": 5,
+      "isd": "3000",
+      "dv": 4,
+      "as": 0,
+      "af": 0,
+      "cr": 3,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 1
+        },
+        {
+          "name": "Scout",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "b5f68fb5-dc1a-4cd6-b376-ee6f5640b7c4",
+      "name": "Zealot",
+      "category": "Ships",
+      "hullCode": "AB",
+      "cost": 2,
+      "isd": "3000",
+      "dv": 2,
+      "as": 2,
+      "af": 1,
+      "cr": 2,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Police"
+        }
+      ]
+    },
+    {
+      "id": "5d4234eb-f374-4c03-97c5-d71e1ce176c2",
+      "name": "Adherent",
+      "category": "Ships",
+      "hullCode": "CT",
+      "cost": 3,
+      "isd": "3001",
+      "dv": 2,
+      "as": 1,
+      "af": 2,
+      "cr": 3,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        }
+      ]
+    },
+    {
+      "id": "1e0e5656-4e90-46a1-8a50-bf0cc0a4e980",
+      "name": "Pilgrim",
+      "category": "Ships",
+      "hullCode": "DD",
+      "cost": 6,
+      "isd": "3002",
+      "dv": 4,
+      "as": 1,
+      "af": 1,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Supply",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "3d2844df-2b05-4c27-b54e-dc1d9927a7f7",
+      "name": "Emissary",
+      "category": "Ships",
+      "hullCode": "FF",
+      "cost": 4,
+      "isd": "3003",
+      "dv": 3,
+      "as": 1,
+      "af": 1,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        },
+        {
+          "name": "Assault",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "018661a5-3303-464b-94bc-da00a4e320fa",
+      "name": "Believer",
+      "category": "Ships",
+      "hullCode": "DD",
+      "cost": 5,
+      "isd": "3004",
+      "dv": 3,
+      "as": 3,
+      "af": 3,
+      "cr": 5,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        }
+      ]
+    },
+    {
+      "id": "ef43951e-c956-4e32-9c04-77aec61acb1f",
+      "name": "Worshipper",
+      "category": "Ships",
+      "hullCode": "CL",
+      "cost": 7,
+      "isd": "3005",
+      "dv": 5,
+      "as": 2,
+      "af": 1,
+      "cr": 6,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "202311c4-877c-454a-b3da-ae5c541dd83c",
+      "name": "Firebrand",
+      "category": "Ships",
+      "hullCode": "CA",
+      "cost": 9,
+      "isd": "3006",
+      "dv": 6,
+      "as": 2,
+      "af": 2,
+      "cr": 8,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 3
+        }
+      ]
+    },
+    {
+      "id": "f83854c2-70a6-463a-a399-611d9d228b6f",
+      "name": "Prayer",
+      "category": "Ships",
+      "hullCode": "DD",
+      "cost": 5,
+      "isd": "3007",
+      "dv": 4,
+      "as": 1,
+      "af": 4,
+      "cr": 5,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        }
+      ]
+    },
+    {
+      "id": "1346f4a6-2e90-4fc5-b8c2-0feaf0133283",
+      "name": "Wayfarer",
+      "category": "Ships",
+      "hullCode": "CA",
+      "cost": 9,
+      "isd": "3008",
+      "dv": 7,
+      "as": 0,
+      "af": 3,
+      "cr": 8,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 2
+        },
+        {
+          "name": "Scout",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "033581e7-f6b4-4383-81f1-bac4934a0db9",
+      "name": "Maniac",
+      "category": "Ships",
+      "hullCode": "DD",
+      "cost": 5,
+      "isd": "3009",
+      "dv": 2,
+      "as": 4,
+      "af": 3,
+      "cr": 5,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Gunship"
+        }
+      ]
+    },
+    {
+      "id": "78dc8296-fb7e-496e-a692-ada0137b9613",
+      "name": "Legate",
+      "category": "Ships",
+      "hullCode": "CA",
+      "cost": 9,
+      "isd": "3010",
+      "dv": 6,
+      "as": 2,
+      "af": 2,
+      "cr": 8,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        },
+        {
+          "name": "Assault",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "86de3a3c-53a4-42ce-b24f-db51baaee240",
+      "name": "Faithless",
+      "category": "Ships",
+      "hullCode": "FF",
+      "cost": 4,
+      "isd": "3011",
+      "dv": 3,
+      "as": 4,
+      "af": 0,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Bombardment"
+        }
+      ]
+    },
+    {
+      "id": "45e0cf32-2961-407c-bb0f-1adbdd25d1d2",
+      "name": "Crusader",
+      "category": "Ships",
+      "hullCode": "BB",
+      "cost": 12,
+      "isd": "3012",
+      "dv": 8,
+      "as": 2,
+      "af": 2,
+      "cr": 10,
+      "cc": 5,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 4
+        }
+      ]
+    },
+    {
+      "id": "61f85ae8-1f95-47da-b668-730a32704c04",
+      "name": "Agitator",
+      "category": "Ships",
+      "hullCode": "CA",
+      "cost": 9,
+      "isd": "3013",
+      "dv": 7,
+      "as": 3,
+      "af": 2,
+      "cr": 8,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "57d423bf-2238-44ca-bd19-c75eaa184b9e",
+      "name": "Partisan",
+      "category": "Ships",
+      "hullCode": "CT",
+      "cost": 3,
+      "isd": "3014",
+      "dv": 3,
+      "as": 2,
+      "af": 0,
+      "cr": 3,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Stealth"
+        }
+      ]
+    },
+    {
+      "id": "e780be3a-6520-46ea-bf13-71eb28e9b440",
+      "name": "Vagabond",
+      "category": "Ships",
+      "hullCode": "CW",
+      "cost": 8,
+      "isd": "3015",
+      "dv": 5,
+      "as": 1,
+      "af": 2,
+      "cr": 6,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Supply",
+          "factor": 3
+        }
+      ]
+    },
+    {
+      "id": "c44ec85a-a0ce-4fb6-a18e-0a5f3d112477",
+      "name": "Providence",
+      "category": "Ships",
+      "hullCode": "DN",
+      "cost": 14,
+      "isd": "3016",
+      "dv": 9,
+      "as": 3,
+      "af": 2,
+      "cr": 10,
+      "cc": 5,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 5
+        }
+      ]
+    },
+    {
+      "id": "2656675d-8743-4d2b-94d4-bfd3036c5925",
+      "name": "Convert",
+      "category": "Ships",
+      "hullCode": "CT",
+      "cost": 3,
+      "isd": "3017",
+      "dv": 3,
+      "as": 3,
+      "af": 0,
+      "cr": 3,
+      "cc": 1,
+      "traits": []
+    },
+    {
+      "id": "2045c2c9-3be7-4348-9631-b2965b1d339a",
+      "name": "Radical",
+      "category": "Ships",
+      "hullCode": "FF",
+      "cost": 4,
+      "isd": "3018",
+      "dv": 3,
+      "as": 0,
+      "af": 3,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        },
+        {
+          "name": "Carronade"
+        }
+      ]
+    },
+    {
+      "id": "c945d82d-9d95-4911-9352-e05b0eff69c0",
+      "name": "Missionary",
+      "category": "Ships",
+      "hullCode": "BC",
+      "cost": 10,
+      "isd": "3019",
+      "dv": 7,
+      "as": 4,
+      "af": 1,
+      "cr": 9,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        },
+        {
+          "name": "Assault",
+          "factor": 1
+        },
+        {
+          "name": "Carrier",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "80b5f36f-ab05-464b-8377-07dcb3f6a71d",
+      "name": "Reformer",
+      "category": "Ships",
+      "hullCode": "DN",
+      "cost": 13,
+      "isd": "3020",
+      "dv": 10,
+      "as": 8,
+      "af": 2,
+      "cr": 10,
+      "cc": 5,
+      "traits": [
+        {
+          "name": "Gunship"
+        },
+        {
+          "name": "Carrier",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "be00ed2d-ebb9-4f21-af91-49a39f0312a9",
+      "name": "Hermit",
+      "category": "Ships",
+      "hullCode": "CT",
+      "cost": 3,
+      "isd": "3021",
+      "dv": 3,
+      "as": 1,
+      "af": 1,
+      "cr": 3,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Police"
+        }
+      ]
+    },
+    {
+      "id": "382befcb-c79c-47b3-8642-46a124bf5aec",
+      "name": "Kismet",
+      "category": "Ships",
+      "hullCode": "SD",
+      "cost": 18,
+      "isd": "3022",
+      "dv": 12,
+      "as": 4,
+      "af": 2,
+      "cr": 12,
+      "cc": 6,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 6
+        }
+      ]
+    },
+    {
+      "id": "cfe93c6a-0995-4ca6-aac1-0dda9766b0b5",
+      "name": "Fanatic",
+      "category": "Ships",
+      "hullCode": "DD",
+      "cost": 5,
+      "isd": "3023",
+      "dv": 3,
+      "as": 4,
+      "af": 1,
+      "cr": 5,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        },
+        {
+          "name": "Gunship"
+        }
+      ]
+    },
+    {
+      "id": "07b27e83-5e1e-461c-9682-5e76ee054e21",
+      "name": "Dogma",
+      "category": "Ships",
+      "hullCode": "BB",
+      "cost": 12,
+      "isd": "3024",
+      "dv": 8,
+      "as": 3,
+      "af": 1,
+      "cr": 10,
+      "cc": 5,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 1
+        },
+        {
+          "name": "Scout",
+          "factor": 1
+        },
+        {
+          "name": "Jammer",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "d5fd4b34-6be6-4f47-a557-ecdebf9fd46a",
+      "name": "True Believer",
+      "category": "Ships",
+      "hullCode": "TN",
+      "cost": 24,
+      "isd": "3025",
+      "dv": 12,
+      "as": 8,
+      "af": 4,
+      "cr": 12,
+      "cc": 6,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 8
+        }
+      ]
+    },
+    {
+      "id": "d749ef2c-3e0e-4f76-8fcf-0c896a02542e",
+      "name": "Acolyte",
+      "category": "Fighters",
+      "hullCode": "LF",
+      "cost": 2,
+      "isd": "3000",
+      "dv": 2,
+      "as": 2,
+      "af": 2,
+      "cr": 2,
+      "cc": 1,
+      "traits": []
+    },
+    {
+      "id": "7f4ced82-4ad0-4563-865e-110c90fcdead",
+      "name": "Minion",
+      "category": "Fighters",
+      "hullCode": "MF",
+      "cost": 3,
+      "isd": "3003",
+      "dv": 3,
+      "as": 3,
+      "af": 2,
+      "cr": 3,
+      "cc": 1,
+      "traits": []
+    },
+    {
+      "id": "fa7574e6-72b6-4dc8-9c54-990a773ab41d",
+      "name": "Doomsday",
+      "category": "Fighters",
+      "hullCode": "HF",
+      "cost": 4,
+      "isd": "3009",
+      "dv": 4,
+      "as": 3,
+      "af": 3,
+      "cr": 4,
+      "cc": 1,
+      "traits": []
+    },
+    {
+      "id": "69eaa442-258d-40ad-ab38-7b749eeebc50",
+      "name": "Apocalypse",
+      "category": "Fighters",
+      "hullCode": "SHF",
+      "cost": 5,
+      "isd": "3016",
+      "dv": 5,
+      "as": 4,
+      "af": 3,
+      "cr": 5,
+      "cc": 1,
+      "traits": []
+    },
+    {
+      "id": "54cbf6f6-9c22-4938-a941-f46dcb0ddd6c",
+      "name": "Cohort",
+      "category": "Fighters",
+      "hullCode": "HF",
+      "cost": 4,
+      "isd": "3024",
+      "dv": 3,
+      "as": 4,
+      "af": 3,
+      "cr": 4,
+      "cc": 1,
+      "traits": []
+    },
+    {
+      "id": "edd917d7-c72f-49d6-8efb-c14eec68e391",
+      "name": "Pillar",
+      "category": "Bases",
+      "hullCode": "OWP",
+      "cost": 4,
+      "isd": "3000",
+      "dv": 3,
+      "as": 2,
+      "af": 3,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Guardian",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "635c9293-7889-4a58-b37e-1f9705b4be4a",
+      "name": "Refuge",
+      "category": "Bases",
+      "hullCode": "BS1",
+      "cost": 9,
+      "isd": "3000",
+      "dv": 5,
+      "as": 5,
+      "af": 6,
+      "cr": 6,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 1
+        },
+        {
+          "name": "Guardian",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "567e8455-f050-4091-8d41-df6cfb204a78",
+      "name": "Haven",
+      "category": "Bases",
+      "hullCode": "BS2",
+      "cost": 13,
+      "isd": "3006",
+      "dv": 8,
+      "as": 8,
+      "af": 8,
+      "cr": 8,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 2
+        },
+        {
+          "name": "Guardian",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "2d900997-9cac-4f84-a313-0c776c639ca8",
+      "name": "Sanctuary",
+      "category": "Bases",
+      "hullCode": "BS3",
+      "cost": 18,
+      "isd": "3018",
+      "dv": 12,
+      "as": 10,
+      "af": 10,
+      "cr": 10,
+      "cc": 5,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 3
+        },
+        {
+          "name": "Guardian",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "40ec0943-5a27-4ae2-b711-73a21c92983f",
+      "name": "Cathedral",
+      "category": "Bases",
+      "hullCode": "BS4",
+      "cost": 23,
+      "isd": "3023",
+      "dv": 14,
+      "as": 12,
+      "af": 12,
+      "cr": 12,
+      "cc": 6,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 4
+        },
+        {
+          "name": "Guardian",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "2bb9c745-1251-44cb-a59b-b3c5a7665507",
+      "name": "Militia",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 1,
+      "isd": "N/A",
+      "dv": 4,
+      "as": 4,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": [
+        {
+          "name": "Garrison"
+        }
+      ]
+    },
+    {
+      "id": "4c55a93a-072e-4f28-bf46-0df261cf71e2",
+      "name": "Mobile Infantry",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 2,
+      "isd": "3000",
+      "dv": 4,
+      "as": 8,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": []
+    },
+    {
+      "id": "478dc40a-9ea3-44f7-aaa3-eaa273869ae8",
+      "name": "Marines",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 3,
+      "isd": "3002",
+      "dv": 6,
+      "as": 6,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": [
+        {
+          "name": "Marines"
+        }
+      ]
+    },
+    {
+      "id": "90c1cb92-a2b9-4a18-85b2-4b35d194264e",
+      "name": "Peacekeepers",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 2,
+      "isd": "3007",
+      "dv": 6,
+      "as": 2,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": [
+        {
+          "name": "Peacekeepers"
+        }
+      ]
+    },
+    {
+      "id": "e12f734b-5e02-4f76-828c-47675aff602f",
+      "name": "Heavy Infantry",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 3,
+      "isd": "3015",
+      "dv": 6,
+      "as": 12,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": []
+    },
+    {
+      "id": "d6670e07-1c72-4aa3-9469-645c50d46ff4",
+      "name": "Mechanized Infantry",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 3,
+      "isd": "3021",
+      "dv": 9,
+      "as": 9,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": []
+    }
+  ],
+  "recommendedEP": 200,
+  "recommendedYear": 3005,
+  "recommendedForces": [
+    { "name": "Seeker", "count": 3 },
+    { "name": "Zealot", "count": 6 },
+    { "name": "Adherent", "count": 3 },
+    { "name": "Pilgrim", "count": 3 },
+    { "name": "Emissary", "count": 3 },
+    { "name": "Believer", "count": 3 },
+    { "name": "Worshipper", "count": 3 },
+    { "name": "Acolyte", "count": 5 },
+    { "name": "Minion", "count": 5 },
+    { "name": "Pillar", "count": 2 },
+    { "name": "Refuge", "count": 1 },
+    { "name": "Militia", "count": 6 },
+    { "name": "Mobile Infantry", "count": 2 },
+    { "name": "Marines", "count": 2 },
+    { "name": "Convoy", "count": 1 },
+    { "name": "Shipyard", "count": 1 }
+  ]
+}

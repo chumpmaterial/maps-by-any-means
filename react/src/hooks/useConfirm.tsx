@@ -2,7 +2,9 @@ import { createContext, useContext, useState, useCallback, useEffect, useRef, ty
 
 interface ConfirmOptions {
   title: string;
-  message: string;
+  message: ReactNode;
+  confirmLabel?: string;
+  variant?: 'danger' | 'confirm';
 }
 
 type ConfirmFn = (options: ConfirmOptions) => Promise<boolean>;
@@ -39,6 +41,8 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
         <ConfirmDialog
           title={dialog.title}
           message={dialog.message}
+          confirmLabel={dialog.confirmLabel}
+          variant={dialog.variant}
           onConfirm={handleConfirm}
           onCancel={handleCancel}
         />
@@ -57,12 +61,14 @@ export function useConfirm(): ConfirmFn {
 
 interface ConfirmDialogProps {
   title: string;
-  message: string;
+  message: ReactNode;
+  confirmLabel?: string;
+  variant?: 'danger' | 'confirm';
   onConfirm: () => void;
   onCancel: () => void;
 }
 
-function ConfirmDialog({ title, message, onConfirm, onCancel }: ConfirmDialogProps) {
+function ConfirmDialog({ title, message, confirmLabel, variant = 'danger', onConfirm, onCancel }: ConfirmDialogProps) {
   const cancelRef = useRef<HTMLButtonElement>(null);
 
   // Focus the cancel button on mount
@@ -91,9 +97,9 @@ function ConfirmDialog({ title, message, onConfirm, onCancel }: ConfirmDialogPro
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
           {title}
         </h3>
-        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+        <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
           {message}
-        </p>
+        </div>
         <div className="mt-4 flex justify-end gap-2">
           <button
             ref={cancelRef}
@@ -104,9 +110,13 @@ function ConfirmDialog({ title, message, onConfirm, onCancel }: ConfirmDialogPro
           </button>
           <button
             onClick={onConfirm}
-            className="rounded bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700"
+            className={`rounded px-4 py-2 text-sm text-white ${
+              variant === 'danger'
+                ? 'bg-red-600 hover:bg-red-700'
+                : 'bg-blue-600 hover:bg-blue-700'
+            }`}
           >
-            Delete
+            {confirmLabel ?? (variant === 'danger' ? 'Delete' : 'Confirm')}
           </button>
         </div>
       </div>

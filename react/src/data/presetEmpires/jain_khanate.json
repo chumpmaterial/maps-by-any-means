@@ -1,0 +1,878 @@
+{
+  "id": "4110bf68-fca0-4a5a-9eaf-b79f7765c02f",
+  "name": "Jain Khanate",
+  "advantages": [
+    "Aggressive",
+    "Strong Troops"
+  ],
+  "disadvantage": "Poor Spies",
+  "units": [
+    {
+      "id": "6890c667-8992-4ac7-99fd-2c8d6619fe6c",
+      "name": "Convoy",
+      "category": "Civilian",
+      "hullCode": "N/A",
+      "cost": 20,
+      "isd": "N/A",
+      "dv": 10,
+      "as": 0,
+      "af": 0,
+      "cr": 0,
+      "cc": 0,
+      "traits": []
+    },
+    {
+      "id": "9772ac28-5db5-4b29-8c13-cfb55d17375d",
+      "name": "Shipyard",
+      "category": "Civilian",
+      "hullCode": "N/A",
+      "cost": 20,
+      "isd": "N/A",
+      "dv": 10,
+      "as": 0,
+      "af": 0,
+      "cr": 0,
+      "cc": 0,
+      "traits": []
+    },
+    {
+      "id": "6757931c-7721-4b26-830a-cc76e242d810",
+      "name": "Supply Depot",
+      "category": "Civilian",
+      "hullCode": "N/A",
+      "cost": 20,
+      "isd": "N/A",
+      "dv": 10,
+      "as": 0,
+      "af": 0,
+      "cr": 0,
+      "cc": 0,
+      "traits": []
+    },
+    {
+      "id": "743ce851-6f71-4cb4-8f44-a8ffd0572892",
+      "name": "Trickling Anabranch",
+      "category": "Ships",
+      "hullCode": "CL",
+      "cost": 6,
+      "isd": "3000",
+      "dv": 5,
+      "as": 3,
+      "af": 2,
+      "cr": 6,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Scout",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "91ce0931-f88f-4c76-88b2-ae1d35d8f345",
+      "name": "Tranquil Mist",
+      "category": "Ships",
+      "hullCode": "AB",
+      "cost": 2,
+      "isd": "3000",
+      "dv": 2,
+      "as": 1,
+      "af": 2,
+      "cr": 2,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        }
+      ]
+    },
+    {
+      "id": "9252f0d6-9fa6-46a0-b9e5-ceccd64f4add",
+      "name": "Rushing Torrent",
+      "category": "Ships",
+      "hullCode": "CT",
+      "cost": 3,
+      "isd": "3001",
+      "dv": 3,
+      "as": 2,
+      "af": 1,
+      "cr": 3,
+      "cc": 1,
+      "traits": []
+    },
+    {
+      "id": "80f221e0-40e9-40b8-843c-62dbc99951cb",
+      "name": "Silent Bog",
+      "category": "Ships",
+      "hullCode": "DD",
+      "cost": 5,
+      "isd": "3002",
+      "dv": 3,
+      "as": 3,
+      "af": 2,
+      "cr": 5,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "07d91583-7322-4ad0-8678-5edf68ac058d",
+      "name": "Languid Flow",
+      "category": "Ships",
+      "hullCode": "FF",
+      "cost": 4,
+      "isd": "3003",
+      "dv": 3,
+      "as": 1,
+      "af": 2,
+      "cr": 3,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Supply",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "0d2b3b15-3970-4813-91a6-843e23797782",
+      "name": "Serene Drift",
+      "category": "Ships",
+      "hullCode": "DD",
+      "cost": 6,
+      "isd": "3004",
+      "dv": 4,
+      "as": 1,
+      "af": 1,
+      "cr": 5,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "21766a0d-1564-4c88-bebe-d200f0c767a9",
+      "name": "Rippling Pool",
+      "category": "Ships",
+      "hullCode": "CL",
+      "cost": 6,
+      "isd": "3005",
+      "dv": 5,
+      "as": 5,
+      "af": 0,
+      "cr": 6,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "d8575898-50cc-451b-b07e-7b086983847b",
+      "name": "Joyful Waterfall",
+      "category": "Ships",
+      "hullCode": "FF",
+      "cost": 4,
+      "isd": "3006",
+      "dv": 2,
+      "as": 4,
+      "af": 0,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Bombardment"
+        },
+        {
+          "name": "Gunship"
+        }
+      ]
+    },
+    {
+      "id": "47ab3a45-ada0-4daf-a08a-7058e390b2f9",
+      "name": "Gathering Tide",
+      "category": "Ships",
+      "hullCode": "CW",
+      "cost": 8,
+      "isd": "3007",
+      "dv": 6,
+      "as": 0,
+      "af": 4,
+      "cr": 6,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Supply",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "f4f7c2f0-44ff-4c9c-9c8c-4939c5d8926d",
+      "name": "Deep Pond",
+      "category": "Ships",
+      "hullCode": "CA",
+      "cost": 9,
+      "isd": "3008",
+      "dv": 6,
+      "as": 4,
+      "af": 2,
+      "cr": 8,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Assault",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "554f575c-8d24-467b-9269-13f1a9204048",
+      "name": "Oncoming Storm",
+      "category": "Ships",
+      "hullCode": "BC",
+      "cost": 9,
+      "isd": "3009",
+      "dv": 6,
+      "as": 7,
+      "af": 3,
+      "cr": 9,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Bombardment"
+        }
+      ]
+    },
+    {
+      "id": "3af7da41-f06a-4bda-b66d-f6ded14f0095",
+      "name": "Broad Creek",
+      "category": "Ships",
+      "hullCode": "FF",
+      "cost": 4,
+      "isd": "3010",
+      "dv": 2,
+      "as": 2,
+      "af": 3,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        }
+      ]
+    },
+    {
+      "id": "3413337f-585b-41bf-9a92-ec2dab6cba62",
+      "name": "Sinuous Stream",
+      "category": "Ships",
+      "hullCode": "CA",
+      "cost": 9,
+      "isd": "3011",
+      "dv": 7,
+      "as": 3,
+      "af": 2,
+      "cr": 6,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Scout",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "d24c02de-1bbf-4a2b-8451-d5bbb9b53fe7",
+      "name": "Harmonious Delta",
+      "category": "Ships",
+      "hullCode": "BB",
+      "cost": 11,
+      "isd": "3012",
+      "dv": 8,
+      "as": 2,
+      "af": 4,
+      "cr": 10,
+      "cc": 5,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 3
+        }
+      ]
+    },
+    {
+      "id": "616391a7-7e60-49b6-979d-1e71e69c7bc7",
+      "name": "Violent Flood",
+      "category": "Ships",
+      "hullCode": "BC",
+      "cost": 10,
+      "isd": "3013",
+      "dv": 6,
+      "as": 7,
+      "af": 1,
+      "cr": 9,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Gunship"
+        },
+        {
+          "name": "Carrier",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "58e46cbb-6262-4d3d-985a-a63299519c85",
+      "name": "Rushing Shower",
+      "category": "Ships",
+      "hullCode": "CW",
+      "cost": 7,
+      "isd": "3014",
+      "dv": 5,
+      "as": 7,
+      "af": 0,
+      "cr": 7,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Bombardment"
+        }
+      ]
+    },
+    {
+      "id": "c1b3cc4f-fa08-4ab4-9235-1a9632718acf",
+      "name": "Limitless Depth",
+      "category": "Ships",
+      "hullCode": "DN",
+      "cost": 13,
+      "isd": "3015",
+      "dv": 10,
+      "as": 8,
+      "af": 2,
+      "cr": 10,
+      "cc": 5,
+      "traits": [
+        {
+          "name": "Bombardment"
+        },
+        {
+          "name": "Gunship"
+        }
+      ]
+    },
+    {
+      "id": "ce922629-2da8-4ef7-9f4f-b7ffb980b31d",
+      "name": "Roaring Rapids",
+      "category": "Ships",
+      "hullCode": "CL",
+      "cost": 7,
+      "isd": "3016",
+      "dv": 6,
+      "as": 0,
+      "af": 0,
+      "cr": 5,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Tender",
+          "factor": 3
+        }
+      ]
+    },
+    {
+      "id": "96abc1dc-39b8-4a21-9a13-b88d9680fda2",
+      "name": "Rainless Pool",
+      "category": "Ships",
+      "hullCode": "DD",
+      "cost": 5,
+      "isd": "3017",
+      "dv": 3,
+      "as": 2,
+      "af": 2,
+      "cr": 5,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 1
+        },
+        {
+          "name": "Police"
+        }
+      ]
+    },
+    {
+      "id": "b860482a-53f2-4345-90ee-b13a44409b04",
+      "name": "Temperate Eddy",
+      "category": "Ships",
+      "hullCode": "CT",
+      "cost": 3,
+      "isd": "3018",
+      "dv": 2,
+      "as": 1,
+      "af": 1,
+      "cr": 2,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Hospital",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "090b49c7-7265-4e9e-a82f-21b2c29d59cc",
+      "name": "Agitated Cenote",
+      "category": "Ships",
+      "hullCode": "BC",
+      "cost": 10,
+      "isd": "3019",
+      "dv": 7,
+      "as": 4,
+      "af": 1,
+      "cr": 9,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Assault",
+          "factor": 3
+        }
+      ]
+    },
+    {
+      "id": "25815cc9-69b3-4dd1-a732-ff7000d1e14c",
+      "name": "Restless Loch",
+      "category": "Ships",
+      "hullCode": "SD",
+      "cost": 16,
+      "isd": "3020",
+      "dv": 12,
+      "as": 8,
+      "af": 4,
+      "cr": 12,
+      "cc": 6,
+      "traits": [
+        {
+          "name": "Gunship"
+        },
+        {
+          "name": "Assault",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "e92e037d-c5f4-48e2-aa26-88ce831356b8",
+      "name": "Flowing River",
+      "category": "Ships",
+      "hullCode": "BC",
+      "cost": 10,
+      "isd": "3021",
+      "dv": 7,
+      "as": 4,
+      "af": 3,
+      "cr": 7,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Scout",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "217ae205-a317-4562-bca9-db5638d72e13",
+      "name": "Brisk Tributary",
+      "category": "Ships",
+      "hullCode": "BB",
+      "cost": 10,
+      "isd": "3022",
+      "dv": 8,
+      "as": 8,
+      "af": 2,
+      "cr": 10,
+      "cc": 5,
+      "traits": [
+        {
+          "name": "Bombardment"
+        }
+      ]
+    },
+    {
+      "id": "c9fd6250-1e86-44fc-8a26-1621a01782bf",
+      "name": "Sleepless Gulf",
+      "category": "Ships",
+      "hullCode": "CA",
+      "cost": 9,
+      "isd": "3023",
+      "dv": 6,
+      "as": 5,
+      "af": 1,
+      "cr": 8,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Guardian",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "eaea13ca-a8ed-4fa8-bab0-914aa3639146",
+      "name": "Quiet Rivulet",
+      "category": "Ships",
+      "hullCode": "FF",
+      "cost": 4,
+      "isd": "3024",
+      "dv": 2,
+      "as": 2,
+      "af": 2,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        },
+        {
+          "name": "Police"
+        }
+      ]
+    },
+    {
+      "id": "95eec639-ecb7-45f3-877c-38d23c810a66",
+      "name": "Turbulent Tidewater",
+      "category": "Ships",
+      "hullCode": "SD",
+      "cost": 17,
+      "isd": "3025",
+      "dv": 14,
+      "as": 3,
+      "af": 5,
+      "cr": 12,
+      "cc": 6,
+      "traits": [
+        {
+          "name": "Assault",
+          "factor": 1
+        },
+        {
+          "name": "Carrier",
+          "factor": 3
+        }
+      ]
+    },
+    {
+      "id": "357b5512-0616-40a0-bc0a-679baaf86df5",
+      "name": "Flood",
+      "category": "Fighters",
+      "hullCode": "MF",
+      "cost": 3,
+      "isd": "3000",
+      "dv": 3,
+      "as": 2,
+      "af": 3,
+      "cr": 3,
+      "cc": 1,
+      "traits": []
+    },
+    {
+      "id": "9bfe8603-9d0b-40c4-b87d-b3e4a4680337",
+      "name": "Upsurge",
+      "category": "Fighters",
+      "hullCode": "MF",
+      "cost": 3,
+      "isd": "3004",
+      "dv": 3,
+      "as": 4,
+      "af": 1,
+      "cr": 3,
+      "cc": 1,
+      "traits": []
+    },
+    {
+      "id": "fb89832b-9665-442c-b860-8e0329930811",
+      "name": "Breaker",
+      "category": "Fighters",
+      "hullCode": "HF",
+      "cost": 4,
+      "isd": "3009",
+      "dv": 4,
+      "as": 4,
+      "af": 2,
+      "cr": 4,
+      "cc": 2,
+      "traits": []
+    },
+    {
+      "id": "c68a00bb-04de-428f-a24f-66af43495bb7",
+      "name": "Deluge",
+      "category": "Fighters",
+      "hullCode": "MF",
+      "cost": 3,
+      "isd": "3014",
+      "dv": 3,
+      "as": 1,
+      "af": 4,
+      "cr": 3,
+      "cc": 1,
+      "traits": []
+    },
+    {
+      "id": "efc30247-f44d-4734-9c1b-66f8d7cf9e87",
+      "name": "Cataclysm",
+      "category": "Fighters",
+      "hullCode": "HF",
+      "cost": 4,
+      "isd": "3020",
+      "dv": 3,
+      "as": 5,
+      "af": 0,
+      "cr": 3,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Bombardment"
+        }
+      ]
+    },
+    {
+      "id": "80af43c7-5479-41c9-b121-2c05a3c08a45",
+      "name": "Estuary",
+      "category": "Bases",
+      "hullCode": "BS2",
+      "cost": 13,
+      "isd": "3000",
+      "dv": 9,
+      "as": 8,
+      "af": 7,
+      "cr": 8,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Gunship"
+        },
+        {
+          "name": "Carrier",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "913b0475-f914-40b7-8377-300e003f6890",
+      "name": "Fjord",
+      "category": "Bases",
+      "hullCode": "OWP",
+      "cost": 4,
+      "isd": "3008",
+      "dv": 2,
+      "as": 5,
+      "af": 1,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Gunship"
+        }
+      ]
+    },
+    {
+      "id": "328f99be-c3ba-4345-b6f6-8b5b9ce6261e",
+      "name": "Bayou",
+      "category": "Bases",
+      "hullCode": "BS1",
+      "cost": 9,
+      "isd": "3013",
+      "dv": 6,
+      "as": 6,
+      "af": 2,
+      "cr": 6,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Gunship"
+        },
+        {
+          "name": "Carrier",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "89d6c09f-2d90-4b0e-befb-512c75545096",
+      "name": "Harbor",
+      "category": "Bases",
+      "hullCode": "BS3",
+      "cost": 18,
+      "isd": "3016",
+      "dv": 13,
+      "as": 12,
+      "af": 6,
+      "cr": 10,
+      "cc": 5,
+      "traits": [
+        {
+          "name": "Gunship"
+        },
+        {
+          "name": "Carrier",
+          "factor": 3
+        }
+      ]
+    },
+    {
+      "id": "c618d37f-56e2-41db-834c-9006c9bbf792",
+      "name": "Breakwater",
+      "category": "Bases",
+      "hullCode": "BS4",
+      "cost": 22,
+      "isd": "3022",
+      "dv": 18,
+      "as": 12,
+      "af": 9,
+      "cr": 12,
+      "cc": 6,
+      "traits": [
+        {
+          "name": "Gunship"
+        },
+        {
+          "name": "Carrier",
+          "factor": 4
+        }
+      ]
+    },
+    {
+      "id": "608ba69f-7e6e-4aaa-8d19-1d567e3288e4",
+      "name": "Militia",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 1,
+      "isd": "N/A",
+      "dv": 4,
+      "as": 4,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": [
+        {
+          "name": "Garrison"
+        }
+      ]
+    },
+    {
+      "id": "659c5af3-5e79-4ab7-8ab0-74fef8b8b4a9",
+      "name": "Inquisitors",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 2,
+      "isd": "3000",
+      "dv": 6,
+      "as": 2,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": [
+        {
+          "name": "Peacekeepers"
+        }
+      ]
+    },
+    {
+      "id": "e228b6f9-fa19-4b72-99e3-eacf1a4bfa5a",
+      "name": "Marines",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 3,
+      "isd": "3005",
+      "dv": 6,
+      "as": 6,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": [
+        {
+          "name": "Marines"
+        }
+      ]
+    },
+    {
+      "id": "f68300cb-ca07-440b-9827-1e5ef6aca17e",
+      "name": "Commandos",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 2,
+      "isd": "3010",
+      "dv": 2,
+      "as": 4,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": [
+        {
+          "name": "Special Forces"
+        }
+      ]
+    },
+    {
+      "id": "ed3c7840-1003-48ec-83b3-24bd89cdbc2b",
+      "name": "Heavy Armor",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 3,
+      "isd": "3015",
+      "dv": 12,
+      "as": 6,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": []
+    },
+    {
+      "id": "c7fd0bb8-02af-4079-ba4e-13b15efaef2c",
+      "name": "Heavy Marines",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 4,
+      "isd": "3020",
+      "dv": 8,
+      "as": 8,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": [
+        {
+          "name": "Marines"
+        }
+      ]
+    }
+  ],
+  "recommendedEP": 200,
+  "recommendedYear": 3005,
+  "recommendedForces": [
+    { "name": "Trickling Anabranch", "count": 3 },
+    { "name": "Tranquil Mist", "count": 5 },
+    { "name": "Rushing Torrent", "count": 5 },
+    { "name": "Silent Bog", "count": 3 },
+    { "name": "Languid Flow", "count": 2 },
+    { "name": "Serene Drift", "count": 2 },
+    { "name": "Rippling Pool", "count": 2 },
+    { "name": "Flood", "count": 5 },
+    { "name": "Upsurge", "count": 7 },
+    { "name": "Estuary", "count": 1 },
+    { "name": "Militia", "count": 6 },
+    { "name": "Inquisitors", "count": 3 },
+    { "name": "Marines", "count": 3 },
+    { "name": "Convoy", "count": 1 },
+    { "name": "Shipyard", "count": 1 }
+  ]
+}

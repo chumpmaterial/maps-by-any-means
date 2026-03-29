@@ -1,0 +1,851 @@
+{
+  "id": "c45547ef-7264-4122-929f-b66ce5f2badd",
+  "name": "Senorian Federation",
+  "advantages": [
+    "Disciplined",
+    "Subterranean"
+  ],
+  "disadvantage": "Slow Breeders",
+  "units": [
+    {
+      "id": "eaff5381-b712-4eb9-8731-bb5ade0f36eb",
+      "name": "Convoy",
+      "category": "Civilian",
+      "hullCode": "N/A",
+      "cost": 20,
+      "isd": "N/A",
+      "dv": 10,
+      "as": 0,
+      "af": 0,
+      "cr": 0,
+      "cc": 0,
+      "traits": []
+    },
+    {
+      "id": "aec29a5f-b29d-4370-a6e9-c2675bbdc1a2",
+      "name": "Shipyard",
+      "category": "Civilian",
+      "hullCode": "N/A",
+      "cost": 20,
+      "isd": "N/A",
+      "dv": 10,
+      "as": 0,
+      "af": 0,
+      "cr": 0,
+      "cc": 0,
+      "traits": []
+    },
+    {
+      "id": "1892c67d-5cd3-45b6-9dbe-f881078f6d4d",
+      "name": "Supply Depot",
+      "category": "Civilian",
+      "hullCode": "N/A",
+      "cost": 20,
+      "isd": "N/A",
+      "dv": 10,
+      "as": 0,
+      "af": 0,
+      "cr": 0,
+      "cc": 0,
+      "traits": []
+    },
+    {
+      "id": "5a44efd9-89bb-47e2-ac8c-cbc90cccfb30",
+      "name": "Grasshopper",
+      "category": "Ships",
+      "hullCode": "DD",
+      "cost": 5,
+      "isd": "3000",
+      "dv": 4,
+      "as": 2,
+      "af": 2,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Scout",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "9c9ad00f-e887-4df4-8e9c-c415ee2ad8a9",
+      "name": "Termite",
+      "category": "Ships",
+      "hullCode": "AB",
+      "cost": 2,
+      "isd": "3000",
+      "dv": 2,
+      "as": 3,
+      "af": 0,
+      "cr": 2,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        }
+      ]
+    },
+    {
+      "id": "15fdf323-74ad-42e3-8fc6-619af46a3537",
+      "name": "Locust",
+      "category": "Ships",
+      "hullCode": "CT",
+      "cost": 3,
+      "isd": "3001",
+      "dv": 3,
+      "as": 0,
+      "af": 2,
+      "cr": 3,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        }
+      ]
+    },
+    {
+      "id": "7caa4a22-0ed8-4b01-a50f-ae0109580192",
+      "name": "Cockroach",
+      "category": "Ships",
+      "hullCode": "FF",
+      "cost": 4,
+      "isd": "3002",
+      "dv": 3,
+      "as": 3,
+      "af": 1,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        }
+      ]
+    },
+    {
+      "id": "e5ba8fc1-a220-4193-8cf8-886ab18b7365",
+      "name": "Lice",
+      "category": "Ships",
+      "hullCode": "CL",
+      "cost": 7,
+      "isd": "3003",
+      "dv": 5,
+      "as": 1,
+      "af": 0,
+      "cr": 5,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Supply",
+          "factor": 3
+        }
+      ]
+    },
+    {
+      "id": "22d4fc4e-3a78-4101-84e8-5f5ba9a57c5f",
+      "name": "Silverfish",
+      "category": "Ships",
+      "hullCode": "DD",
+      "cost": 5,
+      "isd": "3004",
+      "dv": 4,
+      "as": 3,
+      "af": 2,
+      "cr": 5,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Stealth"
+        }
+      ]
+    },
+    {
+      "id": "b8b19fc0-28b0-42be-b4fc-7e564484ce15",
+      "name": "Stag Beetle",
+      "category": "Ships",
+      "hullCode": "CL",
+      "cost": 7,
+      "isd": "3005",
+      "dv": 5,
+      "as": 0,
+      "af": 3,
+      "cr": 6,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "e9eb9b86-721b-4f8f-a6ec-e2ed9b557ccd",
+      "name": "Mantis",
+      "category": "Ships",
+      "hullCode": "CA",
+      "cost": 8,
+      "isd": "3006",
+      "dv": 8,
+      "as": 8,
+      "af": 0,
+      "cr": 8,
+      "cc": 4,
+      "traits": []
+    },
+    {
+      "id": "5200450a-5c5b-4a54-84e1-63542c531910",
+      "name": "Damselfly",
+      "category": "Ships",
+      "hullCode": "DD",
+      "cost": 5,
+      "isd": "3007",
+      "dv": 4,
+      "as": 2,
+      "af": 1,
+      "cr": 5,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        },
+        {
+          "name": "Assault",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "524d07f3-92e9-45b4-b9f0-9393ccc3cc3e",
+      "name": "Bristletail",
+      "category": "Ships",
+      "hullCode": "DD",
+      "cost": 5,
+      "isd": "3008",
+      "dv": 3,
+      "as": 3,
+      "af": 1,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        },
+        {
+          "name": "Tender",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "854e86a2-4d6b-4c05-8abb-32102baa00b8",
+      "name": "Mayfly",
+      "category": "Ships",
+      "hullCode": "AB",
+      "cost": 2,
+      "isd": "3009",
+      "dv": 2,
+      "as": 0,
+      "af": 3,
+      "cr": 2,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        }
+      ]
+    },
+    {
+      "id": "449ca913-0441-412c-af03-dead4d5ffc92",
+      "name": "Earwig",
+      "category": "Ships",
+      "hullCode": "CW",
+      "cost": 8,
+      "isd": "3010",
+      "dv": 6,
+      "as": 0,
+      "af": 2,
+      "cr": 6,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Tender",
+          "factor": 3
+        }
+      ]
+    },
+    {
+      "id": "722467f4-cb27-4092-a158-1196c80867d9",
+      "name": "Walkingstick",
+      "category": "Ships",
+      "hullCode": "BB",
+      "cost": 10,
+      "isd": "3011",
+      "dv": 8,
+      "as": 10,
+      "af": 0,
+      "cr": 10,
+      "cc": 5,
+      "traits": [
+        {
+          "name": "Stealth"
+        }
+      ]
+    },
+    {
+      "id": "b4fb6d1d-2762-4587-ac8c-27803c5cb79f",
+      "name": "Webspinner",
+      "category": "Ships",
+      "hullCode": "CL",
+      "cost": 7,
+      "isd": "3012",
+      "dv": 5,
+      "as": 3,
+      "af": 0,
+      "cr": 6,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Jammer",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "daf230bc-45c4-41b2-a39e-b51c0551f6a7",
+      "name": "Dragonfly",
+      "category": "Ships",
+      "hullCode": "BC",
+      "cost": 10,
+      "isd": "3013",
+      "dv": 8,
+      "as": 5,
+      "af": 1,
+      "cr": 9,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Assault",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "7181471a-62a0-41b6-9a0d-6a75761eb0eb",
+      "name": "Rhino Beetle",
+      "category": "Ships",
+      "hullCode": "CA",
+      "cost": 9,
+      "isd": "3014",
+      "dv": 7,
+      "as": 0,
+      "af": 3,
+      "cr": 8,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 3
+        }
+      ]
+    },
+    {
+      "id": "ce4bffb8-7372-426b-923f-419cdd45bac9",
+      "name": "Katydid",
+      "category": "Ships",
+      "hullCode": "CL",
+      "cost": 7,
+      "isd": "3015",
+      "dv": 5,
+      "as": 1,
+      "af": 2,
+      "cr": 5,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Scout",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "a60b9e3a-6c2c-4c5a-85c3-fc12a46e98f1",
+      "name": "Thrip",
+      "category": "Ships",
+      "hullCode": "FF",
+      "cost": 4,
+      "isd": "3016",
+      "dv": 3,
+      "as": 4,
+      "af": 0,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Atmospheric"
+        }
+      ]
+    },
+    {
+      "id": "3dd4085a-4d73-4390-a7a3-dbc2c021cab5",
+      "name": "Archmantis",
+      "category": "Ships",
+      "hullCode": "BC",
+      "cost": 9,
+      "isd": "3017",
+      "dv": 9,
+      "as": 9,
+      "af": 0,
+      "cr": 9,
+      "cc": 4,
+      "traits": []
+    },
+    {
+      "id": "1c7577b1-9303-4989-82c9-110ed246a884",
+      "name": "Firebrat",
+      "category": "Ships",
+      "hullCode": "FF",
+      "cost": 4,
+      "isd": "3018",
+      "dv": 3,
+      "as": 3,
+      "af": 1,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Stealth"
+        }
+      ]
+    },
+    {
+      "id": "3dbaf52a-0578-4c8b-b306-164783de24fc",
+      "name": "Fishmoth",
+      "category": "Ships",
+      "hullCode": "DD",
+      "cost": 5,
+      "isd": "3019",
+      "dv": 3,
+      "as": 4,
+      "af": 2,
+      "cr": 5,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Stealth"
+        }
+      ]
+    },
+    {
+      "id": "260990e0-cee3-4f80-979b-35cc47548bbd",
+      "name": "Butterfly",
+      "category": "Ships",
+      "hullCode": "CA",
+      "cost": 9,
+      "isd": "3020",
+      "dv": 6,
+      "as": 3,
+      "af": 3,
+      "cr": 8,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Scout",
+          "factor": 1
+        },
+        {
+          "name": "Jammer",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "4cc64499-513e-4bfa-a748-cde5cb474f0d",
+      "name": "Titan Beetle",
+      "category": "Ships",
+      "hullCode": "DN",
+      "cost": 14,
+      "isd": "3021",
+      "dv": 9,
+      "as": 2,
+      "af": 5,
+      "cr": 10,
+      "cc": 5,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 4
+        }
+      ]
+    },
+    {
+      "id": "14e421e2-9712-4d19-b5b1-d49313bd02b5",
+      "name": "Hercules Beetle",
+      "category": "Ships",
+      "hullCode": "DN",
+      "cost": 13,
+      "isd": "3022",
+      "dv": 9,
+      "as": 8,
+      "af": 1,
+      "cr": 10,
+      "cc": 5,
+      "traits": [
+        {
+          "name": "Gunship"
+        },
+        {
+          "name": "Carrier",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "0dd260f1-1a05-43a4-be44-46b21e1b694a",
+      "name": "Weta",
+      "category": "Ships",
+      "hullCode": "BC",
+      "cost": 10,
+      "isd": "3023",
+      "dv": 7,
+      "as": 2,
+      "af": 3,
+      "cr": 7,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Scout",
+          "factor": 3
+        }
+      ]
+    },
+    {
+      "id": "2f28d2a1-3ccc-47eb-b9be-da63541faa50",
+      "name": "Atlas Moth",
+      "category": "Ships",
+      "hullCode": "DN",
+      "cost": 12,
+      "isd": "3024",
+      "dv": 10,
+      "as": 9,
+      "af": 2,
+      "cr": 10,
+      "cc": 5,
+      "traits": [
+        {
+          "name": "Stealth"
+        }
+      ]
+    },
+    {
+      "id": "116c1bc8-890e-4fa5-9d88-8a95a9e5dd3f",
+      "name": "Goliath Beetle",
+      "category": "Ships",
+      "hullCode": "SD",
+      "cost": 18,
+      "isd": "3025",
+      "dv": 10,
+      "as": 3,
+      "af": 5,
+      "cr": 12,
+      "cc": 6,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 6
+        }
+      ]
+    },
+    {
+      "id": "0d2bcc35-a331-4826-9d3b-04b1803810c0",
+      "name": "Yellowjacket",
+      "category": "Fighters",
+      "hullCode": "LF",
+      "cost": 2,
+      "isd": "3000",
+      "dv": 2,
+      "as": 4,
+      "af": 0,
+      "cr": 2,
+      "cc": 1,
+      "traits": []
+    },
+    {
+      "id": "cd55b27f-c970-4c61-9d07-0cf3ef866665",
+      "name": "Wasp",
+      "category": "Fighters",
+      "hullCode": "MF",
+      "cost": 3,
+      "isd": "3006",
+      "dv": 3,
+      "as": 5,
+      "af": 0,
+      "cr": 3,
+      "cc": 1,
+      "traits": []
+    },
+    {
+      "id": "31f068e6-02cf-4345-892b-0e9b9e463875",
+      "name": "Sawfly",
+      "category": "Fighters",
+      "hullCode": "LF",
+      "cost": 2,
+      "isd": "3010",
+      "dv": 2,
+      "as": 0,
+      "af": 4,
+      "cr": 2,
+      "cc": 1,
+      "traits": []
+    },
+    {
+      "id": "8fb033e5-6449-40ce-9e7e-048ca9a0ad04",
+      "name": "Hornet",
+      "category": "Fighters",
+      "hullCode": "HF",
+      "cost": 4,
+      "isd": "3015",
+      "dv": 4,
+      "as": 6,
+      "af": 0,
+      "cr": 4,
+      "cc": 1,
+      "traits": []
+    },
+    {
+      "id": "58343ac1-2521-4fda-9190-26155d0b595c",
+      "name": "Tarantula Hawk",
+      "category": "Fighters",
+      "hullCode": "SHF",
+      "cost": 5,
+      "isd": "3022",
+      "dv": 5,
+      "as": 5,
+      "af": 0,
+      "cr": 5,
+      "cc": 1,
+      "traits": [
+        {
+          "name": "Disruptor",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "78f21cf7-f108-4546-93a1-1517c5101e1e",
+      "name": "Cone",
+      "category": "Bases",
+      "hullCode": "OWP",
+      "cost": 4,
+      "isd": "3000",
+      "dv": 2,
+      "as": 4,
+      "af": 2,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "80245813-e820-4888-bf05-f4bf37e3963f",
+      "name": "Hive",
+      "category": "Bases",
+      "hullCode": "BS2",
+      "cost": 13,
+      "isd": "3000",
+      "dv": 12,
+      "as": 5,
+      "af": 7,
+      "cr": 8,
+      "cc": 4,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 3
+        }
+      ]
+    },
+    {
+      "id": "6a087296-77f4-4170-94fe-dbaedff31a57",
+      "name": "Comb",
+      "category": "Bases",
+      "hullCode": "BS1",
+      "cost": 9,
+      "isd": "3006",
+      "dv": 8,
+      "as": 3,
+      "af": 5,
+      "cr": 6,
+      "cc": 3,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 2
+        }
+      ]
+    },
+    {
+      "id": "56a2a7a5-1bde-4797-9493-546f4460982e",
+      "name": "Skep",
+      "category": "Bases",
+      "hullCode": "OWP",
+      "cost": 4,
+      "isd": "3018",
+      "dv": 4,
+      "as": 1,
+      "af": 2,
+      "cr": 4,
+      "cc": 2,
+      "traits": [
+        {
+          "name": "Stealth"
+        },
+        {
+          "name": "Jammer",
+          "factor": 1
+        }
+      ]
+    },
+    {
+      "id": "c6727c9a-a307-4d2d-88dd-5d116539ca9c",
+      "name": "Apiary",
+      "category": "Bases",
+      "hullCode": "BS3",
+      "cost": 18,
+      "isd": "3024",
+      "dv": 15,
+      "as": 7,
+      "af": 10,
+      "cr": 10,
+      "cc": 5,
+      "traits": [
+        {
+          "name": "Carrier",
+          "factor": 4
+        }
+      ]
+    },
+    {
+      "id": "efc84a57-dbc5-4579-b784-a9f107d85de4",
+      "name": "Militia",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 1,
+      "isd": "N/A",
+      "dv": 4,
+      "as": 4,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": [
+        {
+          "name": "Garrison"
+        }
+      ]
+    },
+    {
+      "id": "8f3b523c-b50e-4d54-aac9-ef2768d976ea",
+      "name": "Light Marines",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 2,
+      "isd": "3000",
+      "dv": 4,
+      "as": 4,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": [
+        {
+          "name": "Marines"
+        }
+      ]
+    },
+    {
+      "id": "a2a78de7-525a-4b4d-b623-b483b4ed0bfe",
+      "name": "Marines",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 3,
+      "isd": "3004",
+      "dv": 6,
+      "as": 6,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": [
+        {
+          "name": "Marines"
+        }
+      ]
+    },
+    {
+      "id": "5dce880a-fa79-4164-b77c-310ecef204e8",
+      "name": "Light Armor",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 2,
+      "isd": "3008",
+      "dv": 8,
+      "as": 4,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": []
+    },
+    {
+      "id": "21165e10-677d-4083-9a1a-0adeb614baaf",
+      "name": "Heavy Armor",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 3,
+      "isd": "3013",
+      "dv": 12,
+      "as": 6,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": []
+    },
+    {
+      "id": "a7bbc2f2-fd1f-477d-a45c-e303d18cbaf3",
+      "name": "Heavy Marines",
+      "category": "Troops",
+      "hullCode": "N/A",
+      "cost": 4,
+      "isd": "3020",
+      "dv": 8,
+      "as": 8,
+      "af": "-",
+      "cr": "-",
+      "cc": "-",
+      "traits": [
+        {
+          "name": "Marines"
+        }
+      ]
+    }
+  ],
+  "recommendedEP": 200,
+  "recommendedYear": 3005,
+  "recommendedForces": [
+    { "name": "Grasshopper", "count": 3 },
+    { "name": "Termite", "count": 9 },
+    { "name": "Locust", "count": 4 },
+    { "name": "Cockroach", "count": 4 },
+    { "name": "Lice", "count": 2 },
+    { "name": "Silverfish", "count": 2 },
+    { "name": "Stag Beetle", "count": 2 },
+    { "name": "Yellowjacket", "count": 12 },
+    { "name": "Cone", "count": 2 },
+    { "name": "Hive", "count": 1 },
+    { "name": "Militia", "count": 6 },
+    { "name": "Light Marines", "count": 2 },
+    { "name": "Marines", "count": 2 },
+    { "name": "Convoy", "count": 1 },
+    { "name": "Shipyard", "count": 1 }
+  ]
+}

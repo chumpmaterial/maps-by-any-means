@@ -81,12 +81,12 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
     setViewport({ offsetX: 0, offsetY: 0, zoom: 1 });
   }, []);
 
-  // Center on a specific point
-  const centerOn = useCallback((x: number, y: number, containerWidth: number, containerHeight: number) => {
+  // Center on a specific world-space point (SVG coordinates)
+  const centerOn = useCallback((x: number, y: number) => {
     setViewport((prev) => ({
       ...prev,
-      offsetX: containerWidth / 2 - x * prev.zoom,
-      offsetY: containerHeight / 2 - y * prev.zoom,
+      offsetX: -x * prev.zoom,
+      offsetY: -y * prev.zoom,
     }));
   }, []);
 

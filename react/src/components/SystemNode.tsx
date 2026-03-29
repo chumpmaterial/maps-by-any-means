@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { System } from '../types';
+import type { System, CampaignPlayer } from '../types';
 import { hexToPixel, DEFAULT_HEX_SIZE } from '../utils/hexUtils';
 import { generateStrokeColor } from '../utils/colorUtils';
 
@@ -10,6 +10,11 @@ interface SystemNodeProps {
   onHover?: (system: System | null) => void;
   useTeamColors?: boolean;
   getOwnerTeamColor?: (ownerId: string) => string | undefined;
+  isOnTradeRoute?: boolean;
+  /** Campaign-mode ownership record. When provided, overrides map editor color logic. */
+  systemOwnership?: Record<string, string>;
+  /** Campaign players for color lookup by playerId. */
+  campaignPlayers?: CampaignPlayer[];
 }
 
 // Size multipliers for different system types (relative to hex size)
@@ -35,6 +40,9 @@ export function SystemNode({
   onHover,
   useTeamColors,
   getOwnerTeamColor,
+  isOnTradeRoute,
+  systemOwnership,
+  campaignPlayers,
 }: SystemNodeProps) {
   const [isHovered, setIsHovered] = useState(false);
   const { x, y } = hexToPixel(system.position);
@@ -45,7 +53,17 @@ export function SystemNode({
   let fillColor = defaultColors.fill;
   let strokeColor = defaultColors.stroke;
 
-  if (useTeamColors) {
+  if (systemOwnership && campaignPlayers) {
+    // Campaign mode: color from systemOwnership → player.teamColor
+    const ownerId = systemOwnership[system.id];
+    const owner = campaignPlayers.find(p => p.id === ownerId);
+    if (owner?.teamColor) {
+      fillColor = owner.teamColor;
+      strokeColor = generateStrokeColor(owner.teamColor);
+    }
+    // Unowned system keeps default type-based colors
+  } else if (useTeamColors) {
+    // Map editor mode: legacy system.teamColor / system.owner logic
     if (system.type === 'homeworld' && system.teamColor) {
       // Homeworld uses its own team color
       fillColor = system.teamColor;
@@ -62,9 +80,15 @@ export function SystemNode({
   }
 
   // For homeworld star icon, use a darker version of the fill color
-  const starFill = system.type === 'homeworld'
-    ? (useTeamColors && system.teamColor ? generateStrokeColor(system.teamColor) : defaultColors.starFill)
-    : undefined;
+  const starFill = (() => {
+    if (system.type !== 'homeworld') return undefined;
+    if (systemOwnership && campaignPlayers) {
+      const ownerId = systemOwnership[system.id];
+      const owner = campaignPlayers.find(p => p.id === ownerId);
+      return owner?.teamColor ? generateStrokeColor(owner.teamColor) : defaultColors.starFill;
+    }
+    return (useTeamColors && system.teamColor ? generateStrokeColor(system.teamColor) : defaultColors.starFill);
+  })();
 
   return (
     <g
@@ -95,6 +119,18 @@ export function SystemNode({
           stroke="#60a5fa"
           strokeWidth={2}
           opacity={0.5}
+        />
+      )}
+
+      {/* Trade route ring */}
+      {isOnTradeRoute && (
+        <circle
+          cx={x}
+          cy={y}
+          r={radius + 6}
+          fill="none"
+          stroke="#f59e0b"
+          strokeWidth={3}
         />
       )}
 

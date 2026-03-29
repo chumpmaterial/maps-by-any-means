@@ -17,7 +17,7 @@ const sizeLabels: Record<number, { name: string; systems: number; color: string 
 export function GenerateMapDialog({ isOpen, onClose, onGenerate }: GenerateMapDialogProps) {
   const [ringCount, setRingCount] = useState(3);
   const [mapName, setMapName] = useState('Generated Map');
-  const [useRandomNames, setUseRandomNames] = useState(false);
+  const [useRandomNames, setUseRandomNames] = useState(true);
 
   if (!isOpen) return null;
 
@@ -28,14 +28,14 @@ export function GenerateMapDialog({ isOpen, onClose, onGenerate }: GenerateMapDi
     onClose();
     setRingCount(3);
     setMapName('Generated Map');
-    setUseRandomNames(false);
+    setUseRandomNames(true);
   };
 
   const handleClose = () => {
     onClose();
     setRingCount(3);
     setMapName('Generated Map');
-    setUseRandomNames(false);
+    setUseRandomNames(true);
   };
 
   return (

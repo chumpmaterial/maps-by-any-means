@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useDragScroll } from '../hooks/useDragScroll';
 import type { CampaignPlayer, CampaignSettings, CampaignUnit, CMFleet, DiplomacyLevel, EmpireUnit, GameMap, IndependentUnitList, System, SystemCampaignStatus, TurnOrderEntry } from '../types';
 import { diplomacyKey } from '../utils/supplyUtils';
+import { resolveUnitTemplate } from '../utils/fleetUtils';
 
 interface CartItem {
   templateId: string;
@@ -65,6 +66,7 @@ function computeConstructionLimits(
   player: CampaignPlayer,
   system: System,
   cart: CartItem[],
+  allPlayers?: CampaignPlayer[],
 ): ConstructionLimits | null {
   const attrs = system.attributes;
   if (!attrs) return null;
@@ -76,9 +78,8 @@ function computeConstructionLimits(
   const isVolunteerArmy = player.empire.disadvantage === 'Volunteer Army';
   const traitMult = isIndustrious ? 1.5 : isCorrupt ? 0.5 : 1.0;
 
-  const templateMap = new Map(player.empire.units.map(u => [u.id, u]));
   const shipyardCount = player.units.filter(u =>
-    u.systemId === system.id && templateMap.get(u.unitTemplateId)?.name === 'Shipyard'
+    u.systemId === system.id && resolveUnitTemplate(player, u.unitTemplateId, allPlayers)?.name === 'Shipyard'
   ).length;
 
   const shipyardCP = Math.ceil(shipyardCount * 24 * traitMult);
@@ -90,7 +91,7 @@ function computeConstructionLimits(
   let troopCost = 0;
 
   for (const item of cart) {
-    const template = templateMap.get(item.templateId);
+    const template = resolveUnitTemplate(player, item.templateId, allPlayers);
     if (!template || template.name === 'Convoy') continue;
     const total = item.cost * item.count;
     if (template.category === 'Troops') troopCost += total;
@@ -252,14 +253,7 @@ export function AddUnitsView({
   // Unit filtering
   const getAvailableUnits = (player: CampaignPlayer): EmpireUnit[] => {
     if (showAllUnits) return player.empire.units;
-    return player.empire.units.filter(unit => {
-      if (unit.isSuperseded) return false;
-      if (unit.isd === 'N/A') return true;
-      const isd = parseInt(unit.isd);
-      if (!isNaN(isd) && isd <= settings.startingYear) return true;
-      if ((player.unlockedUnitIds ?? []).includes(unit.id)) return true;
-      return false;
-    });
+    return player.empire.units.filter(u => u.researched === true && !u.isSuperseded);
   };
 
   // Compute current Alliance-level allies for the active player
@@ -282,13 +276,7 @@ export function AddUnitsView({
     return rel === 'Alliance';
   };
 
-  const isUnitLocked = (unit: EmpireUnit, player: CampaignPlayer): boolean => {
-    if (unit.isd === 'N/A') return false;
-    const isd = parseInt(unit.isd);
-    if (!isNaN(isd) && isd <= settings.startingYear) return false;
-    if ((player.unlockedUnitIds ?? []).includes(unit.id)) return false;
-    return true;
-  };
+  const isUnitLocked = (unit: EmpireUnit): boolean => !unit.researched;
 
   // Cart operations
   const addToCart = (unit: EmpireUnit) => {
@@ -341,7 +329,7 @@ export function AddUnitsView({
   );
 
   const constructionLimits: ConstructionLimits | null = (!isCMTab && activePlayer && selectedSystem)
-    ? computeConstructionLimits(activePlayer, selectedSystem, cart)
+    ? computeConstructionLimits(activePlayer, selectedSystem, cart, allPlayers)
     : null;
 
   // Group units by category
@@ -396,7 +384,10 @@ export function AddUnitsView({
                 {p.teamColor && (
                   <span className="inline-block h-2 w-2 flex-shrink-0 rounded-full" style={{ backgroundColor: p.teamColor }} />
                 )}
-                {p.name}
+                <span className="flex flex-col items-start leading-tight">
+                  <span>{p.name}</span>
+                  <span className="text-[10px] font-normal opacity-60">{p.empire.name}</span>
+                </span>
               </button>
             ))}
             <button
@@ -439,7 +430,7 @@ export function AddUnitsView({
                       const atRiskMap = new Map<string, Set<string>>();
                       for (const unit of player.units) {
                         if (!unit.systemId) continue;
-                        const t = player.empire.units.find(et => et.id === unit.unitTemplateId);
+                        const t = resolveUnitTemplate(player, unit.unitTemplateId, players);
                         if (t?.category === 'Civilian' && t?.name === 'Convoy') {
                           if (!atRiskMap.has(unit.systemId)) atRiskMap.set(unit.systemId, new Set());
                           atRiskMap.get(unit.systemId)!.add('Convoy');
@@ -462,7 +453,7 @@ export function AddUnitsView({
                         for (const p of players) {
                           for (const u of p.units) {
                             if (u.systemId !== sid) continue;
-                            const t = p.empire.units.find(et => et.id === u.unitTemplateId);
+                            const t = resolveUnitTemplate(p, u.unitTemplateId, players);
                             if (t?.traits.some(tr => tr.name === 'Police')) policeTotal += t.cost;
                           }
                         }
@@ -649,7 +640,10 @@ export function AddUnitsView({
                   {p.teamColor && (
                     <span className="inline-block h-2.5 w-2.5 flex-shrink-0 rounded-full" style={{ backgroundColor: p.teamColor }} />
                   )}
-                  {p.name}
+                  <span className="flex flex-col items-start leading-tight">
+                    <span>{p.name}</span>
+                    <span className="text-[11px] font-normal opacity-60">{p.empire.name}</span>
+                  </span>
                 </button>
               ))}
               <button
@@ -705,15 +699,64 @@ export function AddUnitsView({
                     </div>
                   )}
                   {(() => {
-                    const units = showAllUnits ? activePlayer.empire.units : getAvailableUnits(activePlayer);
-                    const grouped = groupByCategory(units);
+                    type TaggedUnit = {
+                      unit: EmpireUnit;
+                      rowKey: string;
+                      effectiveCost: number;
+                      tag?: { label: string; colorClass: string; sourceLabel: string };
+                    };
+
+                    const ownEntries: TaggedUnit[] = getAvailableUnits(activePlayer).map(unit => ({
+                      unit, rowKey: unit.id, effectiveCost: unit.cost ?? 0,
+                    }));
+
+                    const stolenEntries: TaggedUnit[] = !showAlliedUnits ? [] :
+                      (activePlayer.stolenUnits ?? [])
+                        .filter(s => showAllUnits || !isStolenUnitCoveredByAlliance(s))
+                        .map(({ sourceEmpireId, unit }) => ({
+                          unit,
+                          rowKey: `stolen-${sourceEmpireId}-${unit.id}`,
+                          effectiveCost: alliedCost(unit.cost ?? 0),
+                          tag: {
+                            label: 'Stolen',
+                            colorClass: 'text-purple-600 dark:text-purple-400',
+                            sourceLabel: allPlayers.find(p => p.id === sourceEmpireId)?.empire.name ?? sourceEmpireId,
+                          },
+                        }));
+
+                    const alliedEntries: TaggedUnit[] = !showAlliedUnits ? [] :
+                      getAllies().flatMap(ally => {
+                        const allyUnits = showAllUnits
+                          ? ally.empire.units.filter(u => u.researched === true)
+                          : ally.empire.units.filter(u => u.researched === true && !u.isSuperseded);
+                        return allyUnits.map(unit => ({
+                          unit,
+                          rowKey: `ally-${ally.id}-${unit.id}`,
+                          effectiveCost: alliedCost(unit.cost ?? 0),
+                          tag: {
+                            label: 'Allied',
+                            colorClass: 'text-green-600 dark:text-green-400',
+                            sourceLabel: ally.empire.name,
+                          },
+                        }));
+                      });
+
+                    // Merge: own first, then stolen, then allied — within each category this preserves order
+                    const allEntries = [...ownEntries, ...stolenEntries, ...alliedEntries];
+
+                    const grouped: Partial<Record<string, TaggedUnit[]>> = {};
+                    for (const cat of UNIT_CATEGORY_ORDER) {
+                      const catEntries = allEntries.filter(e => e.unit.category === cat);
+                      if (catEntries.length > 0) grouped[cat] = catEntries;
+                    }
                     const entries = Object.entries(grouped);
+
                     if (entries.length === 0) {
                       return <p className="text-sm italic text-gray-400 dark:text-gray-500">No units available.</p>;
                     }
                     return (
                       <div className="space-y-3">
-                        {entries.map(([cat, catUnits]) => {
+                        {entries.map(([cat, catEntries]) => {
                           const isCollapsed = collapsedCategories.has(cat);
                           return (
                             <div key={cat}>
@@ -723,7 +766,7 @@ export function AddUnitsView({
                               >
                                 <span className={`inline-block text-[9px] transition-transform ${isCollapsed ? '' : 'rotate-90'}`}>▶</span>
                                 {cat}
-                                <span className="font-normal normal-case text-gray-400 dark:text-gray-500">({catUnits!.length})</span>
+                                <span className="font-normal normal-case text-gray-400 dark:text-gray-500">({catEntries!.length})</span>
                               </button>
                               {!isCollapsed && (
                                 <div className="grid grid-cols-2 gap-x-4">
@@ -745,12 +788,13 @@ export function AddUnitsView({
                                       <div />
                                     </div>
                                   ))}
-                                  {catUnits!.map(unit => {
-                                    const locked = isUnitLocked(unit, activePlayer);
+                                  {catEntries!.map(({ unit, rowKey, effectiveCost, tag }) => {
+                                    const locked = !tag && isUnitLocked(unit);
                                     const inCart = cart.find(c => c.templateId === unit.id);
+                                    const cartUnit: EmpireUnit = tag ? { ...unit, cost: effectiveCost } : unit;
                                     return (
                                       <div
-                                        key={unit.id}
+                                        key={rowKey}
                                         style={{ gridTemplateColumns: unitCols }}
                                         className={`grid items-center gap-x-1 rounded px-2 py-1 ${locked ? 'opacity-50' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'}`}
                                       >
@@ -760,8 +804,14 @@ export function AddUnitsView({
                                             {unit.hullCode !== 'N/A' && <span className="font-normal"> ({unit.hullCode})</span>}
                                             {locked && <span className="ml-1 text-xs font-normal text-gray-400"> ISD {unit.isd}</span>}
                                           </div>
+                                          {tag && (
+                                            <div className={`text-[11px] leading-tight ${tag.colorClass}`}>{tag.label} · {tag.sourceLabel}</div>
+                                          )}
                                         </div>
-                                        <span className="text-right text-xs font-bold text-gray-700 dark:text-gray-300">{unit.cost}</span>
+                                        <span
+                                          className={`text-right text-xs font-bold text-gray-700 dark:text-gray-300 ${tag ? 'italic' : ''}`}
+                                          title={tag ? `${unit.cost} base × 1.25 surcharge = ${effectiveCost} EP` : undefined}
+                                        >{effectiveCost}</span>
                                         {(['dv', 'as', 'af', 'cr', 'cc'] as const).map(stat => (
                                           <span key={stat} className="text-right text-xs tabular-nums text-gray-600 dark:text-gray-300">
                                             {unit[stat] === '-' ? '—' : String(unit[stat])}
@@ -776,10 +826,10 @@ export function AddUnitsView({
                                             <>
                                               <button onClick={() => removeFromCart(unit.id)} className="flex h-5 w-5 items-center justify-center rounded border border-gray-300 text-xs hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-700">−</button>
                                               <span className="w-4 text-center text-xs font-medium dark:text-gray-200">{inCart.count}</span>
-                                              <button onClick={() => !locked && addToCart(unit)} disabled={locked} className="flex h-5 w-5 items-center justify-center rounded border border-gray-300 text-xs hover:bg-gray-100 disabled:opacity-50 dark:border-gray-600 dark:hover:bg-gray-700">+</button>
+                                              <button onClick={() => !locked && addToCart(cartUnit)} disabled={locked} className="flex h-5 w-5 items-center justify-center rounded border border-gray-300 text-xs hover:bg-gray-100 disabled:opacity-50 dark:border-gray-600 dark:hover:bg-gray-700">+</button>
                                             </>
                                           ) : (
-                                            <button onClick={() => !locked && addToCart(unit)} disabled={locked} className="flex h-5 w-5 items-center justify-center rounded border border-blue-400 bg-blue-50 text-xs text-blue-700 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-blue-700 dark:bg-blue-900/20 dark:text-blue-300 dark:hover:bg-blue-900/40">+</button>
+                                            <button onClick={() => !locked && addToCart(cartUnit)} disabled={locked} className="flex h-5 w-5 items-center justify-center rounded border border-blue-400 bg-blue-50 text-xs text-blue-700 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-blue-700 dark:bg-blue-900/20 dark:text-blue-300 dark:hover:bg-blue-900/40">+</button>
                                           )}
                                         </div>
                                       </div>
@@ -793,69 +843,6 @@ export function AddUnitsView({
                       </div>
                     );
                   })()}
-
-                    {/* Stolen Designs section */}
-                    {showAlliedUnits && activePlayer && (() => {
-                      const stolen = (activePlayer.stolenUnits ?? []).filter(s => {
-                        // Hide if covered by active alliance AND showAllUnits is off
-                        if (!showAllUnits && isStolenUnitCoveredByAlliance(s)) return false;
-                        return true;
-                      });
-                      if (stolen.length === 0) return null;
-                      return (
-                        <div className="mt-4">
-                          <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-purple-600 dark:text-purple-400">
-                            Stolen Designs
-                          </div>
-                          {stolen.map(({ sourceEmpireId, unit }) => {
-                            const sourceName = allPlayers.find(p => p.id === sourceEmpireId)?.empire.name ?? sourceEmpireId;
-                            const cost = alliedCost(unit.cost ?? 0);
-                            return (
-                              <UnitRowWithSurcharge
-                                key={`stolen-${sourceEmpireId}-${unit.id}`}
-                                unit={unit}
-                                cost={cost}
-                                label="Stolen"
-                                labelColor="purple"
-                                sourceLabel={sourceName}
-                                onAdd={() => addToCart({ ...unit, cost: alliedCost(unit.cost ?? 0) })}
-                              />
-                            );
-                          })}
-                        </div>
-                      );
-                    })()}
-
-                    {/* Per-ally sections */}
-                    {showAlliedUnits && (() => {
-                      const allies = getAllies();
-                      if (allies.length === 0) return null;
-                      return allies.map(ally => {
-                        const allyUnits = ally.empire.units.filter(u => !u.isSuperseded);
-                        if (allyUnits.length === 0) return null;
-                        return (
-                          <div key={ally.id} className="mt-4">
-                            <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-green-600 dark:text-green-400">
-                              Allied: {ally.empire.name}
-                            </div>
-                            {allyUnits.map(unit => {
-                              const cost = alliedCost(unit.cost ?? 0);
-                              return (
-                                <UnitRowWithSurcharge
-                                  key={`ally-${ally.id}-${unit.id}`}
-                                  unit={unit}
-                                  cost={cost}
-                                  label="Allied"
-                                  labelColor="green"
-                                  sourceLabel={ally.empire.name}
-                                  onAdd={() => addToCart({ ...unit, cost: alliedCost(unit.cost ?? 0) })}
-                                />
-                              );
-                            })}
-                          </div>
-                        );
-                      });
-                    })()}
                 </>
               )}
 
@@ -1244,43 +1231,6 @@ export function AddUnitsView({
             </div>
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function UnitRowWithSurcharge({
-  unit,
-  cost,
-  label,
-  labelColor,
-  sourceLabel,
-  onAdd,
-}: {
-  unit: EmpireUnit;
-  cost: number;
-  label: string;
-  labelColor: 'purple' | 'green';
-  sourceLabel: string;
-  onAdd: () => void;
-}) {
-  const colorClass = labelColor === 'purple'
-    ? 'text-purple-600 dark:text-purple-400'
-    : 'text-green-600 dark:text-green-400';
-  return (
-    <div className="flex items-center justify-between rounded border border-gray-100 px-3 py-1.5 text-sm dark:border-gray-800">
-      <div className="flex flex-col">
-        <span className="font-medium dark:text-gray-200">{unit.name}</span>
-        <span className={`text-xs ${colorClass}`}>{label} · {sourceLabel}</span>
-      </div>
-      <div className="flex items-center gap-3">
-        <span className="text-xs text-gray-400">{cost} EP (×1.25)</span>
-        <button
-          onClick={onAdd}
-          className="rounded bg-blue-600 px-2 py-0.5 text-xs font-medium text-white hover:bg-blue-700"
-        >
-          Add
-        </button>
       </div>
     </div>
   );

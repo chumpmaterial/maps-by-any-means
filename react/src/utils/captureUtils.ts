@@ -42,24 +42,58 @@ function computeTransform(
 }
 
 /**
- * Walk all <text> elements in `cloneG` and inline their fill/stroke from
- * getComputedStyle() on the corresponding elements in `originalSvg`.
- * This resolves Tailwind utility classes (fill-gray-700, stroke-white, dark: variants)
- * to actual color values so they survive SVG serialization.
+ * Walk all elements in `cloneG` that carry Tailwind fill-* or stroke-* classes
+ * and inline their computed fill/stroke from the live DOM counterpart in `originalG`.
+ * This resolves Tailwind utility classes (fill-gray-100, stroke-gray-300, dark: variants)
+ * to actual color values so they survive SVG serialization without a stylesheet.
  */
-function inlineTextStyles(cloneG: Element, originalSvg: SVGSVGElement): void {
-  const cloneTexts = Array.from(cloneG.querySelectorAll('text'));
-  const origTexts = Array.from(originalSvg.querySelectorAll('text'));
-  cloneTexts.forEach((cloneText, i) => {
-    const origText = origTexts[i];
-    if (!origText) return;
-    const computed = window.getComputedStyle(origText);
+function inlineFillStrokeStyles(cloneG: Element, originalG: Element): void {
+  const hasFillOrStrokeClass = (el: Element) => {
+    const cls = el.getAttribute('class') ?? '';
+    return cls.split(/\s+/).some(c => c.startsWith('fill-') || c.startsWith('stroke-') || c.startsWith('dark:fill-') || c.startsWith('dark:stroke-'));
+  };
+
+  const origEls = Array.from(originalG.querySelectorAll('[class]')).filter(hasFillOrStrokeClass);
+  const cloneEls = Array.from(cloneG.querySelectorAll('[class]')).filter(hasFillOrStrokeClass);
+
+  cloneEls.forEach((cloneEl, i) => {
+    const origEl = origEls[i];
+    if (!origEl) return;
+    const computed = window.getComputedStyle(origEl);
     const fill = computed.getPropertyValue('fill');
     const stroke = computed.getPropertyValue('stroke');
-    if (fill) cloneText.setAttribute('fill', fill);
-    if (stroke) cloneText.setAttribute('stroke', stroke);
-    cloneText.removeAttribute('class');
+    if (fill) cloneEl.setAttribute('fill', fill);
+    if (stroke) cloneEl.setAttribute('stroke', stroke);
+    // Strip fill-*/stroke-*/dark: classes since they're now inlined as attributes
+    const remaining = (cloneEl.getAttribute('class') ?? '')
+      .split(/\s+/)
+      .filter(c => c && !c.startsWith('fill-') && !c.startsWith('stroke-') && !c.startsWith('dark:fill-') && !c.startsWith('dark:stroke-'))
+      .join(' ');
+    if (remaining) cloneEl.setAttribute('class', remaining);
+    else cloneEl.removeAttribute('class');
   });
+}
+
+/**
+ * Add vector-effect="non-scaling-stroke" to all polygons inside .hex-grid.
+ * This prevents sub-pixel thin horizontal edges when the fit-zoom scale is < 1.
+ */
+function fixHexGridStrokes(cloneG: Element): void {
+  cloneG.querySelectorAll('.hex-grid polygon').forEach(el => {
+    el.setAttribute('vector-effect', 'non-scaling-stroke');
+    el.setAttribute('stroke-width', '1');
+  });
+}
+
+/** Walk up from `el` to find the first ancestor with a non-transparent background color. */
+function readBackgroundColor(el: Element): string {
+  let cur: Element | null = el;
+  while (cur) {
+    const bg = window.getComputedStyle(cur).backgroundColor;
+    if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') return bg;
+    cur = cur.parentElement;
+  }
+  return '#e5e7eb';
 }
 
 /** Remove cursor-* and pointer-events classes — meaningless in a static image. */
@@ -108,9 +142,10 @@ export async function captureMapToClipboard(options: CaptureOptions): Promise<st
   // Deep-clone before any DOM queries so we don't mutate the live tree
   const cloneG = mainG.cloneNode(true) as Element;
 
-  // inlineTextStyles must be called before removeNonClipElements:
-  // it pairs clone texts to live texts by index, so the counts must still match.
-  inlineTextStyles(cloneG, liveSvg);
+  // inlineFillStrokeStyles must be called before removeNonClipElements:
+  // it pairs clone elements to live elements by index, so the counts must still match.
+  inlineFillStrokeStyles(cloneG, mainG);
+  fixHexGridStrokes(cloneG);
   stripInteractivityClasses(cloneG);
 
   if (clipSystemIds) removeNonClipElements(cloneG, clipSystemIds);
@@ -125,15 +160,12 @@ export async function captureMapToClipboard(options: CaptureOptions): Promise<st
   captureSvg.setAttribute('width', String(width));
   captureSvg.setAttribute('height', String(height));
 
-  // Background rect: read color from the map container div
-  const rawBg = liveSvg.parentElement
-    ? window.getComputedStyle(liveSvg.parentElement).backgroundColor
-    : '';
-  const isTransparent = !rawBg || rawBg === 'rgba(0, 0, 0, 0)' || rawBg === 'transparent';
+  // Background rect: walk up from the SVG element to find an actual background color
+  const bgColor = readBackgroundColor(liveSvg);
   const bg = document.createElementNS(ns, 'rect');
   bg.setAttribute('width', String(width));
   bg.setAttribute('height', String(height));
-  bg.setAttribute('fill', isTransparent ? '#e5e7eb' : rawBg);
+  bg.setAttribute('fill', bgColor);
   captureSvg.appendChild(bg);
   captureSvg.appendChild(cloneG);
 
