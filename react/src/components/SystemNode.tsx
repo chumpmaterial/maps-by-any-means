@@ -15,6 +15,8 @@ interface SystemNodeProps {
   systemOwnership?: Record<string, string>;
   /** Campaign players for color lookup by playerId. */
   campaignPlayers?: CampaignPlayer[];
+  galaxyStateHighlight?: 'independent' | 'raider' | 'both' | null;
+  independentColor?: string | null;
 }
 
 // Size multipliers for different system types (relative to hex size)
@@ -43,6 +45,8 @@ export function SystemNode({
   isOnTradeRoute,
   systemOwnership,
   campaignPlayers,
+  galaxyStateHighlight,
+  independentColor,
 }: SystemNodeProps) {
   const [isHovered, setIsHovered] = useState(false);
   const { x, y } = hexToPixel(system.position);
@@ -53,7 +57,10 @@ export function SystemNode({
   let fillColor = defaultColors.fill;
   let strokeColor = defaultColors.stroke;
 
-  if (systemOwnership && campaignPlayers) {
+  if (independentColor) {
+    fillColor = independentColor;
+    strokeColor = generateStrokeColor(independentColor);
+  } else if (systemOwnership && campaignPlayers) {
     // Campaign mode: color from systemOwnership → player.teamColor
     const ownerId = systemOwnership[system.id];
     const owner = campaignPlayers.find(p => p.id === ownerId);
@@ -155,6 +162,23 @@ export function SystemNode({
         stroke={strokeColor}
         strokeWidth={2}
       />
+
+      {/* Galaxy State Setup highlight ring */}
+      {galaxyStateHighlight && (
+        <circle
+          cx={x}
+          cy={y}
+          r={radius + 5}
+          fill="none"
+          strokeWidth={3}
+          stroke={
+            galaxyStateHighlight === 'independent' ? '#60a5fa' :
+            galaxyStateHighlight === 'raider'      ? '#f87171' :
+            '#a855f7'
+          }
+          opacity={0.85}
+        />
+      )}
 
       {/* Star icon for homeworlds */}
       {system.type === 'homeworld' && (

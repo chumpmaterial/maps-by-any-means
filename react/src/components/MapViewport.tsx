@@ -72,6 +72,8 @@ interface MapViewportProps {
   clipModeActive?: boolean;
   clipSelectedSystemIds?: Set<string>;
   onClipToggleSystem?: (systemId: string) => void;
+  galaxyStateHighlights?: Record<string, 'independent' | 'raider' | 'both'> | null;
+  independentSystemColors?: Record<string, string>;
 }
 
 const SYSTEM_RADIUS_MULTIPLIERS: Record<string, number> = {
@@ -81,7 +83,7 @@ const SYSTEM_RADIUS_MULTIPLIERS: Record<string, number> = {
   unimportant: 0.22,
 };
 
-export function MapViewport({ mapState, generationLog = [], onClearLog, campaignMode = false, mapEditingMode = false, showHexGrid = true, tradeRouteLaneIds, tradeRouteSystemIds, fowData, espionageMode = false, onEspionageTarget, fleetMoveMode, onFleetMoveTarget, cmFleetMoveMode, onCMFleetMoveTarget, fleetIndicators, staleSystems, onFleetMove, onCMFleetMove, requestCenter, systemOwnership, campaignPlayers, svgRef, clipModeActive = false, clipSelectedSystemIds, onClipToggleSystem }: MapViewportProps) {
+export function MapViewport({ mapState, generationLog = [], onClearLog, campaignMode = false, mapEditingMode = false, showHexGrid = true, tradeRouteLaneIds, tradeRouteSystemIds, fowData, espionageMode = false, onEspionageTarget, fleetMoveMode, onFleetMoveTarget, cmFleetMoveMode, onCMFleetMoveTarget, fleetIndicators, staleSystems, onFleetMove, onCMFleetMove, requestCenter, systemOwnership, campaignPlayers, svgRef, clipModeActive = false, clipSelectedSystemIds, onClipToggleSystem, galaxyStateHighlights, independentSystemColors }: MapViewportProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
 
@@ -412,6 +414,8 @@ export function MapViewport({ mapState, generationLog = [], onClearLog, campaign
                     isOnTradeRoute={tradeRouteSystemIds?.has(system.id)}
                     systemOwnership={systemOwnership}
                     campaignPlayers={campaignPlayers}
+                    galaxyStateHighlight={galaxyStateHighlights?.[system.id] ?? null}
+                    independentColor={independentSystemColors?.[system.id] ?? null}
                   />
                 </g>
               );

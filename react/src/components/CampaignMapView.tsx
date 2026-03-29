@@ -23,6 +23,7 @@ import { CombatScenarioView } from './CombatScenarioView';
 import { SupplyPhaseView } from './SupplyPhaseView';
 import { SystemsOverviewView } from './SystemsOverviewView';
 import { TurnHistoryBrowser } from './TurnHistoryBrowser';
+import { GalaxyStateSetupPanel } from './GalaxyStateSetupPanel';
 import { SettingsModal } from './SettingsModal';
 import { Toolbar } from './Toolbar';
 import { useMapCapture } from '../hooks/useMapCapture';
@@ -155,6 +156,8 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
   const bypassTradeWarningRef = useRef(false);
   const [cmFleets, setCmFleets] = useState<CMFleet[]>([]);
   const [systemFleetOrder, setSystemFleetOrder] = useState<Record<string, string[]>>({});
+  const [galaxyStateLog, setGalaxyStateLog] = useState<Campaign['galaxyStateLog']>(undefined);
+  const [independentSystemColors, setIndependentSystemColors] = useState<Record<string, string>>({});
   const [pathSelectModal, setPathSelectModal] = useState<{
     paths: string[][];
     fleetId: string;
@@ -380,6 +383,8 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
       if (savedCampaign.diplomacyCooldowns) setDiplomacyCooldowns(savedCampaign.diplomacyCooldowns);
       if (savedCampaign.activeCombatScenarios) setActiveCombatScenarios(savedCampaign.activeCombatScenarios);
       if (savedCampaign.independentUnitLists) setIndependentUnitListOverrides(savedCampaign.independentUnitLists);
+      if (savedCampaign.galaxyStateLog) setGalaxyStateLog(savedCampaign.galaxyStateLog);
+      if (savedCampaign.independentSystemColors) setIndependentSystemColors(savedCampaign.independentSystemColors);
       if (savedCampaign.systemOwnership) {
         setSystemOwnership(savedCampaign.systemOwnership);
       } else {
@@ -407,6 +412,8 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
           activeCombatScenarios: structuredClone(savedCampaign.activeCombatScenarios ?? []),
           turnOrders: structuredClone(savedCampaign.turnOrders ?? {}),
           independentUnitListOverrides: structuredClone(savedCampaign.independentUnitLists ?? []),
+          galaxyStateLog: savedCampaign.galaxyStateLog ? { ...savedCampaign.galaxyStateLog } : undefined,
+          independentSystemColors: savedCampaign.independentSystemColors ? { ...savedCampaign.independentSystemColors } : undefined,
         };
         setCampaignHistory({
           entries: [{
@@ -462,6 +469,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
             activeCombatScenarios: [],
             turnOrders: {},
             independentUnitListOverrides: [],
+            galaxyStateLog: undefined,
           },
         }],
       });
@@ -490,10 +498,13 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
     systemOwnership,
     independentUnitLists: independentUnitListOverrides.length > 0 ? independentUnitListOverrides : undefined,
     history: campaignHistory,
+    galaxyStateLog: galaxyStateLog ?? undefined,
+    independentSystemColors: Object.keys(independentSystemColors).length > 0 ? independentSystemColors : undefined,
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [settings, phase, players, currentTurn, currentTurnPhase, currentPlayerIndex,
       systemStatuses, cmFleets, turnOrders, diplomacyRelations,
-      diplomacyCooldowns, activeCombatScenarios, systemOwnership, mapState.map, independentUnitListOverrides, campaignHistory]);
+      diplomacyCooldowns, activeCombatScenarios, systemOwnership, mapState.map, independentUnitListOverrides, campaignHistory,
+      galaxyStateLog, independentSystemColors]);
 
   // Autosave campaign state to localStorage whenever key state changes
   useEffect(() => {
@@ -513,8 +524,11 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
     activeCombatScenarios: structuredClone(activeCombatScenarios),
     turnOrders: structuredClone(turnOrders),
     independentUnitListOverrides: structuredClone(independentUnitListOverrides),
+    independentSystemColors: { ...independentSystemColors },
+    galaxyStateLog: galaxyStateLog ? { ...galaxyStateLog } : undefined,
   }), [players, mapState.map, systemOwnership, systemStatuses, cmFleets,
-      diplomacyRelations, diplomacyCooldowns, activeCombatScenarios, turnOrders, independentUnitListOverrides]);
+      diplomacyRelations, diplomacyCooldowns, activeCombatScenarios, turnOrders, independentUnitListOverrides,
+      independentSystemColors, galaxyStateLog]);
 
   // Auto-capture a history snapshot when entering a new phase
   // Fires after React batches all state updates from advance handlers
@@ -723,20 +737,10 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
     ));
   }, [players, currentPlayerIndex, systemOwnership, mapState]);
 
-  // Finish system purchase for all players: store unspent SP bonus, zero unowned planets
-  const handleFinishAllPurchases = useCallback(() => {
-    // Store unspent SP bonus for later EP calculation; don't add to EP yet
-    const updatedPlayers = players.map(player => ({
-      ...player,
-      unspentSPBonus: player.sp * 10,
-      sp: 0,
-    }));
-    setPlayers(updatedPlayers);
-
-    // Zero P/M/I/F on unowned planets
-    const allOwnedIds = new Set(players.flatMap(p => p.ownedSystemIds));
+  const zeroUnownedSystemAttributes = useCallback((ownershipSnapshot: Record<string, string>) => {
     for (const system of mapState.map.systems) {
-      if (!allOwnedIds.has(system.id) && system.attributes) {
+      const owner = ownershipSnapshot[system.id];
+      if (!owner && system.attributes) {
         mapState.updateSystem(system.id, {
           attributes: {
             ...system.attributes,
@@ -748,10 +752,47 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
         });
       }
     }
+  }, [mapState]);
 
+  // Finish system purchase for all players: store unspent SP bonus, zero unowned planets
+  const handleFinishAllPurchases = useCallback(() => {
+    // Store unspent SP bonus for later EP calculation; don't add to EP yet
+    const updatedPlayers = players.map(player => ({
+      ...player,
+      unspentSPBonus: player.sp * 10,
+      sp: 0,
+    }));
+    setPlayers(updatedPlayers);
+
+    if (settings.rules.independentSystems || settings.rules.hostileGalaxy) {
+      setPhase('galaxy_state_setup');
+      setCurrentPlayerIndex(0);
+    } else {
+      zeroUnownedSystemAttributes(systemOwnership);
+      setPhase('lane_rolling');
+      setCurrentPlayerIndex(0);
+    }
+  }, [players, settings.rules.independentSystems, settings.rules.hostileGalaxy, zeroUnownedSystemAttributes, systemOwnership]);
+
+  const handleFinishGalaxyStateSetup = useCallback(() => {
+    const log = galaxyStateLog ?? { independents: [], raiderSystems: [], independentChecked: {}, raiderChecked: {} };
+    const newOwnership = { ...systemOwnership };
+    for (const sysId of log.independents) {
+      newOwnership[sysId] = `independent:${sysId}`;
+    }
+    setSystemOwnership(newOwnership);
+    setPlayers(prev => rebuildOwnedSystemIds(prev, newOwnership));
+    zeroUnownedSystemAttributes(newOwnership);
     setPhase('lane_rolling');
     setCurrentPlayerIndex(0);
-  }, [players, mapState]);
+  }, [galaxyStateLog, systemOwnership, zeroUnownedSystemAttributes]);
+
+  const handleSetGalaxyStateLog = useCallback((patch: Partial<NonNullable<Campaign['galaxyStateLog']>>) => {
+    setGalaxyStateLog(prev => {
+      const base = prev ?? { independents: [], raiderSystems: [], independentChecked: {}, raiderChecked: {} };
+      return { ...base, ...patch };
+    });
+  }, []);
 
   // Finish lane rolling: calculate EP, transition to unit_purchase
   const handleFinishLaneRolling = useCallback(() => {
@@ -2000,6 +2041,16 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
     setEspionageFlow(null);
   }, [espionageFlow, players, mapState.map, currentTurn, confirm]);
 
+  const galaxyStateHighlights = useMemo((): Record<string, 'independent' | 'raider' | 'both'> | null => {
+    if (phase !== 'galaxy_state_setup' || !galaxyStateLog) return null;
+    const result: Record<string, 'independent' | 'raider' | 'both'> = {};
+    for (const id of galaxyStateLog.independents ?? []) result[id] = 'independent';
+    for (const id of galaxyStateLog.raiderSystems ?? []) {
+      result[id] = result[id] === 'independent' ? 'both' : 'raider';
+    }
+    return result;
+  }, [phase, galaxyStateLog]);
+
   // Memoized Fog of War data for MapViewport
   const fowData = useMemo(() => {
     if (!mapSettings.fogOfWar || !mapSettings.fowPlayerId) return null;
@@ -2520,7 +2571,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
           onCancelEspionage={() => setEspionageFlow(null)}
           onOpenFleetManager={phase === 'in_progress' ? handleOpenFleetManager : undefined}
           onOpenTradeRoutes={phase === 'in_progress' ? () => setShowTradeRouteManager(true) : undefined}
-          onOpenAddUnits={phase === 'in_progress' ? () => { setAddUnitsSystemId(mapState.selectedSystemId ?? ''); setShowAddUnits(true); } : undefined}
+          onOpenAddUnits={(phase === 'in_progress' || phase === 'galaxy_state_setup') ? () => { setAddUnitsSystemId(mapState.selectedSystemId ?? ''); setShowAddUnits(true); } : undefined}
           onOpenTransferUnit={phase === 'in_progress' ? () => setShowTransferUnitModal(true) : undefined}
           onOpenAddToTechPool={phase === 'in_progress' ? () => setShowAddToTechPoolModal(true) : undefined}
           onOpenForceAdvancement={phase === 'in_progress' ? () => setShowForceAdvancementModal(true) : undefined}
@@ -2611,6 +2662,20 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
           onBack={handleRevertToPreviousPhase}
           onViewMap={() => setTurnPhaseMapView(true)}
           canBack={canRevert}
+        />
+      ) : phase === 'galaxy_state_setup' && !mapEditingMode ? (
+        <GalaxyStateSetupPanel
+          players={players}
+          map={mapState.map}
+          systemOwnership={systemOwnership}
+          settings={settings}
+          galaxyStateLog={galaxyStateLog}
+          onSetLog={handleSetGalaxyStateLog}
+          onFinish={handleFinishGalaxyStateSetup}
+          onOpenAddUnits={() => {
+            setAddUnitsSystemId('');
+            setShowAddUnits(true);
+          }}
         />
       ) : phase === 'unit_purchase' && !mapEditingMode && !unitPurchaseMapView ? (
         <UnitPurchaseView
@@ -2742,6 +2807,8 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
               clipModeActive={captureHook.clipModeActive}
               clipSelectedSystemIds={captureHook.clipSelectedSystemIds}
               onClipToggleSystem={captureHook.toggleClipSystem}
+              galaxyStateHighlights={galaxyStateHighlights}
+              independentSystemColors={independentSystemColors}
             />
             {/* Map control pill */}
             {phase === 'in_progress' && (
@@ -7909,6 +7976,7 @@ interface CampaignPhasePanelProps {
 const PHASE_LABELS: Partial<Record<CampaignPhase, string>> = {
   homeworld_selection: 'Homeworld Selection',
   system_purchase: 'System Purchase',
+  galaxy_state_setup: 'Galaxy State Setup',
   lane_rolling: 'Lane Rolling',
   unit_purchase: 'Unit Purchase',
   unit_deployment: 'Unit Deployment',
