@@ -1399,6 +1399,7 @@ function SystemPropertiesPanel({ mapState, selectedSystem, nameListHook, campaig
               placeholder="Unowned"
               options={[
                 { value: '', label: 'Unowned' },
+                { value: `independent:${selectedSystem.id}`, label: 'Independent', color: independentSystemColors?.[selectedSystem.id] ?? '#6b7280' },
                 ...players.map(p => ({
                   value: p.id,
                   label: p.name,
@@ -1406,6 +1407,19 @@ function SystemPropertiesPanel({ mapState, selectedSystem, nameListHook, campaig
                 })),
               ]}
             />
+            {systemOwnership[selectedSystem.id]?.startsWith('independent:') && onSetIndependentSystemColor && (
+              <div className="mt-2">
+                <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+                  Independent System Color
+                </label>
+                <input
+                  type="color"
+                  value={independentSystemColors?.[selectedSystem.id] ?? '#6b7280'}
+                  onChange={e => onSetIndependentSystemColor(selectedSystem.id, e.target.value)}
+                  className="mt-1 h-8 w-full cursor-pointer rounded border border-gray-300 dark:border-gray-600"
+                />
+              </div>
+            )}
           </div>
         )}
 
