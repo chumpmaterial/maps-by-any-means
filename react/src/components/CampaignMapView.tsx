@@ -2778,6 +2778,9 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
                 onUpdateOrders={handleUpdateTurnOrders}
                 constructionChecks={constructionChecks}
                 onUpdateConstructionChecks={(key, checks) => setConstructionChecks(prev => ({ ...prev, [key]: checks }))}
+                cmFleets={cmFleets}
+                independentLists={INDEPENDENT_UNIT_LISTS.filter(l => l.id !== 'ravager' || settings.rules.ravagerFleets)}
+                map={mapState.map}
               />
             ) : phase === 'in_progress' && currentTurnPhase === 'combat' ? (
               <CombatPhasePanel
@@ -5416,9 +5419,12 @@ interface ConstructionPhasePanelProps {
   onUpdateOrders: (key: string, entry: TurnOrderEntry) => void;
   constructionChecks: Record<string, Array<{ checked: boolean; xed: boolean }>>;
   onUpdateConstructionChecks: (key: string, checks: Array<{ checked: boolean; xed: boolean }>) => void;
+  cmFleets: CMFleet[];
+  independentLists: IndependentUnitList[];
+  map: GameMap;
 }
 
-function ConstructionPhasePanel({ players, turnOrders, onUpdateOrders, constructionChecks, onUpdateConstructionChecks }: ConstructionPhasePanelProps) {
+function ConstructionPhasePanel({ players, turnOrders, onUpdateOrders, constructionChecks, onUpdateConstructionChecks, cmFleets, independentLists, map }: ConstructionPhasePanelProps) {
   const cmTabIndex = players.length;
   const [activeTab, setActiveTab] = useState(0);
   const { ref: tabBarRef, onMouseDown: tabBarMouseDown, onClickCapture: tabBarClickCapture } = useDragScroll();
@@ -5507,6 +5513,33 @@ function ConstructionPhasePanel({ players, turnOrders, onUpdateOrders, construct
               onChange={e => onUpdateOrders(activeKey, { ...entry, construction: e.target.value })}
               placeholder="CM construction notes…"
             />
+            {(() => {
+              const allCMUnits = cmFleets.flatMap(f => f.units.map(u => ({ unit: u, fleet: f })));
+              const regeneratingCrippled = allCMUnits.filter(({ unit, fleet }) => {
+                if (!unit.crippled) return false;
+                const sourceList = independentLists.find(l => l.id === fleet.sourceListId);
+                const template = sourceList?.units.find(u => u.id === unit.unitTemplateId);
+                return template?.traits?.some(t => t.name === 'Regenerating') ?? false;
+              });
+              if (regeneratingCrippled.length === 0) return null;
+              return (
+                <div className="mt-4">
+                  <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Regenerating Units (Crippled) — CM
+                  </h4>
+                  <ul className="space-y-1">
+                    {regeneratingCrippled.map(({ unit, fleet }) => {
+                      const sysName = map.systems.find(s => s.id === unit.systemId)?.name ?? unit.systemId ?? '—';
+                      return (
+                        <li key={unit.id} className="text-sm text-gray-600 dark:text-gray-300">
+                          {unit.name ?? unit.unitTemplateId} — {sysName} / {fleet.name}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              );
+            })()}
           </div>
         ) : (
           <div>
@@ -5587,6 +5620,34 @@ function ConstructionPhasePanel({ players, turnOrders, onUpdateOrders, construct
                 })}
               </ul>
             )}
+            {!isEditing && (() => {
+              const player = players[activeTab];
+              if (!player) return null;
+              const regeneratingCrippled = player.units.filter(unit => {
+                if (!unit.crippled) return false;
+                const template = resolveUnitTemplate(player, unit.unitTemplateId, players);
+                return template?.traits?.some(t => t.name === 'Regenerating') ?? false;
+              });
+              if (regeneratingCrippled.length === 0) return null;
+              return (
+                <div className="mt-4">
+                  <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Regenerating Units (Crippled)
+                  </h4>
+                  <ul className="space-y-1">
+                    {regeneratingCrippled.map(unit => {
+                      const fleet = (player.fleets ?? []).find(f => f.id === unit.fleetId);
+                      const sysName = map.systems.find(s => s.id === unit.systemId)?.name ?? unit.systemId ?? '—';
+                      return (
+                        <li key={unit.id} className="text-sm text-gray-600 dark:text-gray-300">
+                          {unit.name ?? unit.unitTemplateId} — {sysName}{fleet ? ` / ${fleet.name}` : ''}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              );
+            })()}
           </div>
         )}
       </div>
