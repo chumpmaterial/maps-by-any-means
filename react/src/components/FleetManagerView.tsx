@@ -1,9 +1,9 @@
 import { useState, useRef, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import type { CampaignFleet, CampaignPlayer, CampaignUnit, CMFleet, EmpireUnit, GameMap, IndependentUnitList, TurnOrderEntry } from '../types';
+import type { CampaignFleet, CampaignPlayer, CampaignUnit, CMFleet, EmpireUnit, GameMap, IndependentUnitList, TurnOrderEntry, SystemCampaignStatus, DiplomacyLevel, CampaignSettings, TradeRoute, System } from '../types';
 import { SYSTEM_FLEET_NAMES } from '../types';
 import { useConfirm } from '../hooks/useConfirm';
-import { computeFleetBadges, getCarryCapacity, canJoinSystemFleet, resolveUnitTemplate } from '../utils/fleetUtils';
+import { computeFleetBadges, getCarryCapacity, canJoinSystemFleet, resolveUnitTemplate, computeRaiderChecks } from '../utils/fleetUtils';
 import { unitStatusKey, computeEffectiveStats } from '../utils/combatUtils';
 
 // ---------------------------------------------------------------------------
@@ -39,6 +39,12 @@ interface FleetManagerViewProps {
   onToggleUnitStatus?: (playerId: string, unitId: string, status: StrategicStatus) => void;
   initialPlayerId?: string;
   initialSystemId?: string;
+  systemOwnership?: Record<string, string>;
+  systemStatuses?: Record<string, SystemCampaignStatus>;
+  diplomacyRelations?: Record<string, DiplomacyLevel>;
+  settings?: CampaignSettings;
+  onCenterOnSystem?: (systemId: string) => void;
+  tradeRoutes?: TradeRoute[];
 }
 
 interface FMDragState {
@@ -72,6 +78,44 @@ function GripIcon({ className }: { className?: string }) {
       <circle cx="2.5" cy="10" r="1.5" /><circle cx="7.5" cy="10" r="1.5" />
       <circle cx="2.5" cy="14" r="1.5" /><circle cx="7.5" cy="14" r="1.5" />
     </svg>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Rule activity badge
+// ---------------------------------------------------------------------------
+
+function RuleActivityBadge({ label }: { label: string }) {
+  return (
+    <span className="inline-flex items-center rounded border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 dark:border-blue-800/40 dark:bg-blue-900/20 dark:text-blue-400">
+      {label} Active
+    </span>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Raider check card
+// ---------------------------------------------------------------------------
+
+function RaiderCheckCard({ system, reasons, onCenter }: { system: System; reasons: string[]; onCenter: () => void }) {
+  const [checked, setChecked] = useState(false);
+  return (
+    <div className="flex items-center gap-2 rounded border border-amber-200 bg-amber-50 px-2 py-1.5 dark:border-amber-800/40 dark:bg-amber-900/20">
+      <button
+        onClick={e => { e.stopPropagation(); setChecked(c => !c); }}
+        className="flex-shrink-0 rounded p-0.5 hover:bg-amber-100 dark:hover:bg-amber-800/40"
+      >
+        <span className={`block h-3 w-3 rounded-sm border ${checked ? 'border-amber-600 bg-amber-500' : 'border-amber-400 bg-white dark:bg-transparent'}`} />
+      </button>
+      <button onClick={onCenter} className="flex-1 min-w-0 text-left">
+        <span className={`text-sm ${checked ? 'text-gray-400 line-through dark:text-gray-500' : 'dark:text-gray-100'}`}>
+          {system.name || system.id}
+        </span>
+        {reasons.length > 0 && (
+          <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">{reasons.join(', ')}</span>
+        )}
+      </button>
+    </div>
   );
 }
 
@@ -973,6 +1017,12 @@ export function FleetManagerView({
   onToggleUnitStatus,
   initialPlayerId,
   initialSystemId,
+  systemOwnership,
+  systemStatuses,
+  diplomacyRelations,
+  settings,
+  onCenterOnSystem,
+  tradeRoutes = [],
 }: FleetManagerViewProps) {
   const confirm = useConfirm();
 
@@ -1609,6 +1659,37 @@ export function FleetManagerView({
         {isCMTab ? (
           /* CM Fleets View — same structure as player tab */
           <div>
+            {/* Rule badges — CM tab */}
+            {(settings?.rules.persistentRaiders || settings?.rules.ravagerFleets || settings?.rules.harbingerThreats) && (
+              <div className="mb-3 flex flex-wrap gap-1.5">
+                {settings?.rules.persistentRaiders && <RuleActivityBadge label="Persistent Raiders" />}
+                {settings?.rules.ravagerFleets && <RuleActivityBadge label="Ravager Fleets" />}
+                {settings?.rules.harbingerThreats && <RuleActivityBadge label="Harbinger Threats" />}
+              </div>
+            )}
+
+            {/* Raider Checks — Independent Systems */}
+            {(() => {
+              if (!systemOwnership || !systemStatuses || !diplomacyRelations) return null;
+              const checks = computeRaiderChecks('CM', players, map, systemOwnership, systemStatuses, diplomacyRelations, tradeRoutes);
+              if (checks.length === 0) return null;
+              return (
+                <div className="mb-4">
+                  <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Raider Checks — Independent Systems</h4>
+                  <div className="space-y-1">
+                    {checks.map(({ system, reasons }) => (
+                      <RaiderCheckCard
+                        key={system.id}
+                        system={system}
+                        reasons={reasons}
+                        onCenter={() => onCenterOnSystem?.(system.id)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
             {cmFleets.length === 0 ? (
               <p className="text-sm italic text-gray-400 dark:text-gray-500">No CM fleets created. Use Fleets → Add Units to create CM fleets.</p>
             ) : (
@@ -1686,9 +1767,40 @@ export function FleetManagerView({
               </div>
             )}
           </div>
-        ) : playerSystems.length === 0 ? (
-          <p className="text-sm italic text-gray-400 dark:text-gray-500">No fleets or units deployed.</p>
         ) : (
+          <div>
+            {/* Rule badges — player tab */}
+            {settings?.rules.persistentRaiders && (
+              <div className="mb-3 flex flex-wrap gap-1.5">
+                <RuleActivityBadge label="Persistent Raiders" />
+              </div>
+            )}
+
+            {/* Raider Checks — player tab */}
+            {(() => {
+              if (!systemOwnership || !systemStatuses || !diplomacyRelations || !player) return null;
+              const checks = computeRaiderChecks(player.id, players, map, systemOwnership, systemStatuses, diplomacyRelations, tradeRoutes);
+              if (checks.length === 0) return null;
+              return (
+                <div className="mb-4">
+                  <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Raider Checks</h4>
+                  <div className="space-y-1">
+                    {checks.map(({ system, reasons }) => (
+                      <RaiderCheckCard
+                        key={system.id}
+                        system={system}
+                        reasons={reasons}
+                        onCenter={() => onCenterOnSystem?.(system.id)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {playerSystems.length === 0 ? (
+              <p className="text-sm italic text-gray-400 dark:text-gray-500">No fleets or units deployed.</p>
+            ) : (
           <div className="space-y-3">
             {playerSystems.map(sys => {
               const systemName = map.systems.find(s => s.id === sys.systemId)?.name ?? sys.systemId;
@@ -1894,6 +2006,8 @@ export function FleetManagerView({
                 </div>
               );
             })}
+          </div>
+            )}
           </div>
         )}
         </div>{/* end p-6 */}

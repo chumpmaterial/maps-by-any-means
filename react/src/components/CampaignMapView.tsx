@@ -3177,6 +3177,15 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
           turnOrders={turnOrders}
           onUpdateOrders={handleUpdateTurnOrders}
           onToggleUnitStatus={handleToggleUnitStatus}
+          systemOwnership={systemOwnership}
+          systemStatuses={systemStatuses}
+          diplomacyRelations={diplomacyRelations}
+          settings={settings}
+          tradeRoutes={players.flatMap(p => p.tradeRoutes ?? [])}
+          onCenterOnSystem={(sysId) => {
+            handleCenterAndSelectSystem(sysId);
+            setShowFleetManager(false);
+          }}
         />
       )}
 

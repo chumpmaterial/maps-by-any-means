@@ -1,4 +1,4 @@
-import type { CampaignFleet, CampaignUnit, CampaignPlayer, EmpireUnit, GameMap, UnitCategory } from '../types';
+import type { CampaignFleet, CampaignUnit, CampaignPlayer, EmpireUnit, GameMap, UnitCategory, System, SystemCampaignStatus, DiplomacyLevel, TradeRoute } from '../types';
 
 // ---------------------------------------------------------------------------
 // Template resolution — handles own + stolen + allied unit designs
@@ -263,4 +263,103 @@ export function canJoinSystemFleet(
     default:
       return true; // Named user fleets accept any category
   }
+}
+
+// ---------------------------------------------------------------------------
+// Raider check computation
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns true if the given entity (player or independent) is at war with any other entity.
+ * Internal helper — not exported.
+ */
+function isAtWar(
+  entityId: string,
+  diplomacyRelations: Record<string, DiplomacyLevel>,
+  allEntityIds: string[],
+): boolean {
+  for (const otherId of allEntityIds) {
+    if (otherId === entityId) continue;
+    const key = [entityId, otherId].sort().join(':');
+    if (diplomacyRelations[key] === 'War') return true;
+  }
+  return false;
+}
+
+export interface RaiderCheckResult {
+  system: System;
+  reasons: string[];  // e.g., ['Convoy', 'Trade Route']
+}
+
+/**
+ * Compute which systems require a raider check for the given player (or 'CM' for
+ * independent-system checks).
+ *
+ * Pass `playerId = 'CM'` to get raider checks for all independent systems.
+ */
+export function computeRaiderChecks(
+  playerId: string,
+  players: CampaignPlayer[],
+  map: GameMap,
+  systemOwnership: Record<string, string>,
+  systemStatuses: Record<string, SystemCampaignStatus>,
+  diplomacyRelations: Record<string, DiplomacyLevel>,
+  tradeRoutes: TradeRoute[],
+): RaiderCheckResult[] {
+  // All independent owner IDs present in systemOwnership
+  const independentOwnerIds = [...new Set(
+    Object.values(systemOwnership).filter(v => v?.startsWith('independent:')),
+  )];
+
+  // All entity IDs: players + independent owners
+  const allEntityIds = [
+    ...players.map(p => p.id),
+    ...independentOwnerIds,
+  ];
+
+  const results: RaiderCheckResult[] = [];
+
+  for (const sys of map.systems) {
+    const ownerId = systemOwnership[sys.id];
+
+    // Filter by player/CM
+    if (playerId === 'CM') {
+      if (!ownerId?.startsWith('independent:')) continue;
+    } else {
+      if (ownerId !== playerId) continue;
+    }
+
+    // Must have a status entry
+    const status = systemStatuses[sys.id];
+    if (!status) continue;
+
+    // Determine convoy presence: Convoy unit physically at this system
+    const hasConvoy = players.some(p =>
+      p.units.some(u => {
+        if (u.systemId !== sys.id) return false;
+        const t = p.empire.units.find(eu => eu.id === u.unitTemplateId)
+          ?? p.stolenUnits?.find(s => s.unit.id === u.unitTemplateId)?.unit;
+        return t?.category === 'Civilian' && t?.name === 'Convoy';
+      }),
+    );
+
+    // Determine trade route presence
+    const hasTradeRoute = tradeRoutes.some(r => r.systemIds.includes(sys.id));
+
+    if (!hasConvoy && !hasTradeRoute) continue;
+
+    // Population >= 5 exemption: skip if owner is NOT at war with anyone
+    if ((sys.attributes?.population ?? 0) >= 5) {
+      const ownerEntityId = ownerId ?? '';
+      if (!isAtWar(ownerEntityId, diplomacyRelations, allEntityIds)) continue;
+    }
+
+    const reasons: string[] = [];
+    if (hasConvoy) reasons.push('Convoy');
+    if (hasTradeRoute) reasons.push('Trade Route');
+
+    results.push({ system: sys, reasons });
+  }
+
+  return results;
 }
