@@ -2988,7 +2988,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
             independentSystemColors={independentSystemColors}
             onSetIndependentSystemColor={phase === 'in_progress' ? handleSetIndependentSystemColor : undefined}
             cmFleets={cmFleets}
-            independentLists={INDEPENDENT_UNIT_LISTS}
+            independentLists={INDEPENDENT_UNIT_LISTS.filter(l => l.id !== 'ravager' || settings.rules.ravagerFleets)}
             onEditCMFleet={phase === 'in_progress' ? (id) => setEditingCMFleet(id) : undefined}
             onMoveCMFleet={phase === 'in_progress' ? handleEnterCMFleetMoveMode : undefined}
             onDeleteCMUnits={phase === 'in_progress' ? handleDeleteCMUnits : undefined}
@@ -3164,7 +3164,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
           onEditFleet={(pid, fid) => { setShowFleetManager(false); setEditingFleet({ playerId: pid, fleetId: fid }); }}
           onMoveFleet={(pid, fid) => { setShowFleetManager(false); handleEnterFleetMoveMode(pid, fid); }}
           cmFleets={cmFleets}
-          independentLists={INDEPENDENT_UNIT_LISTS}
+          independentLists={INDEPENDENT_UNIT_LISTS.filter(l => l.id !== 'ravager' || settings.rules.ravagerFleets)}
           onEditCMFleet={(id) => { setShowFleetManager(false); setEditingCMFleet(id); }}
           onDeleteCMFleet={(id) => setCmFleets(prev => prev.filter(f => f.id !== id))}
           onMoveCMFleet={(id) => { setShowFleetManager(false); handleEnterCMFleetMoveMode(id); }}
@@ -3203,7 +3203,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
           systemOwnership={systemOwnership}
           turnOrders={turnOrders}
           onUpdateOrders={handleUpdateTurnOrders}
-          independentLists={INDEPENDENT_UNIT_LISTS}
+          independentLists={INDEPENDENT_UNIT_LISTS.filter(l => l.id !== 'ravager' || settings.rules.ravagerFleets)}
           cmFleets={cmFleets}
           systemStatuses={systemStatuses}
           selectedSystemId={addUnitsSystemId}
@@ -3249,7 +3249,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
       {editingCMFleet && (() => {
         const cf = cmFleets.find(f => f.id === editingCMFleet);
         if (!cf) return null;
-        const allIndieUnits = INDEPENDENT_UNIT_LISTS.flatMap(l => l.units);
+        const allIndieUnits = INDEPENDENT_UNIT_LISTS.filter(l => l.id !== 'ravager' || settings.rules.ravagerFleets).flatMap(l => l.units);
         const asCampaignFleet = { id: cf.id, name: cf.name, systemId: cf.systemId ?? '', movedThisTurn: false };
         const otherFleetNames = cmFleets
           .filter(f => f.id !== cf.id && f.systemId === cf.systemId)
@@ -7194,7 +7194,7 @@ function StealUnitTechModal({
 
 function ForceAdvancementModal({
   players,
-  settings: _settings,
+  settings,
   independentListOverrides,
   onUnlockUnit,
   onUpgradeUnit,
@@ -7220,11 +7220,13 @@ function ForceAdvancementModal({
   // CM sub-tab
   const [cmSubTab, setCmSubTab] = useState(0);
 
-  // Effective independent lists (override takes priority over static)
-  const effectiveIndepLists = INDEPENDENT_UNIT_LISTS.map(staticList => {
-    const override = independentListOverrides.find(o => o.id === staticList.id);
-    return override ?? staticList;
-  });
+  // Effective independent lists (override takes priority over static; ravager filtered by rule)
+  const effectiveIndepLists = INDEPENDENT_UNIT_LISTS
+    .filter(l => l.id !== 'ravager' || settings?.rules.ravagerFleets)
+    .map(staticList => {
+      const override = independentListOverrides.find(o => o.id === staticList.id);
+      return override ?? staticList;
+    });
 
   const handleTabChange = (tab: TabId) => {
     setActiveTab(tab);

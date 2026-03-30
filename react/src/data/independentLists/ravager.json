@@ -1,0 +1,28 @@
+{
+  "id": "ravager",
+  "name": "Ravager Force List",
+  "units": [
+    { "id": "ravager-battlewagon",      "name": "Battlewagon",      "category": "Ships",   "hullCode": "BC",  "cost": 9, "isd": "N/A", "dv": 7, "as": 7, "af": 2, "cr": 8, "cc": 4, "traits": [{ "name": "Regenerating" }] },
+    { "id": "ravager-galleon",          "name": "Galleon",          "category": "Ships",   "hullCode": "CA",  "cost": 9, "isd": "N/A", "dv": 6, "as": 0, "af": 2, "cr": 7, "cc": 4, "traits": [{ "name": "Carrier", "factor": 3 }, { "name": "Regenerating" }] },
+    { "id": "ravager-stalker",          "name": "Stalker",          "category": "Ships",   "hullCode": "CA",  "cost": 8, "isd": "N/A", "dv": 5, "as": 4, "af": 3, "cr": 7, "cc": 4, "traits": [{ "name": "Disruptor", "factor": 1 }, { "name": "Regenerating" }] },
+    { "id": "ravager-dragonship",       "name": "Dragonship",       "category": "Ships",   "hullCode": "CW",  "cost": 7, "isd": "N/A", "dv": 5, "as": 7, "af": 1, "cr": 6, "cc": 3, "traits": [{ "name": "Regenerating" }] },
+    { "id": "ravager-trespasser",       "name": "Trespasser",       "category": "Ships",   "hullCode": "CW",  "cost": 8, "isd": "N/A", "dv": 5, "as": 3, "af": 1, "cr": 6, "cc": 3, "traits": [{ "name": "Scout", "factor": 2 }, { "name": "Regenerating" }] },
+    { "id": "ravager-caravel",          "name": "Caravel",          "category": "Ships",   "hullCode": "CL",  "cost": 7, "isd": "N/A", "dv": 5, "as": 0, "af": 2, "cr": 5, "cc": 3, "traits": [{ "name": "Carrier", "factor": 2 }, { "name": "Regenerating" }] },
+    { "id": "ravager-vandal",           "name": "Vandal",           "category": "Ships",   "hullCode": "CL",  "cost": 6, "isd": "N/A", "dv": 4, "as": 5, "af": 2, "cr": 5, "cc": 3, "traits": [{ "name": "Regenerating" }] },
+    { "id": "ravager-lorry",            "name": "Lorry",            "category": "Ships",   "hullCode": "CL",  "cost": 7, "isd": "N/A", "dv": 4, "as": 1, "af": 2, "cr": 4, "cc": 2, "traits": [{ "name": "Tender", "factor": 2 }, { "name": "Regenerating" }] },
+    { "id": "ravager-barge",            "name": "Barge",            "category": "Ships",   "hullCode": "DD",  "cost": 5, "isd": "N/A", "dv": 4, "as": 0, "af": 3, "cr": 4, "cc": 2, "traits": [{ "name": "Assault", "factor": 1 }, { "name": "Regenerating" }] },
+    { "id": "ravager-brigantine",       "name": "Brigantine",       "category": "Ships",   "hullCode": "DD",  "cost": 5, "isd": "N/A", "dv": 3, "as": 3, "af": 3, "cr": 4, "cc": 2, "traits": [{ "name": "Regenerating" }] },
+    { "id": "ravager-galley",           "name": "Galley",           "category": "Ships",   "hullCode": "DD",  "cost": 5, "isd": "N/A", "dv": 4, "as": 1, "af": 2, "cr": 4, "cc": 2, "traits": [{ "name": "Carrier", "factor": 1 }, { "name": "Regenerating" }] },
+    { "id": "ravager-howitzer",         "name": "Howitzer",         "category": "Ships",   "hullCode": "DD",  "cost": 5, "isd": "N/A", "dv": 3, "as": 1, "af": 4, "cr": 4, "cc": 2, "traits": [{ "name": "Carronade" }, { "name": "Regenerating" }] },
+    { "id": "ravager-corsair",          "name": "Corsair",          "category": "Ships",   "hullCode": "FF",  "cost": 4, "isd": "N/A", "dv": 2, "as": 2, "af": 3, "cr": 3, "cc": 2, "traits": [{ "name": "Regenerating" }] },
+    { "id": "ravager-infiltrator",      "name": "Infiltrator",      "category": "Ships",   "hullCode": "FF",  "cost": 4, "isd": "N/A", "dv": 3, "as": 3, "af": 0, "cr": 3, "cc": 2, "traits": [{ "name": "Stealth" }, { "name": "Regenerating" }] },
+    { "id": "ravager-intruder",         "name": "Intruder",         "category": "Ships",   "hullCode": "FF",  "cost": 4, "isd": "N/A", "dv": 3, "as": 0, "af": 2, "cr": 3, "cc": 2, "traits": [{ "name": "Scout", "factor": 1 }, { "name": "Regenerating" }] },
+    { "id": "ravager-schooner",         "name": "Schooner",         "category": "Ships",   "hullCode": "CT",  "cost": 3, "isd": "N/A", "dv": 2, "as": 1, "af": 2, "cr": 2, "cc": 1, "traits": [{ "name": "Regenerating" }] },
+    { "id": "ravager-sloop",            "name": "Sloop",            "category": "Ships",   "hullCode": "CT",  "cost": 3, "isd": "N/A", "dv": 2, "as": 2, "af": 1, "cr": 2, "cc": 1, "traits": [{ "name": "Regenerating" }] },
+    { "id": "ravager-gunboat",          "name": "Gunboat",          "category": "Ships",   "hullCode": "AB",  "cost": 2, "isd": "N/A", "dv": 1, "as": 2, "af": 1, "cr": 2, "cc": 1, "traits": [{ "name": "Regenerating" }] },
+    { "id": "ravager-asp",              "name": "Asp",              "category": "Fighters","hullCode": "LF",  "cost": 2, "isd": "N/A", "dv": 2, "as": 1, "af": 2, "cr": 2, "cc": 1, "traits": [{ "name": "Regenerating" }] },
+    { "id": "ravager-viper",            "name": "Viper",            "category": "Fighters","hullCode": "MF",  "cost": 3, "isd": "N/A", "dv": 3, "as": 2, "af": 2, "cr": 2, "cc": 1, "traits": [{ "name": "Regenerating" }] },
+    { "id": "ravager-marauder",         "name": "Marauder",         "category": "Fighters","hullCode": "HF",  "cost": 4, "isd": "N/A", "dv": 3, "as": 3, "af": 3, "cr": 3, "cc": 1, "traits": [{ "name": "Regenerating" }] },
+    { "id": "ravager-merc-commandos",   "name": "Merc Commandos",   "category": "Troops",  "hullCode": "N/A", "cost": 2, "isd": "N/A", "dv": 2, "as": 4, "af": "-", "cr": "-", "cc": "-", "traits": [{ "name": "Special Forces" }, { "name": "Regenerating" }] }
+  ]
+}
