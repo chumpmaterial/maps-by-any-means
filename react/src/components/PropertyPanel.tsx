@@ -5,7 +5,7 @@ import { useConfirm } from '../hooks/useConfirm';
 import type { SystemType, LaneType, StarType, PlanetType, SystemTrait, SystemAttributes, CampaignPlayer, CampaignFleet, EmpireUnit, UnitCategory, SystemCampaignStatus, SystemIntelSnapshot, CMFleet, IndependentUnitList } from '../types';
 import { SYSTEM_FLEET_NAMES } from '../types';
 import type { FowData } from './MapViewport';
-import { computeFleetBadges, resolveUnitTemplate } from '../utils/fleetUtils';
+import { computeFleetBadges, resolveUnitTemplate, cmOnPlanetKey } from '../utils/fleetUtils';
 import type { useNameLists } from '../hooks/useNameLists';
 import { generateRandomTeamColor } from '../utils/colorUtils';
 import { ColorSelect } from './ColorSelect';
@@ -386,8 +386,10 @@ function FleetEntry({ name, fleetKey, unitRows, onDeleteUnitsByTemplate, ownerCo
 
   // Category counts (omit zeros)
   const categoryCounts: Partial<Record<UnitCategory, number>> = {};
+  let totalEP = 0;
   for (const { template, count } of unitRows) {
     categoryCounts[template.category] = (categoryCounts[template.category] ?? 0) + count;
+    totalEP += template.cost * count;
   }
   const categoryParts = FLEET_CATEGORY_ORDER
     .filter(cat => (categoryCounts[cat] ?? 0) > 0)
@@ -439,6 +441,7 @@ function FleetEntry({ name, fleetKey, unitRows, onDeleteUnitsByTemplate, ownerCo
               <>
                 {categoryParts.join(', ')}
                 {crDisplay !== null && <span className="ml-1">· CR {crDisplay}</span>}
+                <span className="ml-1">· {totalEP} EP</span>
               </>
             )}
           </div>
@@ -624,6 +627,7 @@ interface FleetsSectionProps {
   onMoveTemplateToFleet?: (playerId: string, templateId: string, fromFleetKey: string, toFleetKey: string, count: number) => void;
   cmFleets?: CMFleet[];
   independentLists?: IndependentUnitList[];
+  independentSystemColors?: Record<string, string>;
   onEditCMFleet?: (fleetId: string) => void;
   onMoveCMFleet?: (fleetId: string) => void;
   onDeleteCMUnits?: (fleetId: string, templateId: string, count: number) => void;
@@ -639,7 +643,7 @@ interface PendingDrop {
   maxCount: number;
 }
 
-function FleetsSection({ players, systemId, systemOwnership, onDeleteUnits, onCreateFleet, onEditFleet, onMoveFleet, fleetDisplayOrder, onReorderAnyFleet, onMoveTemplateToFleet, cmFleets, independentLists, onEditCMFleet, onMoveCMFleet, onDeleteCMUnits, onMoveCMTemplateToFleet }: FleetsSectionProps) {
+function FleetsSection({ players, systemId, systemOwnership, onDeleteUnits, onCreateFleet, onEditFleet, onMoveFleet, fleetDisplayOrder, onReorderAnyFleet, onMoveTemplateToFleet, cmFleets, independentLists, independentSystemColors, onEditCMFleet, onMoveCMFleet, onDeleteCMUnits, onMoveCMTemplateToFleet }: FleetsSectionProps) {
   const [expanded, setExpanded] = useState(true);
   const [newFleetName, setNewFleetName] = useState('');
   const [newFleetPlayerId, setNewFleetPlayerId] = useState('');
@@ -724,7 +728,7 @@ function FleetsSection({ players, systemId, systemOwnership, onDeleteUnits, onCr
   })();
 
   // CM fleets at this system + unit rows map for unified rendering
-  const cmFleetsHereList = (cmFleets ?? []).filter(f => f.systemId === systemId);
+  const cmFleetsHereList = (cmFleets ?? []).filter(f => f.systemId === systemId || f.independentSystemId === systemId);
   const allIndie = (independentLists ?? []).flatMap(l => l.units);
   const cmUnitRowsMap = new Map<string, Array<{ template: EmpireUnit; count: number; playerId: string }>>();
   for (const fleet of cmFleetsHereList) {
@@ -738,10 +742,9 @@ function FleetsSection({ players, systemId, systemOwnership, onDeleteUnits, onCr
     cmUnitRowsMap.set(fleet.id, Object.values(unitMap));
   }
 
-  // Unified ordered fleet ID list (player named + CM named), sorted by fleetDisplayOrder if provided
+  // Unified ordered fleet ID list (player named only); CM fleets are rendered separately below
   const defaultOrderedIds = [
     ...namedFleetsHere.map(x => x.fleet.id),
-    ...cmFleetsHereList.map(f => f.id),
   ];
   const orderedFleetIds = fleetDisplayOrder
     ? [
@@ -924,37 +927,6 @@ function FleetsSection({ players, systemId, systemOwnership, onDeleteUnits, onCr
                 />
               );
             }
-            const cmFleet = cmFleetsHereList.find(f => f.id === fleetId);
-            if (cmFleet) {
-              const unitRows = cmUnitRowsMap.get(fleetId) ?? [];
-              const canMove = cmFleet.units.length > 0;
-              return (
-                <FleetEntry
-                  key={cmFleet.id}
-                  fleetKey={cmFleet.id}
-                  name={cmFleet.name}
-                  unitRows={unitRows}
-                  ownerColors={cmFleet.color ? [cmFleet.color] : ['#6b7280']}
-                  subtitleBadges="CM Fleet"
-                  onDeleteUnitsByTemplate={onDeleteCMUnits ? (templateId, n) => onDeleteCMUnits(cmFleet.id, templateId, n) : undefined}
-                  onEdit={onEditCMFleet ? () => onEditCMFleet(cmFleet.id) : undefined}
-                  onMove={onMoveCMFleet ? () => onMoveCMFleet(cmFleet.id) : undefined}
-                  moveDisabled={!canMove}
-                  moveTitle={canMove ? 'Move fleet' : 'No units to move'}
-                  gripDraggable={!!onReorderAnyFleet}
-                  onGripDragStart={onReorderAnyFleet ? (e) => {
-                    e.dataTransfer.setData('application/fleet-reorder', JSON.stringify({ fleetId: cmFleet.id, playerId: 'cm' }));
-                    e.dataTransfer.effectAllowed = 'move';
-                  } : undefined}
-                  reorderDragOver={reorderDragOverKey === cmFleet.id}
-                  dragEnabled={!!onMoveCMTemplateToFleet}
-                  isDragOver={dragOverFleet === cmFleet.id}
-                  onDragOver={makeDragOver(cmFleet.id)}
-                  onDragLeave={handleDragLeave}
-                  onDrop={makeDrop(cmFleet.id)}
-                />
-              );
-            }
             return null;
           })}
 
@@ -981,6 +953,71 @@ function FleetsSection({ players, systemId, systemOwnership, onDeleteUnits, onCr
               );
             })
           )}
+
+          {/* CM fleets — mobile card + On-Planet card per fleet */}
+          {cmFleetsHereList.flatMap(cmFleet => {
+            const allIndie = (independentLists ?? []).flatMap(l => l.units);
+            const fleetColor = cmFleet.independentSystemId
+              ? (independentSystemColors?.[cmFleet.independentSystemId] ?? '#60a5fa')
+              : (cmFleet.color ?? '#6b7280');
+            const mobileUnits = cmFleet.units.filter(u => u.fleetId !== 'On-Planet');
+            const onPlanetUnits = cmFleet.units.filter(u => u.fleetId === 'On-Planet');
+            const showOnPlanet = cmFleet.isGarrisonPool || onPlanetUnits.length > 0;
+
+            const toUnitRows = (units: typeof cmFleet.units) => {
+              const rowMap: Record<string, { template: (typeof allIndie)[0]; count: number; playerId: string }> = {};
+              for (const unit of units) {
+                const tmpl = allIndie.find(u => u.id === unit.unitTemplateId);
+                if (!tmpl) continue;
+                if (rowMap[tmpl.id]) { rowMap[tmpl.id].count++; }
+                else { rowMap[tmpl.id] = { template: tmpl, count: 1, playerId: '' }; }
+              }
+              return Object.values(rowMap);
+            };
+
+            const entries = [];
+            if (mobileUnits.length > 0) {
+              entries.push(
+                <FleetEntry
+                  key={cmFleet.id}
+                  fleetKey={cmFleet.id}
+                  name={cmFleet.name}
+                  unitRows={toUnitRows(mobileUnits)}
+                  ownerColors={[fleetColor]}
+                  subtitleBadges={cmFleet.isGarrisonPool ? undefined : 'CM Fleet'}
+                  onDeleteUnitsByTemplate={onDeleteCMUnits ? (templateId, n) => onDeleteCMUnits(cmFleet.id, templateId, n) : undefined}
+                  onEdit={!cmFleet.isGarrisonPool && onEditCMFleet ? () => onEditCMFleet(cmFleet.id) : undefined}
+                  onMove={!cmFleet.isGarrisonPool && onMoveCMFleet ? () => onMoveCMFleet(cmFleet.id) : undefined}
+                  moveDisabled={mobileUnits.length === 0}
+                  dragEnabled={!!onMoveCMTemplateToFleet}
+                  isDragOver={dragOverFleet === cmFleet.id}
+                  onDragOver={makeDragOver(cmFleet.id)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={makeDrop(cmFleet.id)}
+                />
+              );
+            }
+            if (showOnPlanet) {
+              const onPlanetKey = cmOnPlanetKey(cmFleet.id);
+              entries.push(
+                <FleetEntry
+                  key={onPlanetKey}
+                  fleetKey={onPlanetKey}
+                  name={`${cmFleet.name} On-Planet`}
+                  unitRows={toUnitRows(onPlanetUnits)}
+                  ownerColors={[fleetColor]}
+                  subtitleBadges="CM Fleet"
+                  onDeleteUnitsByTemplate={onDeleteCMUnits ? (templateId, n) => onDeleteCMUnits(cmFleet.id, templateId, n) : undefined}
+                  dragEnabled={!!onMoveCMTemplateToFleet}
+                  isDragOver={dragOverFleet === onPlanetKey}
+                  onDragOver={makeDragOver(onPlanetKey)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={makeDrop(onPlanetKey)}
+                />
+              );
+            }
+            return entries;
+          })}
         </div>
       )}
 
@@ -1302,18 +1339,15 @@ function SystemPropertiesPanel({ mapState, selectedSystem, nameListHook, campaig
 
   return (
     <aside className="w-64 overflow-y-auto border-l border-gray-300 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-      <h2 className="mb-4 text-lg font-semibold">System Properties</h2>
-
       <div className="space-y-4">
-        {/* Name */}
+        {/* Name as editable title + subtitle */}
         <div>
-          <label className="mb-1 block text-sm font-medium">Name</label>
-          <div className="flex items-center gap-1">
+          <div className="relative flex items-center">
             <input
               type="text"
               value={selectedSystem.name}
               onChange={(e) => updateSystem(selectedSystem.id, { name: e.target.value })}
-              className="flex-1 rounded border border-gray-300 bg-transparent px-2 py-1 text-sm dark:border-gray-700"
+              className="w-full border-b border-gray-300 bg-transparent pb-0.5 pr-8 text-lg font-semibold text-gray-900 focus:border-blue-400 focus:outline-none dark:border-gray-600 dark:text-white dark:focus:border-blue-500"
             />
             <button
               onClick={() => {
@@ -1325,27 +1359,14 @@ function SystemPropertiesPanel({ mapState, selectedSystem, nameListHook, campaig
                   updateSystem(selectedSystem.id, { name: randomName });
                 }
               }}
-              className="flex-shrink-0 rounded border border-gray-300 px-1.5 py-1 text-sm hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-700"
+              className="absolute right-0 rounded px-1 py-0.5 text-sm text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-gray-300"
               title="Random name"
             >
               🎲
             </button>
           </div>
-        </div>
-
-        {/* Importance (derived from planet type) */}
-        <div>
-          <label className="mb-1 block text-sm font-medium">Importance</label>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            {systemTypes.find((t) => t.value === selectedSystem.type)?.label || 'Unimportant System'}
-          </p>
-        </div>
-
-        {/* Position (read-only) */}
-        <div>
-          <label className="mb-1 block text-sm font-medium">Position</label>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            q: {selectedSystem.position.q}, r: {selectedSystem.position.r}
+          <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+            {systemTypes.find((t) => t.value === selectedSystem.type)?.label || 'Unimportant'} · q:{selectedSystem.position.q}, r:{selectedSystem.position.r}
           </p>
         </div>
 
@@ -1412,12 +1433,24 @@ function SystemPropertiesPanel({ mapState, selectedSystem, nameListHook, campaig
                 <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
                   Independent System Color
                 </label>
-                <input
-                  type="color"
-                  value={independentSystemColors?.[selectedSystem.id] ?? '#6b7280'}
-                  onChange={e => onSetIndependentSystemColor(selectedSystem.id, e.target.value)}
-                  className="mt-1 h-8 w-full cursor-pointer rounded border border-gray-300 dark:border-gray-600"
-                />
+                <div className="flex items-center gap-2">
+                  <div
+                    className="h-8 w-8 flex-shrink-0 rounded border border-gray-300 dark:border-gray-600"
+                    style={{ backgroundColor: independentSystemColors?.[selectedSystem.id] ?? '#6b7280' }}
+                  />
+                  <input
+                    type="color"
+                    value={independentSystemColors?.[selectedSystem.id] ?? '#6b7280'}
+                    onChange={e => onSetIndependentSystemColor(selectedSystem.id, e.target.value)}
+                    className="h-8 w-12 cursor-pointer rounded border-0 bg-transparent p-0"
+                  />
+                  <button
+                    onClick={() => onSetIndependentSystemColor(selectedSystem.id, generateRandomTeamColor())}
+                    className="rounded bg-gray-200 px-2 py-1 text-xs hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200"
+                  >
+                    Randomize
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -1596,7 +1629,7 @@ function SystemPropertiesPanel({ mapState, selectedSystem, nameListHook, campaig
                       </button>
                     )}
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
                     {(['capacity', 'raw', 'population', 'morale', 'intel', 'fortification'] as const).map(
                       (attr) => {
                         const epCostMultiplier: Partial<Record<keyof SystemAttributes, number>> = {
@@ -1605,10 +1638,10 @@ function SystemPropertiesPanel({ mapState, selectedSystem, nameListHook, campaig
                         const mult = epCostMultiplier[attr];
                         const val = selectedSystem.attributes![attr];
                         return (
-                          <div key={attr} className="flex items-center gap-1">
-                            <label className="w-12 text-xs capitalize text-gray-500 dark:text-gray-400">
-                              {attr === 'fortification' ? 'Fort' : attr.slice(0, 3).toUpperCase()}
-                            </label>
+                          <div key={attr} className="flex items-center gap-2">
+                            <span className="w-8 text-right font-mono text-xs text-gray-400 dark:text-gray-500">
+                              {attr === 'fortification' ? 'FORT' : attr.slice(0, 3).toUpperCase()}
+                            </span>
                             <input
                               type="number"
                               min="0"
@@ -1620,7 +1653,7 @@ function SystemPropertiesPanel({ mapState, selectedSystem, nameListHook, campaig
                             />
                             {campaignMode && mult && (
                               <span className="whitespace-nowrap text-[10px] text-gray-400 dark:text-gray-500">
-                                {(val + 1) * mult}EP
+                                {(val + 1) * mult} EP
                               </span>
                             )}
                           </div>
@@ -1628,6 +1661,20 @@ function SystemPropertiesPanel({ mapState, selectedSystem, nameListHook, campaig
                       }
                     )}
                   </div>
+                  {(() => {
+                    const raw = selectedSystem.attributes!.raw ?? 0;
+                    const pop = selectedSystem.attributes!.population ?? 0;
+                    const output = raw * pop;
+                    return (
+                      <div className="mt-2 flex items-center justify-between rounded bg-blue-50 px-2.5 py-1.5 dark:bg-blue-900/20">
+                        <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">Output</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm font-bold text-blue-800 dark:text-blue-200">{output}</span>
+                          <span className="text-[10px] text-blue-400 dark:text-blue-500">{raw} × {pop}</span>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
             </div>
@@ -1688,6 +1735,7 @@ function SystemPropertiesPanel({ mapState, selectedSystem, nameListHook, campaig
             onMoveTemplateToFleet={onMoveTemplateToFleet ? (pid, tid, from, to, n) => onMoveTemplateToFleet(pid, tid, from, to, selectedSystem.id, n) : undefined}
             cmFleets={cmFleets}
             independentLists={independentLists}
+            independentSystemColors={independentSystemColors}
             onEditCMFleet={onEditCMFleet}
             onMoveCMFleet={onMoveCMFleet}
             onDeleteCMUnits={onDeleteCMUnits}

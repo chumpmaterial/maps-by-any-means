@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import type { CampaignFleet, CampaignPlayer, CampaignUnit, CMFleet, EmpireUnit, GameMap, IndependentUnitList, TurnOrderEntry, SystemCampaignStatus, DiplomacyLevel, CampaignSettings, TradeRoute, System } from '../types';
 import { SYSTEM_FLEET_NAMES } from '../types';
 import { useConfirm } from '../hooks/useConfirm';
-import { computeFleetBadges, getCarryCapacity, canJoinSystemFleet, resolveUnitTemplate, computeRaiderChecks } from '../utils/fleetUtils';
+import { computeFleetBadges, getCarryCapacity, canJoinSystemFleet, resolveUnitTemplate, computeRaiderChecks, parseCMFleetKey, cmOnPlanetKey } from '../utils/fleetUtils';
 import { unitStatusKey, computeEffectiveStats } from '../utils/combatUtils';
 
 // ---------------------------------------------------------------------------
@@ -32,8 +32,8 @@ interface FleetManagerViewProps {
   onDeleteCMUnits?: (fleetId: string, templateId: string, count: number) => void;
   onReorderCMUnit?: (fleetId: string, unitId: string, dir: 'up' | 'down') => void;
   onAttachCMUnit?: (fleetId: string, depUnitId: string, carrierId: string | null) => void;
-  onMoveCMUnitToFleet?: (fromFleetId: string, unitId: string, toFleetId: string) => void;
-  onMoveCMTemplateToFleet?: (fromFleetId: string, toFleetId: string, templateId: string, systemId: string, count: number) => void;
+  onMoveCMUnitToFleet?: (fromFleetId: string, unitId: string, toFleetId: string, targetBucket?: string) => void;
+  onMoveCMTemplateToFleet?: (fromFleetId: string, toFleetId: string, templateId: string, systemId: string, count: number, targetBucket?: string) => void;
   turnOrders?: Record<string, TurnOrderEntry>;
   onUpdateOrders?: (key: string, entry: TurnOrderEntry) => void;
   onToggleUnitStatus?: (playerId: string, unitId: string, status: StrategicStatus) => void;
@@ -45,6 +45,7 @@ interface FleetManagerViewProps {
   settings?: CampaignSettings;
   onCenterOnSystem?: (systemId: string) => void;
   tradeRoutes?: TradeRoute[];
+  independentSystemColors?: Record<string, string>;
 }
 
 interface FMDragState {
@@ -97,12 +98,17 @@ function RuleActivityBadge({ label }: { label: string }) {
 // Raider check card
 // ---------------------------------------------------------------------------
 
-function RaiderCheckCard({ system, reasons, onCenter }: { system: System; reasons: string[]; onCenter: () => void }) {
-  const [checked, setChecked] = useState(false);
+function RaiderCheckCard({ system, reasons, checked, onToggleChecked, onCenter }: {
+  system: System;
+  reasons: string[];
+  checked: boolean;
+  onToggleChecked: (systemId: string) => void;
+  onCenter: () => void;
+}) {
   return (
     <div className="flex items-center gap-2 rounded border border-amber-200 bg-amber-50 px-2 py-1.5 dark:border-amber-800/40 dark:bg-amber-900/20">
       <button
-        onClick={e => { e.stopPropagation(); setChecked(c => !c); }}
+        onClick={e => { e.stopPropagation(); onToggleChecked(system.id); }}
         className="flex-shrink-0 rounded p-0.5 hover:bg-amber-100 dark:hover:bg-amber-800/40"
       >
         <span className={`block h-3 w-3 rounded-sm border ${checked ? 'border-amber-600 bg-amber-500' : 'border-amber-400 bg-white dark:bg-transparent'}`} />
@@ -437,6 +443,7 @@ function FMFleetSection({
   isNamed,
   onEditFleet,
   onMoveFleet,
+  onDeleteFleet,
   onColorChange,
   onReorderFleet,
   onAttachUnit,
@@ -468,6 +475,7 @@ function FMFleetSection({
   isNamed: boolean;
   onEditFleet?: () => void;
   onMoveFleet?: () => void;
+  onDeleteFleet?: () => void;
   onColorChange?: (color: string) => void;
   onReorderFleet: (fromId: string, toId: string) => void;
   onAttachUnit: (depId: string, carrierId: string | null) => void;
@@ -533,7 +541,7 @@ function FMFleetSection({
   }
 
   const badges = fleet && player ? computeFleetBadges(fleet, fleetUnits, player, allPlayers) : null;
-  const hasActions = isNamed && (!!onEditFleet || !!onMoveFleet || !!onColorChange);
+  const hasActions = isNamed && (!!onEditFleet || !!onMoveFleet || !!onDeleteFleet || !!onColorChange);
 
   // Warning unit IDs
   const fleetUnitIds = new Set(fleetUnits.map(u => u.id));
@@ -784,6 +792,14 @@ function FMFleetSection({
                       Move Fleet
                     </button>
                   )}
+                  {onDeleteFleet && fleetUnits.length === 0 && (
+                    <button
+                      onClick={() => { onDeleteFleet(); setShowActionsMenu(false); }}
+                      className="w-full rounded px-3 py-1.5 text-left text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950"
+                    >
+                      Delete Fleet
+                    </button>
+                  )}
                   {onColorChange && (
                     <div className="mt-1 border-t border-gray-100 pt-1.5 dark:border-gray-700">
                       <p className="mb-1 px-2 text-xs text-gray-500 dark:text-gray-400">Fleet Color</p>
@@ -1004,7 +1020,7 @@ export function FleetManagerView({
   cmFleets = [],
   independentLists = [],
   onEditCMFleet,
-  onDeleteCMFleet: _onDeleteCMFleet,
+  onDeleteCMFleet,
   onMoveCMFleet,
   onUpdateCMFleetColor,
   onDeleteCMUnits,
@@ -1023,14 +1039,23 @@ export function FleetManagerView({
   settings,
   onCenterOnSystem,
   tradeRoutes = [],
+  independentSystemColors,
 }: FleetManagerViewProps) {
   const confirm = useConfirm();
 
   const [selectedPlayerId, setSelectedPlayerId] = useState(() => initialPlayerId ?? players[0]?.id ?? '');
   const [expandedSystems, setExpandedSystems] = useState<Set<string>>(() => {
-    if (!initialSystemId) return new Set();
-    const key = initialPlayerId === CM_TAB_ID ? `cm:${initialSystemId}` : initialSystemId;
-    return new Set([key]);
+    const keys = new Set<string>();
+    // Pre-expand the focused system (player or CM)
+    if (initialSystemId) {
+      keys.add(initialPlayerId === CM_TAB_ID ? `cm:${initialSystemId}` : initialSystemId);
+    }
+    // Always pre-expand all CM system groups so On-Planet and independent fleets are visible without extra clicks
+    for (const f of cmFleets ?? []) {
+      const sysId = f.systemId || f.independentSystemId || '';
+      if (sysId) keys.add(`cm:${sysId}`);
+    }
+    return keys;
   });
   const [condensedView, setCondensedView] = useState(true);
   const [dragState, setDragState] = useState<FMDragState | null>(null);
@@ -1047,11 +1072,20 @@ export function FleetManagerView({
     systemId: string;
     maxCount: number;
     isCM?: boolean;
+    targetBucket?: string;
   } | null>(null);
   const [templateMoveCount, setTemplateMoveCount] = useState(1);
   const [fleetOrderChecks, setFleetOrderChecks] = useState<Array<{ checked: boolean; xed: boolean }>>([]);
   const [isOrdersExpanded, setIsOrdersExpanded] = useState(true);
   const [isEditingOrders, setIsEditingOrders] = useState(false);
+  const [checkedRaiderSystems, setCheckedRaiderSystems] = useState<Set<string>>(new Set());
+  const handleToggleRaiderCheck = (systemId: string) => {
+    setCheckedRaiderSystems(prev => {
+      const next = new Set(prev);
+      next.has(systemId) ? next.delete(systemId) : next.add(systemId);
+      return next;
+    });
+  };
 
   // All indie units (for CM fleet template lookups)
   const allIndieUnits = independentLists.flatMap(l => l.units);
@@ -1195,6 +1229,14 @@ export function FleetManagerView({
     count: number,
     isCM?: boolean,
   ) => {
+    if (isCM) {
+      const { fleetId: fromFleetId, bucket: fromBucket } = parseCMFleetKey(fromFleetKey);
+      const { fleetId: toFleetId, bucket: targetBucket } = parseCMFleetKey(toFleetKey);
+      if (fromFleetId === toFleetId && fromBucket === targetBucket) return;
+      setTemplateMoveCount(1);
+      setPendingTemplateMove({ templateId, templateName, fromFleetKey: fromFleetId, toFleetKey: toFleetId, toFleetName, systemId, maxCount: count, isCM: true, targetBucket });
+      return;
+    }
     setTemplateMoveCount(1);
     setPendingTemplateMove({ templateId, templateName, fromFleetKey, toFleetKey, toFleetName, systemId, maxCount: count, isCM });
   };
@@ -1208,6 +1250,7 @@ export function FleetManagerView({
         pendingTemplateMove.templateId,
         pendingTemplateMove.systemId,
         templateMoveCount,
+        pendingTemplateMove.targetBucket,
       );
     } else {
       if (!player) return;
@@ -1273,17 +1316,16 @@ export function FleetManagerView({
     startDragScroll();
   };
 
-  const startCMDrag = (unitId: string, cmFleetId: string) => {
-    const fleet = cmFleets.find(f => f.id === cmFleetId);
+  const startCMDrag = (unitId: string, fromKey: string) => {
+    const { fleetId: fromFleetId } = parseCMFleetKey(fromKey);
+    const fleet = cmFleets.find(f => f.id === fromFleetId);
     if (!fleet) return;
     const unit = fleet.units.find(u => u.id === unitId);
-    if (!unit?.systemId) return;
+    if (!unit) return;
     const template = allIndieUnits.find(t => t.id === unit.unitTemplateId);
     if (!template) return;
 
-    const fleetKey = cmFleetId;
     const fleetUnitsHere = fleet.units;
-
     const validCarrierIds = new Set<string>();
     const warnCarrierIds = new Set<string>();
     for (const u of fleetUnitsHere) {
@@ -1307,15 +1349,20 @@ export function FleetManagerView({
       }
     }
 
-    // Valid fleet targets: other CM fleets at the same system
+    const systemId = fleet.systemId || fleet.independentSystemId || '';
     const validFleetKeys = new Set<string>();
     for (const f of cmFleets) {
-      if (f.id !== cmFleetId && f.systemId === fleet.systemId) {
-        validFleetKeys.add(f.id);
-      }
+      const fSysId = f.systemId || f.independentSystemId || '';
+      if (fSysId !== systemId) continue;
+      // Mobile section of every other fleet is a valid target
+      if (f.id !== fromFleetId) validFleetKeys.add(f.id);
+      // On-Planet section of every fleet (including own) is a valid target
+      validFleetKeys.add(cmOnPlanetKey(f.id));
     }
+    // Own mobile section: valid if dragging from On-Planet (to convert to mobile)
+    if (fromKey === cmOnPlanetKey(fromFleetId)) validFleetKeys.add(fromFleetId);
 
-    setDragState({ unitId, playerId: '__cm__', fleetKey, systemId: fleet.systemId ?? '', validCarrierIds, warnCarrierIds, validFleetKeys });
+    setDragState({ unitId, playerId: '__cm__', fleetKey: fromKey, systemId, validCarrierIds, warnCarrierIds, validFleetKeys });
     startDragScroll();
   };
 
@@ -1439,7 +1486,11 @@ export function FleetManagerView({
   const handleDropOnFleet = (targetFleetKey: string) => {
     if (!dragState) return;
     if (dragState.playerId === '__cm__') {
-      onMoveCMUnitToFleet?.(dragState.fleetKey, dragState.unitId, targetFleetKey);
+      if (targetFleetKey !== dragState.fleetKey) {
+        const { fleetId: sourceFleetId } = parseCMFleetKey(dragState.fleetKey);
+        const { fleetId: targetFleetId, bucket: targetBucket } = parseCMFleetKey(targetFleetKey);
+        onMoveCMUnitToFleet?.(sourceFleetId, dragState.unitId, targetFleetId, targetBucket);
+      }
     } else {
       onMoveUnitToFleet(dragState.playerId, dragState.unitId, targetFleetKey);
     }
@@ -1671,7 +1722,7 @@ export function FleetManagerView({
             {/* Raider Checks — Independent Systems */}
             {(() => {
               if (!systemOwnership || !systemStatuses || !diplomacyRelations) return null;
-              const checks = computeRaiderChecks('CM', players, map, systemOwnership, systemStatuses, diplomacyRelations, tradeRoutes);
+              const checks = computeRaiderChecks('CM', players, map, systemOwnership, systemStatuses, diplomacyRelations, tradeRoutes, cmFleets);
               if (checks.length === 0) return null;
               return (
                 <div className="mb-4">
@@ -1682,6 +1733,8 @@ export function FleetManagerView({
                         key={system.id}
                         system={system}
                         reasons={reasons}
+                        checked={checkedRaiderSystems.has(system.id)}
+                        onToggleChecked={handleToggleRaiderCheck}
                         onCenter={() => onCenterOnSystem?.(system.id)}
                       />
                     ))}
@@ -1694,14 +1747,100 @@ export function FleetManagerView({
               <p className="text-sm italic text-gray-400 dark:text-gray-500">No CM fleets created. Use Fleets → Add Units to create CM fleets.</p>
             ) : (
               <div className="space-y-3">
-                {Array.from(new Set(cmFleets.map(f => f.systemId ?? ''))).sort((a, b) => {
+                {Array.from(new Set(cmFleets.map(f => f.systemId || f.independentSystemId || ''))).sort((a, b) => {
                   const na = map.systems.find(s => s.id === a)?.name ?? a;
                   const nb = map.systems.find(s => s.id === b)?.name ?? b;
                   return na.localeCompare(nb);
                 }).map(sysId => {
-                  const systemName = map.systems.find(s => s.id === sysId)?.name ?? (sysId || 'No system');
-                  const fleetsHere = cmFleets.filter(f => (f.systemId ?? '') === sysId);
+                  const baseName = map.systems.find(s => s.id === sysId)?.name ?? (sysId || 'No system');
+                  const isIndependentGroup = sysId !== '' && cmFleets.some(f => f.independentSystemId === sysId);
+                  const systemName = isIndependentGroup ? `${baseName} (Independent)` : baseName;
+                  const fleetsHere = cmFleets.filter(f => (f.systemId || f.independentSystemId || '') === sysId);
                   const isExpanded = expandedSystems.has('cm:' + sysId);
+
+                  const renderCMFleetPair = (cmFleet: CMFleet) => {
+                    const asCampaignFleet: CampaignFleet = { id: cmFleet.id, name: cmFleet.name, systemId: cmFleet.systemId ?? '', movedThisTurn: false };
+                    const fleetColor = cmFleet.independentSystemId
+                      ? (independentSystemColors?.[cmFleet.independentSystemId] ?? '#60a5fa')
+                      : (cmFleet.color ?? '#6b7280');
+                    const mobileUnits = cmFleet.units.filter(u => u.fleetId !== 'On-Planet');
+                    const onPlanetUnits = cmFleet.units.filter(u => u.fleetId === 'On-Planet');
+                    const showOnPlanet = cmFleet.isGarrisonPool || onPlanetUnits.length > 0;
+                    const onPlanetFleetKey = cmOnPlanetKey(cmFleet.id);
+                    const subtitle = cmFleet.isGarrisonPool ? undefined : 'CM Fleet';
+                    return (
+                      <>
+                        {mobileUnits.length > 0 && (
+                          <div className="rounded border border-gray-100 p-2 dark:border-gray-800">
+                            <FMFleetSection
+                              fleetKey={cmFleet.id}
+                              fleetName={cmFleet.name}
+                              fleetSubtitle={subtitle}
+                              fleet={asCampaignFleet}
+                              unitPool={allIndieUnits}
+                              fleetColor={fleetColor}
+                              fleetUnits={mobileUnits}
+                              systemId={sysId}
+                              condensedView={condensedView}
+                              dragState={dragState}
+                              dragOverCarrierId={dragOverCarrierId}
+                              dragOverFleetKey={dragOverFleetKey}
+                              isNamed={true}
+                              onEditFleet={!cmFleet.isGarrisonPool && onEditCMFleet ? () => onEditCMFleet(cmFleet.id) : undefined}
+                              onMoveFleet={!cmFleet.isGarrisonPool && onMoveCMFleet ? () => onMoveCMFleet(cmFleet.id) : undefined}
+                              onDeleteFleet={!cmFleet.isGarrisonPool && onDeleteCMFleet ? () => onDeleteCMFleet(cmFleet.id) : undefined}
+                              onColorChange={!cmFleet.isGarrisonPool && onUpdateCMFleetColor ? (color) => onUpdateCMFleetColor(cmFleet.id, color) : undefined}
+                              onReorderFleet={() => {}}
+                              onAttachUnit={(depId, carrierId) => onAttachCMUnit?.(cmFleet.id, depId, carrierId)}
+                              onDeleteUnit={(templateId, _fk, _sid, count) => onDeleteCMUnits?.(cmFleet.id, templateId, count)}
+                              onReorderUnit={(unitId, dir) => onReorderCMUnit?.(cmFleet.id, unitId, dir)}
+                              onDragStartUnit={(unitId) => startCMDrag(unitId, cmFleet.id)}
+                              onDragEndUnit={endDrag}
+                              onSetDragOverCarrier={setDragOverCarrierId}
+                              onDropOnCarrier={handleDropOnCarrier}
+                              onSetDragOverFleet={setDragOverFleetKey}
+                              onDropOnFleet={handleDropOnFleet}
+                              onDropTemplateOnFleet={(templateId, templateName, fromFleetKey, count) =>
+                                handleDropTemplateOnFleet(templateId, templateName, fromFleetKey, cmFleet.id, cmFleet.name, sysId, count, true)
+                              }
+                            />
+                          </div>
+                        )}
+                        {showOnPlanet && (
+                          <div className="rounded border border-gray-100 p-2 dark:border-gray-800">
+                            <FMFleetSection
+                              fleetKey={onPlanetFleetKey}
+                              fleetName={`${cmFleet.name} On-Planet`}
+                              fleet={asCampaignFleet}
+                              unitPool={allIndieUnits}
+                              fleetColor={fleetColor}
+                              fleetUnits={onPlanetUnits}
+                              systemId={sysId}
+                              condensedView={condensedView}
+                              dragState={dragState}
+                              dragOverCarrierId={dragOverCarrierId}
+                              dragOverFleetKey={dragOverFleetKey}
+                              isNamed={false}
+                              onReorderFleet={() => {}}
+                              onAttachUnit={(depId, carrierId) => onAttachCMUnit?.(cmFleet.id, depId, carrierId)}
+                              onDeleteUnit={(templateId, _fk, _sid, count) => onDeleteCMUnits?.(cmFleet.id, templateId, count)}
+                              onReorderUnit={(unitId, dir) => onReorderCMUnit?.(cmFleet.id, unitId, dir)}
+                              onDragStartUnit={(unitId) => startCMDrag(unitId, onPlanetFleetKey)}
+                              onDragEndUnit={endDrag}
+                              onSetDragOverCarrier={setDragOverCarrierId}
+                              onDropOnCarrier={handleDropOnCarrier}
+                              onSetDragOverFleet={setDragOverFleetKey}
+                              onDropOnFleet={handleDropOnFleet}
+                              onDropTemplateOnFleet={(templateId, templateName, fromFleetKey, count) =>
+                                handleDropTemplateOnFleet(templateId, templateName, fromFleetKey, onPlanetFleetKey, `${cmFleet.name} On-Planet`, sysId, count, true)
+                              }
+                            />
+                          </div>
+                        )}
+                      </>
+                    );
+                  };
+
                   return (
                     <div key={sysId || '__none__'} className="rounded-lg border border-gray-200 dark:border-gray-700">
                       <button
@@ -1717,46 +1856,10 @@ export function FleetManagerView({
                       {isExpanded && (
                         <div className="border-t border-gray-200 px-3 py-3 dark:border-gray-700">
                           <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                            {fleetsHere.map(cmFleet => {
-                              const asCampaignFleet: CampaignFleet = { id: cmFleet.id, name: cmFleet.name, systemId: cmFleet.systemId ?? '', movedThisTurn: false };
-                              const cmFleetSubtitle = cmFleet.independentSystemId
-                                ? (map.systems.find(s => s.id === cmFleet.independentSystemId)?.name ?? 'Unknown system')
-                                : 'CM-owned';
-                              return (
-                                <div key={cmFleet.id} className="rounded border border-gray-100 p-2 dark:border-gray-800">
-                                  <FMFleetSection
-                                    fleetKey={cmFleet.id}
-                                    fleetName={cmFleet.name}
-                                    fleetSubtitle={cmFleetSubtitle}
-                                    fleet={asCampaignFleet}
-                                    unitPool={allIndieUnits}
-                                    fleetColor={cmFleet.color}
-                                    fleetUnits={cmFleet.units}
-                                    systemId={sysId}
-                                    condensedView={condensedView}
-                                    dragState={dragState}
-                                    dragOverCarrierId={dragOverCarrierId}
-                                    dragOverFleetKey={dragOverFleetKey}
-                                    isNamed={true}
-                                    onEditFleet={onEditCMFleet ? () => onEditCMFleet(cmFleet.id) : undefined}
-                                    onMoveFleet={onMoveCMFleet ? () => onMoveCMFleet(cmFleet.id) : undefined}
-                                    onColorChange={onUpdateCMFleetColor ? (color) => onUpdateCMFleetColor(cmFleet.id, color) : undefined}
-                                    onReorderFleet={() => {}}
-                                    onAttachUnit={(depId, carrierId) => onAttachCMUnit?.(cmFleet.id, depId, carrierId)}
-                                    onDeleteUnit={(templateId, _fk, _sid, count) => onDeleteCMUnits?.(cmFleet.id, templateId, count)}
-                                    onReorderUnit={(unitId, dir) => onReorderCMUnit?.(cmFleet.id, unitId, dir)}
-                                    onDragStartUnit={(unitId) => startCMDrag(unitId, cmFleet.id)}
-                                    onDragEndUnit={endDrag}
-                                    onSetDragOverCarrier={setDragOverCarrierId}
-                                    onDropOnCarrier={handleDropOnCarrier}
-                                    onSetDragOverFleet={setDragOverFleetKey}
-                                    onDropOnFleet={handleDropOnFleet}
-                                    onDropTemplateOnFleet={(templateId, templateName, fromFleetKey, count) =>
-                                      handleDropTemplateOnFleet(templateId, templateName, fromFleetKey, cmFleet.id, cmFleet.name, sysId, count, true)
-                                    }
-                                  />
-                                </div>
-                              );
+                            {fleetsHere.flatMap(f => {
+                              const pair = renderCMFleetPair(f);
+                              // renderCMFleetPair returns a fragment; wrap each in a keyed div to satisfy grid layout
+                              return [<div key={f.id} className="contents">{pair}</div>];
                             })}
                           </div>
                         </div>
@@ -1779,7 +1882,7 @@ export function FleetManagerView({
             {/* Raider Checks — player tab */}
             {(() => {
               if (!systemOwnership || !systemStatuses || !diplomacyRelations || !player) return null;
-              const checks = computeRaiderChecks(player.id, players, map, systemOwnership, systemStatuses, diplomacyRelations, tradeRoutes);
+              const checks = computeRaiderChecks(player.id, players, map, systemOwnership, systemStatuses, diplomacyRelations, tradeRoutes, cmFleets);
               if (checks.length === 0) return null;
               return (
                 <div className="mb-4">
@@ -1790,6 +1893,8 @@ export function FleetManagerView({
                         key={system.id}
                         system={system}
                         reasons={reasons}
+                        checked={checkedRaiderSystems.has(system.id)}
+                        onToggleChecked={handleToggleRaiderCheck}
                         onCenter={() => onCenterOnSystem?.(system.id)}
                       />
                     ))}

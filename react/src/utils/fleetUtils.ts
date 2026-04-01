@@ -1,4 +1,4 @@
-import type { CampaignFleet, CampaignUnit, CampaignPlayer, EmpireUnit, GameMap, UnitCategory, System, SystemCampaignStatus, DiplomacyLevel, TradeRoute } from '../types';
+import type { CampaignFleet, CampaignUnit, CampaignPlayer, CMFleet, EmpireUnit, GameMap, UnitCategory, System, SystemCampaignStatus, DiplomacyLevel, TradeRoute } from '../types';
 
 // ---------------------------------------------------------------------------
 // Template resolution — handles own + stolen + allied unit designs
@@ -305,6 +305,7 @@ export function computeRaiderChecks(
   systemStatuses: Record<string, SystemCampaignStatus>,
   diplomacyRelations: Record<string, DiplomacyLevel>,
   tradeRoutes: TradeRoute[],
+  cmFleets?: CMFleet[],
 ): RaiderCheckResult[] {
   // All independent owner IDs present in systemOwnership
   const independentOwnerIds = [...new Set(
@@ -329,19 +330,31 @@ export function computeRaiderChecks(
       if (ownerId !== playerId) continue;
     }
 
-    // Must have a status entry
-    const status = systemStatuses[sys.id];
-    if (!status) continue;
+    // Must have a status entry (guard — no fields are read from it, but absence means
+    // the system has never been initialized and should be skipped entirely)
+    if (!systemStatuses[sys.id]) continue;
 
-    // Determine convoy presence: Convoy unit physically at this system
-    const hasConvoy = players.some(p =>
-      p.units.some(u => {
-        if (u.systemId !== sys.id) return false;
-        const t = p.empire.units.find(eu => eu.id === u.unitTemplateId)
-          ?? p.stolenUnits?.find(s => s.unit.id === u.unitTemplateId)?.unit;
+    // Determine convoy presence: Convoy unit physically at this system (player or CM fleet)
+    const isConvoyUnit = (templateId: string, player?: CampaignPlayer) => {
+      if (player) {
+        const t = player.empire.units.find(eu => eu.id === templateId)
+          ?? player.stolenUnits?.find(s => s.unit.id === templateId)?.unit;
         return t?.category === 'Civilian' && t?.name === 'Convoy';
-      }),
-    );
+      }
+      return false;
+    };
+    const hasConvoy =
+      players.some(p =>
+        p.units.some(u => u.systemId === sys.id && isConvoyUnit(u.unitTemplateId, p)),
+      ) ||
+      (cmFleets ?? []).some(f =>
+        f.units.some(u => {
+          if (u.systemId !== sys.id) return false;
+          // CM fleet units: resolve template from independentLists not available here,
+          // so match by name on the unit itself (CMFleet units carry a .name field)
+          return u.name === 'Convoy';
+        }),
+      );
 
     // Determine trade route presence
     const hasTradeRoute = tradeRoutes.some(r => r.systemIds.includes(sys.id));
@@ -362,4 +375,51 @@ export function computeRaiderChecks(
   }
 
   return results;
+}
+
+// ---------------------------------------------------------------------------
+// Fleet assignment based on unit category / name
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns the system fleet bucket name for a unit based on its category.
+ * Troops → 'On-Planet'; Ships/Fighters → 'Untasked Ships'; etc.
+ * Used by both CampaignMapView (player units) and AddUnitsView (CM units).
+ */
+export function getFleetForUnit(category: UnitCategory, unitName: string): string {
+  switch (category) {
+    case 'Ships':    return 'Untasked Ships';
+    case 'Fighters': return 'Untasked Ships';
+    case 'Bases':    return 'Bases';
+    case 'Troops':   return 'On-Planet';
+    case 'Civilian':
+      if (unitName === 'Supply Depot' || unitName === 'Shipyard') return 'Bases';
+      return 'Untasked Civilians';
+    default:         return 'Untasked Civilians';
+  }
+}
+
+// ---------------------------------------------------------------------------
+// CM fleet key helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Parses a CM fleet section key.
+ * Mobile section key  = the CMFleet id (e.g. "abc-123")
+ * On-Planet section key = "<cmFleetId>:on-planet"
+ *
+ * Returns { fleetId, bucket } where bucket is 'On-Planet' or undefined.
+ */
+export function parseCMFleetKey(key: string): { fleetId: string; bucket: string | undefined } {
+  if (key.endsWith(':on-planet')) {
+    return { fleetId: key.slice(0, key.length - ':on-planet'.length), bucket: 'On-Planet' };
+  }
+  return { fleetId: key, bucket: undefined };
+}
+
+/**
+ * Returns the On-Planet section key for a CMFleet.
+ */
+export function cmOnPlanetKey(fleetId: string): string {
+  return `${fleetId}:on-planet`;
 }

@@ -30,7 +30,7 @@ import { useMapCapture } from '../hooks/useMapCapture';
 import { CaptureButton } from './CaptureButton';
 import { ClipModePanel } from './ClipModePanel';
 import { generateRandomTeamColor } from '../utils/colorUtils';
-import { computeFleetBadges, computeMovementPoints, findFleetPaths, canJoinSystemFleet, getCarryCapacity, resolveUnitTemplate } from '../utils/fleetUtils';
+import { computeFleetBadges, computeMovementPoints, findFleetPaths, canJoinSystemFleet, getCarryCapacity, resolveUnitTemplate, getFleetForUnit } from '../utils/fleetUtils';
 import { isEffectivelyBlockaded, diplomacyKey as supplyDiplomacyKey } from '../utils/supplyUtils';
 import { saveCampaignToStorage, exportCampaignToFile } from '../utils/fileUtils';
 import { computeTAC, getUpgradePoints, getTotalAP, nextTechLevel, nextTLIterator, STANDARD_TRAITS, FACTOR_TRAITS, TROOP_TRAITS, DEFAULT_UNITS } from '../data/unitData';
@@ -151,6 +151,16 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
   const [fleetManagerFocus, setFleetManagerFocus] = useState<{ playerId: string; systemId: string } | null>(null);
   const [showAddUnits, setShowAddUnits] = useState(false);
   const [addUnitsSystemId, setAddUnitsSystemId] = useState('');
+  const [addUnitsInitialTab, setAddUnitsInitialTab] = useState(0);
+
+  // Compute which tab AddUnitsView should open on for a given system:
+  // independent/unowned → CM tab (players.length); otherwise → owning player's index
+  const getAddUnitsInitialTab = useCallback((systemId: string) => {
+    const owner = systemOwnership[systemId];
+    if (!owner || owner.startsWith('independent:')) return players.length;
+    const idx = players.findIndex(p => p.id === owner);
+    return idx >= 0 ? idx : 0;
+  }, [systemOwnership, players]);
   const [addUnitsPickMode, setAddUnitsPickMode] = useState(false);
   const [showAddToTechPoolModal, setShowAddToTechPoolModal] = useState(false);
   const [showStealUnitTechModal, setShowStealUnitTechModal] = useState(false);
@@ -296,10 +306,10 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
 
     // Process CM fleets — each distinct color gets its own owner entry
     for (const fleet of cmFleets) {
-      if (!fleet.systemId) continue;
-      const systemId = fleet.systemId;
+      const systemId = fleet.systemId || fleet.independentSystemId;
+      if (!systemId) continue;
       const color = fleet.independentSystemId
-        ? (independentSystemColors[fleet.independentSystemId] ?? fleet.color ?? '#6b7280')
+        ? (independentSystemColors[fleet.independentSystemId] ?? '#60a5fa')
         : (fleet.color ?? '#6b7280');
       const cmOwnerId = `cm-${color}`;
 
@@ -385,7 +395,15 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
       if (savedCampaign.currentTurnPhase) setCurrentTurnPhase(savedCampaign.currentTurnPhase);
       if (savedCampaign.currentPlayerIndex != null) setCurrentPlayerIndex(savedCampaign.currentPlayerIndex);
       if (savedCampaign.systemStatuses) setSystemStatuses(savedCampaign.systemStatuses);
-      if (savedCampaign.cmFleets) setCmFleets(savedCampaign.cmFleets);
+      if (savedCampaign.cmFleets) {
+        // Migrate legacy isOnPlanet CMFleets: stamp fleetId = 'On-Planet' on all units
+        const migrated = savedCampaign.cmFleets.map(f => {
+          if (!(f as { isOnPlanet?: boolean }).isOnPlanet) return f;
+          const { isOnPlanet: _removed, ...rest } = f as typeof f & { isOnPlanet?: boolean };
+          return { ...rest, units: f.units.map(u => ({ ...u, fleetId: 'On-Planet' as string })) };
+        });
+        setCmFleets(migrated);
+      }
       if (savedCampaign.turnOrders) setTurnOrders(savedCampaign.turnOrders);
       if (savedCampaign.diplomacyRelations) setDiplomacyRelations(savedCampaign.diplomacyRelations);
       if (savedCampaign.diplomacyCooldowns) setDiplomacyCooldowns(savedCampaign.diplomacyCooldowns);
@@ -790,10 +808,40 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
     }
     setSystemOwnership(newOwnership);
     setPlayers(prev => rebuildOwnedSystemIds(prev, newOwnership));
+    // Assign default colors to newly independent systems (if no color already set)
+    if (log.independents.length > 0) {
+      setIndependentSystemColors(prev => {
+        const next = { ...prev };
+        for (const sysId of log.independents) {
+          if (!next[sysId]) next[sysId] = '#60a5fa';
+        }
+        return next;
+      });
+    }
+    // Auto-create garrison pool CMFleet for each newly independent system
+    if (log.independents.length > 0) {
+      setCmFleets(prev => {
+        let next = [...prev];
+        for (const sysId of log.independents) {
+          if (next.some(f => f.isGarrisonPool && f.independentSystemId === sysId)) continue;
+          const sysName = mapState.map.systems.find(s => s.id === sysId)?.name ?? 'Independent System';
+          next = [...next, {
+            id: `garrison-${sysId}`,
+            name: sysName,
+            systemId: sysId,
+            independentSystemId: sysId,
+            sourceListId: 'independent',
+            units: [],
+            isGarrisonPool: true,
+          }];
+        }
+        return next;
+      });
+    }
     zeroUnownedSystemAttributes(newOwnership);
     setPhase('lane_rolling');
     setCurrentPlayerIndex(0);
-  }, [galaxyStateLog, systemOwnership, zeroUnownedSystemAttributes]);
+  }, [galaxyStateLog, mapState.map.systems, systemOwnership, zeroUnownedSystemAttributes]);
 
   const handleSetGalaxyStateLog = useCallback((patch: Partial<NonNullable<Campaign['galaxyStateLog']>>) => {
     setGalaxyStateLog(prev => {
@@ -1069,6 +1117,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
     const current = mapState.selectedSystemId;
     if (current && current !== addUnitsPickInitialIdRef.current) {
       setAddUnitsSystemId(current);
+      setAddUnitsInitialTab(getAddUnitsInitialTab(current));
       setAddUnitsPickMode(false);
       setShowAddUnits(true);
     }
@@ -1198,16 +1247,27 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
     });
   }, [players, cmFleets]);
 
-  // Move a CM unit from one fleet to another
-  const handleMoveCMUnitToFleet = useCallback((fromFleetId: string, unitId: string, toFleetId: string) => {
+  // Move a CM unit from one fleet to another (targetBucket: 'On-Planet' or undefined for mobile)
+  const handleMoveCMUnitToFleet = useCallback((fromFleetId: string, unitId: string, toFleetId: string, targetBucket?: string) => {
     setCmFleets(prev => {
       const fromFleet = prev.find(f => f.id === fromFleetId);
       if (!fromFleet) return prev;
       const unit = fromFleet.units.find(u => u.id === unitId);
       if (!unit) return prev;
+      const updatedFleetId: string | undefined = targetBucket === 'On-Planet' ? 'On-Planet' : undefined;
+
+      if (fromFleetId === toFleetId) {
+        // Same fleet — only bucket changed (mobile ↔ On-Planet)
+        return prev.map(f =>
+          f.id === fromFleetId
+            ? { ...f, units: f.units.map(u => u.id === unitId ? { ...u, fleetId: updatedFleetId } : u) }
+            : f
+        );
+      }
+
       const toFleet = prev.find(f => f.id === toFleetId);
       if (!toFleet) return prev;
-      const movedUnit = { ...unit, systemId: toFleet.systemId ?? unit.systemId };
+      const movedUnit: (typeof unit) = { ...unit, systemId: toFleet.systemId ?? unit.systemId, fleetId: updatedFleetId };
       return prev.map(f => {
         if (f.id === fromFleetId) return { ...f, units: f.units.filter(u => u.id !== unitId) };
         if (f.id === toFleetId) return { ...f, units: [...f.units, movedUnit] };
@@ -1217,17 +1277,18 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
   }, []);
 
   // Move units of a template type from one CM fleet to another (condensed mode drag)
-  const handleMoveCMTemplateToFleet = useCallback((fromFleetId: string, toFleetId: string, templateId: string, _systemId: string, count: number) => {
+  const handleMoveCMTemplateToFleet = useCallback((fromFleetId: string, toFleetId: string, templateId: string, _systemId: string, count: number, targetBucket?: string) => {
     setCmFleets(prev => {
       const fromFleet = prev.find(f => f.id === fromFleetId);
       const toFleet = prev.find(f => f.id === toFleetId);
       if (!fromFleet || !toFleet) return prev;
+      const updatedFleetId: string | undefined = targetBucket === 'On-Planet' ? 'On-Planet' : undefined;
       let remaining = count;
       const toMove: typeof fromFleet.units = [];
       const kept: typeof fromFleet.units = [];
       for (const u of fromFleet.units) {
         if (u.unitTemplateId === templateId && remaining > 0) {
-          toMove.push({ ...u, systemId: toFleet.systemId ?? u.systemId });
+          toMove.push({ ...u, systemId: toFleet.systemId ?? u.systemId, fleetId: updatedFleetId });
           remaining--;
         } else {
           kept.push(u);
@@ -1272,9 +1333,41 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
     // Revert independent fleet ownership if this system was previously independent
     const prevOwner = systemOwnership[systemId];
     if (prevOwner && isIndependentId(prevOwner)) {
-      setCmFleets(prev => prev.map(f =>
-        f.independentSystemId === systemId ? { ...f, independentSystemId: undefined } : f
-      ));
+      // Delete garrison pool (and its units) when system loses independence.
+      // Clear independentSystemId on any remaining non-pool CM fleets at this system.
+      setCmFleets(prev => prev
+        .filter(f => !(f.isGarrisonPool && f.independentSystemId === systemId))
+        .map(f => f.independentSystemId === systemId ? { ...f, independentSystemId: undefined } : f)
+      );
+    }
+
+    // Assign a default color when becoming independent (if none set yet)
+    if (newPlayerId?.startsWith('independent:')) {
+      setIndependentSystemColors(prev => prev[systemId] ? prev : { ...prev, [systemId]: '#60a5fa' });
+      // Auto-create garrison pool for this independent system
+      setCmFleets(prev => {
+        if (prev.some(f => f.isGarrisonPool && f.independentSystemId === systemId)) return prev;
+        const sysName = mapState.map.systems.find(s => s.id === systemId)?.name ?? 'Independent System';
+        return [...prev, {
+          id: `garrison-${systemId}`,
+          name: sysName,
+          systemId,
+          independentSystemId: systemId,
+          sourceListId: 'independent',
+          units: [],
+          isGarrisonPool: true,
+        }];
+      });
+    }
+
+    // Clear the stored independent color when leaving independent ownership
+    if (!newPlayerId?.startsWith('independent:')) {
+      setIndependentSystemColors(prev => {
+        if (!prev[systemId]) return prev;
+        const next = { ...prev };
+        delete next[systemId];
+        return next;
+      });
     }
 
     const newOwnership = { ...systemOwnership };
@@ -1285,7 +1378,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
     }
     setSystemOwnership(newOwnership);
     setPlayers(prev => rebuildOwnedSystemIds(prev, newOwnership));
-  }, [systemOwnership]);
+  }, [mapState.map.systems, systemOwnership]);
 
   // Move a unit to a different fleet (validates category rules for system fleets)
   const handleMoveUnitToFleet = useCallback((playerId: string, unitId: string, newFleetId: string) => {
@@ -2006,37 +2099,77 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
   // Transfer units from a CM fleet to a player or independent system
   const handleCMTransfer = useCallback((unitIds: string[], fromFleetId: string, toTarget: string) => {
     let movedUnits: CampaignUnit[] = [];
+    let isFullFleet = false;
+    let sourceFleetName = '';
+    let sourceFleetSystemId = '';
+
     setCmFleets(prev => {
-      movedUnits = prev.find(f => f.id === fromFleetId)?.units.filter(u => unitIds.includes(u.id)) ?? [];
-      const updated = prev.map(f =>
-        f.id !== fromFleetId ? f : { ...f, units: f.units.filter(u => !unitIds.includes(u.id)) }
-      );
+      const sourceFleet = prev.find(f => f.id === fromFleetId);
+      movedUnits = sourceFleet?.units.filter(u => unitIds.includes(u.id)) ?? [];
+      isFullFleet = !!sourceFleet && unitIds.length === sourceFleet.units.length;
+      sourceFleetName = sourceFleet?.name ?? '';
+      // Use systemId if set, otherwise fall back to independentSystemId (fleet coming from an independent system)
+      sourceFleetSystemId = sourceFleet?.systemId ?? sourceFleet?.independentSystemId ?? '';
+
       if (toTarget.startsWith('independent:')) {
         const sysId = toTarget.replace('independent:', '');
+        if (isFullFleet) {
+          // Transfer fleet ownership — just reassign independentSystemId, leave other fleets untouched
+          return prev.map(f =>
+            f.id !== fromFleetId ? f : { ...f, systemId: undefined, independentSystemId: sysId }
+          );
+        }
+        // Partial transfer: find/create destination CM fleet
+        const updated = prev.map(f =>
+          f.id !== fromFleetId ? f : { ...f, units: f.units.filter(u => !unitIds.includes(u.id)) }
+        );
         const existingFleet = updated.find(f => f.independentSystemId === sysId);
         if (existingFleet) {
           return updated.map(f =>
             f.id !== existingFleet.id ? f : { ...f, units: [...f.units, ...movedUnits] }
           );
-        } else {
-          const sysName = mapState.map.systems.find(s => s.id === sysId)?.name;
-          const newFleet: CMFleet = {
-            id: `cm-fleet-${Date.now()}`,
-            name: sysName ? `${sysName} Fleet` : 'Fleet',
-            systemId: undefined,
-            independentSystemId: sysId,
-            sourceListId: '',
-            units: movedUnits,
-          };
-          return [...updated, newFleet];
         }
+        const sysName = mapState.map.systems.find(s => s.id === sysId)?.name;
+        const newFleet: CMFleet = {
+          id: `cm-fleet-${Date.now()}`,
+          name: sysName ? `${sysName} Fleet` : 'Fleet',
+          systemId: undefined,
+          independentSystemId: sysId,
+          sourceListId: '',
+          units: movedUnits,
+        };
+        return [...updated, newFleet];
       }
-      return updated;
+
+      if (isFullFleet) {
+        // Remove the CM fleet entirely — player will get a proper fleet below
+        return prev.filter(f => f.id !== fromFleetId);
+      }
+      return prev.map(f =>
+        f.id !== fromFleetId ? f : { ...f, units: f.units.filter(u => !unitIds.includes(u.id)) }
+      );
     });
+
     if (!toTarget.startsWith('independent:')) {
-      setPlayers(prev => prev.map(p =>
-        p.id !== toTarget ? p : { ...p, units: [...p.units, ...movedUnits] }
-      ));
+      setPlayers(prev => prev.map(p => {
+        if (p.id !== toTarget) return p;
+        if (isFullFleet) {
+          const newFleetId = `fleet-${Date.now()}`;
+          const newFleet: CampaignFleet = {
+            id: newFleetId,
+            name: sourceFleetName,
+            systemId: sourceFleetSystemId,
+            movedThisTurn: false,
+          };
+          const assignedUnits = movedUnits.map(u => ({
+            ...u,
+            fleetId: newFleetId,
+            systemId: u.systemId || sourceFleetSystemId,
+          }));
+          return { ...p, fleets: [...(p.fleets ?? []), newFleet], units: [...p.units, ...assignedUnits] };
+        }
+        return { ...p, units: [...p.units, ...movedUnits] };
+      }));
     }
   }, [mapState.map.systems, setPlayers]);
 
@@ -2102,8 +2235,11 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
     if (phase !== 'galaxy_state_setup') return null;
     if (!galaxyStateLog) return {};
     const result: Record<string, 'independent' | 'raider' | 'both'> = {};
-    for (const id of galaxyStateLog.independents ?? []) result[id] = 'independent';
+    for (const id of galaxyStateLog.independents ?? []) {
+      if (!galaxyStateLog.independentChecked?.[id]) result[id] = 'independent';
+    }
     for (const id of galaxyStateLog.raiderSystems ?? []) {
+      if (galaxyStateLog.raiderChecked?.[id]) continue;
       result[id] = result[id] === 'independent' ? 'both' : 'raider';
     }
     return result;
@@ -2627,10 +2763,10 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
           espionageFlowActive={espionageFlow?.step === 'select_system'}
           onStartEspionage={() => setEspionageFlow({ step: 'select_player' })}
           onCancelEspionage={() => setEspionageFlow(null)}
-          onOpenFleetManager={phase === 'in_progress' ? handleOpenFleetManager : undefined}
+          onOpenFleetManager={(phase === 'in_progress' || phase === 'galaxy_state_setup') ? handleOpenFleetManager : undefined}
           onOpenTradeRoutes={phase === 'in_progress' ? () => setShowTradeRouteManager(true) : undefined}
-          onOpenAddUnits={(phase === 'in_progress' || phase === 'galaxy_state_setup') ? () => { setAddUnitsSystemId(mapState.selectedSystemId ?? ''); setShowAddUnits(true); } : undefined}
-          onOpenTransferUnit={phase === 'in_progress' ? () => setShowTransferUnitModal(true) : undefined}
+          onOpenAddUnits={(phase === 'in_progress' || phase === 'galaxy_state_setup') ? () => { const sid = mapState.selectedSystemId ?? ''; setAddUnitsSystemId(sid); setAddUnitsInitialTab(getAddUnitsInitialTab(sid)); setShowAddUnits(true); } : undefined}
+          onOpenTransferUnit={(phase === 'in_progress' || phase === 'galaxy_state_setup') ? () => setShowTransferUnitModal(true) : undefined}
           onOpenAddToTechPool={phase === 'in_progress' ? () => setShowAddToTechPoolModal(true) : undefined}
           onOpenForceAdvancement={phase === 'in_progress' ? () => setShowForceAdvancementModal(true) : undefined}
           onOpenSystems={phase === 'in_progress' ? () => setShowSystemsOverview(true) : undefined}
@@ -2720,20 +2856,6 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
           onBack={handleRevertToPreviousPhase}
           onViewMap={() => setTurnPhaseMapView(true)}
           canBack={canRevert}
-        />
-      ) : phase === 'galaxy_state_setup' && !mapEditingMode ? (
-        <GalaxyStateSetupPanel
-          players={players}
-          map={mapState.map}
-          systemOwnership={systemOwnership}
-          settings={settings}
-          galaxyStateLog={galaxyStateLog}
-          onSetLog={handleSetGalaxyStateLog}
-          onFinish={handleFinishGalaxyStateSetup}
-          onOpenAddUnits={() => {
-            setAddUnitsSystemId('');
-            setShowAddUnits(true);
-          }}
         />
       ) : phase === 'unit_purchase' && !mapEditingMode && !unitPurchaseMapView ? (
         <UnitPurchaseView
@@ -2835,6 +2957,12 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
               onFinishTradeRoutes={handleFinishTradeRoutes}
               canRevert={canRevert}
               onRevert={handleRevertToPreviousPhase}
+              systemOwnership={systemOwnership}
+              galaxyStateLog={galaxyStateLog}
+              onSetGalaxyStateLog={handleSetGalaxyStateLog}
+              onFinishGalaxyStateSetup={handleFinishGalaxyStateSetup}
+              onOpenAddUnits={() => { const sid = mapState.selectedSystemId ?? ''; setAddUnitsSystemId(sid); setAddUnitsInitialTab(getAddUnitsInitialTab(sid)); setShowAddUnits(true); }}
+              onCenterOnSystem={systemId => setCenterRequest({ systemId, nonce: Date.now() })}
             />
           )}
 
@@ -2855,7 +2983,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
               onFleetMoveTarget={handleFleetMoveTarget}
               cmFleetMoveMode={!!cmFleetMoveMode}
               onCMFleetMoveTarget={handleCMFleetMoveTarget}
-              fleetIndicators={phase === 'in_progress' && mapSettings.showFleets
+              fleetIndicators={(phase === 'in_progress' || phase === 'galaxy_state_setup') && mapSettings.showFleets
                 ? (fowAwareFleetIndicators ?? fleetIndicators)
                 : undefined}
               staleSystems={phase === 'in_progress' ? fowStaleSystems ?? undefined : undefined}
@@ -2987,9 +3115,9 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
             onMoveUnitToFleet={phase === 'in_progress' ? handleMoveUnitToFleet : undefined}
             onMoveTemplateToFleet={phase === 'in_progress' ? handleMoveTemplateToFleet : undefined}
             systemOwnership={systemOwnership}
-            onChangeSystemOwner={phase === 'in_progress' ? handleChangeSystemOwner : undefined}
+            onChangeSystemOwner={(phase === 'in_progress' || phase === 'galaxy_state_setup') ? handleChangeSystemOwner : undefined}
             independentSystemColors={independentSystemColors}
-            onSetIndependentSystemColor={phase === 'in_progress' ? handleSetIndependentSystemColor : undefined}
+            onSetIndependentSystemColor={(phase === 'in_progress' || phase === 'galaxy_state_setup') ? handleSetIndependentSystemColor : undefined}
             cmFleets={cmFleets}
             independentLists={INDEPENDENT_UNIT_LISTS.filter(l => l.id !== 'ravager' || settings.rules.ravagerFleets)}
             onEditCMFleet={phase === 'in_progress' ? (id) => setEditingCMFleet(id) : undefined}
@@ -3185,6 +3313,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
           diplomacyRelations={diplomacyRelations}
           settings={settings}
           tradeRoutes={players.flatMap(p => p.tradeRoutes ?? [])}
+          independentSystemColors={independentSystemColors}
           onCenterOnSystem={(sysId) => {
             handleCenterAndSelectSystem(sysId);
             setShowFleetManager(false);
@@ -3219,6 +3348,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
           cmFleets={cmFleets}
           systemStatuses={systemStatuses}
           selectedSystemId={addUnitsSystemId}
+          initialTabIndex={addUnitsInitialTab}
           onSelectOnMap={handleEnterAddUnitsPickMode}
           onAddPlayerUnits={handleAddPlayerUnits}
           onAddCMUnits={handleAddCMUnits}
@@ -3342,6 +3472,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
           onClose={() => setShowTransferUnitModal(false)}
           cmFleets={cmFleets}
           systemOwnership={systemOwnership}
+          independentSystemColors={independentSystemColors}
           onCMTransfer={handleCMTransfer}
         />
       )}
@@ -8187,13 +8318,19 @@ interface CampaignPhasePanelProps {
   onFinishTradeRoutes: () => void;
   canRevert: boolean;
   onRevert: () => void;
+  systemOwnership: Record<string, string>;
+  galaxyStateLog: Campaign['galaxyStateLog'];
+  onSetGalaxyStateLog: (patch: Partial<NonNullable<Campaign['galaxyStateLog']>>) => void;
+  onFinishGalaxyStateSetup: () => void;
+  onOpenAddUnits: () => void;
+  onCenterOnSystem: (systemId: string) => void;
 }
 
 function CampaignPhasePanel({
   phase,
   players,
   currentPlayerIndex,
-  settings: _settings,
+  settings,
   onSelectPlayer,
   onSelectHomeworld,
   onChangePlayerColor,
@@ -8215,6 +8352,12 @@ function CampaignPhasePanel({
   onFinishTradeRoutes,
   canRevert,
   onRevert,
+  systemOwnership,
+  galaxyStateLog,
+  onSetGalaxyStateLog,
+  onFinishGalaxyStateSetup,
+  onOpenAddUnits,
+  onCenterOnSystem,
 }: CampaignPhasePanelProps) {
   return (
     <aside className="w-72 overflow-y-auto border-r border-gray-300 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
@@ -8239,6 +8382,20 @@ function CampaignPhasePanel({
           availableHomeworlds={availableHomeworlds}
           selectedSystemId={selectedSystemId}
           mapState={mapState}
+        />
+      )}
+
+      {phase === 'galaxy_state_setup' && (
+        <GalaxyStateSetupPanel
+          players={players}
+          map={mapState.map}
+          systemOwnership={systemOwnership}
+          settings={settings}
+          galaxyStateLog={galaxyStateLog}
+          onSetLog={onSetGalaxyStateLog}
+          onFinish={onFinishGalaxyStateSetup}
+          onOpenAddUnits={onOpenAddUnits}
+          onCenterOnSystem={onCenterOnSystem}
         />
       )}
 
@@ -8922,20 +9079,6 @@ function LaneRollingPanel({
       </div>
     </div>
   );
-}
-
-// Fleet assignment based on unit category/name
-function getFleetForUnit(category: UnitCategory, unitName: string): string {
-  switch (category) {
-    case 'Ships':    return 'Untasked Ships';
-    case 'Fighters': return 'Untasked Ships';
-    case 'Bases':    return 'Bases';
-    case 'Troops':   return 'On-Planet';
-    case 'Civilian':
-      if (unitName === 'Supply Depot' || unitName === 'Shipyard') return 'Bases';
-      return 'Untasked Civilians';
-    default:         return 'Untasked Civilians';
-  }
 }
 
 // --- Unit Card Components ---

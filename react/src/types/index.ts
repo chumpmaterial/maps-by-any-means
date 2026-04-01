@@ -400,6 +400,7 @@ export interface CMFleet {
   sourceListId: string;  // which IndependentUnitList these units came from
   units: CampaignUnit[];
   independentSystemId?: string;  // set when this fleet belongs to an independent system
+  isGarrisonPool?: boolean;      // auto-created fleet for an independent system; renders in bucket mode
 }
 
 /**

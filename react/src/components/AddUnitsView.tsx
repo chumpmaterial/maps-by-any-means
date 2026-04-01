@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useDragScroll } from '../hooks/useDragScroll';
 import type { CampaignPlayer, CampaignSettings, CampaignUnit, CMFleet, DiplomacyLevel, EmpireUnit, GameMap, IndependentUnitList, System, SystemCampaignStatus, TurnOrderEntry } from '../types';
 import { diplomacyKey } from '../utils/supplyUtils';
-import { resolveUnitTemplate } from '../utils/fleetUtils';
+import { resolveUnitTemplate, getFleetForUnit } from '../utils/fleetUtils';
 
 interface CartItem {
   templateId: string;
@@ -24,6 +24,7 @@ interface AddUnitsViewProps {
   cmFleets: CMFleet[];
   systemStatuses: Record<string, SystemCampaignStatus>;
   selectedSystemId: string;
+  initialTabIndex?: number;
   onSelectOnMap: () => void;
   onAddPlayerUnits: (playerId: string, systemId: string, units: Array<{ templateId: string; name: string }>) => void;
   onAddCMUnits: (fleetId: string, units: CampaignUnit[]) => void;
@@ -156,6 +157,7 @@ export function AddUnitsView({
   cmFleets,
   systemStatuses,
   selectedSystemId,
+  initialTabIndex,
   onSelectOnMap,
   onAddPlayerUnits,
   onAddCMUnits,
@@ -171,7 +173,7 @@ export function AddUnitsView({
   const { ref: sidebarTabBarRef, onMouseDown: sidebarTabBarMouseDown, onClickCapture: sidebarTabBarClickCapture } = useDragScroll();
 
   // Main area state
-  const [activeTab, setActiveTab] = useState(0);
+  const [activeTab, setActiveTab] = useState(() => initialTabIndex ?? 0);
   const { ref: mainTabBarRef, onMouseDown: mainTabBarMouseDown, onClickCapture: mainTabBarClickCapture } = useDragScroll();
   const [showAllUnits, setShowAllUnits] = useState(false);
   const [showAlliedUnits, setShowAlliedUnits] = useState(true);
@@ -310,14 +312,19 @@ export function AddUnitsView({
       onAddPlayerUnits(activePlayer.id, selectedSystemId, units);
       setCart([]);
     } else if (isCMTab && selectedCMFleetId) {
-      const newUnits: CampaignUnit[] = cart.flatMap(c =>
-        Array.from({ length: c.count }, () => ({
+      const allIndieUnits = independentLists.flatMap(l => l.units);
+      const newUnits: CampaignUnit[] = cart.flatMap(c => {
+        const template = allIndieUnits.find(u => u.id === c.templateId);
+        const bucket = template ? getFleetForUnit(template.category, template.name) : undefined;
+        const fleetId: string | undefined = bucket === 'On-Planet' ? 'On-Planet' : undefined;
+        return Array.from({ length: c.count }, () => ({
           id: crypto.randomUUID(),
           unitTemplateId: c.templateId,
           name: c.name,
           systemId: selectedSystemId,
-        }))
-      );
+          fleetId,
+        }));
+      });
       onAddCMUnits(selectedCMFleetId, newUnits);
       setCart([]);
     }
@@ -342,7 +349,6 @@ export function AddUnitsView({
     return grouped;
   };
 
-  // CM fleets at selected system
   const cmFleetsAtSystem = cmFleets.filter(f => f.systemId === selectedSystemId);
 
   return (
@@ -865,7 +871,9 @@ export function AddUnitsView({
                   </div>
 
                   <div className="mb-4 rounded border border-gray-200 p-3 dark:border-gray-700">
-                    <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Target Fleet</div>
+                    <div className="mb-2">
+                      <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Target Fleet</span>
+                    </div>
                     {!showNewFleetForm ? (
                       <div className="flex items-center gap-2">
                         <select
