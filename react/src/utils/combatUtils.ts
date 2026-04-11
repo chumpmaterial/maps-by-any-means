@@ -4,6 +4,7 @@ import type {
   CombatScenario,
   CombatUnitState,
   Empire,
+  CMFleet,
 } from '../types';
 import type { EmpireUnit } from '../types';
 
@@ -117,29 +118,35 @@ export function computeFactorTotal(
   return total;
 }
 
-/** Units on one side of the scenario with their resolved template + player info */
+/** Units on one side of the scenario with their resolved template + faction info */
 export interface SideUnitInfo {
   unit: CampaignUnit;
   state: CombatUnitState;
   template: EmpireUnit;
-  player: CampaignPlayer;
+  player?: CampaignPlayer;     // undefined for CM/independent faction units
+  factionId: string;            // player.id | "independent:sysId" | "cm:color"
+  factionLabel: string;         // player name | system name | fleet name
+  factionColor: string;         // hex color for UI accents
 }
 
 /**
  * Returns all units participating on a given side of a combat scenario,
- * along with their CombatUnitState, template, and owning player.
+ * along with their CombatUnitState, template, and owning faction.
+ * Pass cmFleets + indieTemplates to include CM/independent fleet units.
  */
 export function getSideUnits(
   scenario: CombatScenario,
   side: 'attacker' | 'defender',
   players: CampaignPlayer[],
+  cmFleets?: CMFleet[],
+  indieTemplates?: EmpireUnit[],
 ): SideUnitInfo[] {
   const force = side === 'attacker' ? scenario.attackerForce : scenario.defenderForce;
-  const sidePlayerIds = new Set([force.primaryPlayerId, ...force.alliedPlayerIds]);
+  const sideIds = new Set([force.primaryPlayerId, ...force.alliedPlayerIds]);
   const result: SideUnitInfo[] = [];
 
   for (const player of players) {
-    if (!sidePlayerIds.has(player.id)) continue;
+    if (!sideIds.has(player.id)) continue;
     // Build a template map: own empire + stolen unit designs + allied empire units
     const templateMap = new Map(player.empire.units.map(u => [u.id, u]));
     for (const s of player.stolenUnits ?? []) templateMap.set(s.unit.id, s.unit);
@@ -151,16 +158,13 @@ export function getSideUnits(
       if (!state || state.side !== side) continue;
       const template = templateMap.get(unit.unitTemplateId);
       if (!template) continue;
-      result.push({ unit, state, template, player });
+      result.push({ unit, state, template, player, factionId: player.id, factionLabel: player.name, factionColor: player.teamColor ?? '#9ca3af' });
     }
   }
 
   // Also include captured units that now fight for this side.
-  // These units are still in the original (enemy) player's units array,
-  // so we look through non-side players for units whose state.side was
-  // flipped to this side via capture.
   for (const player of players) {
-    if (sidePlayerIds.has(player.id)) continue; // already processed above
+    if (sideIds.has(player.id)) continue; // already processed above
     const templateMap = new Map(player.empire.units.map(u => [u.id, u]));
     for (const s of player.stolenUnits ?? []) templateMap.set(s.unit.id, s.unit);
     for (const unit of player.units) {
@@ -174,7 +178,27 @@ export function getSideUnits(
         (award?.awardedToPlayerId ? players.find(p => p.id === award.awardedToPlayerId) : null)
         ?? players.find(p => p.id === force.primaryPlayerId)
         ?? player;
-      result.push({ unit, state, template, player: capturingPlayer });
+      result.push({ unit, state, template, player: capturingPlayer, factionId: capturingPlayer.id, factionLabel: capturingPlayer.name, factionColor: capturingPlayer.teamColor ?? '#9ca3af' });
+    }
+  }
+
+  // CM / independent fleet units
+  if (cmFleets?.length && indieTemplates?.length) {
+    const indieTemplateMap = new Map(indieTemplates.map(t => [t.id, t]));
+    for (const fleet of cmFleets) {
+      const factionId = fleet.independentSystemId
+        ? `independent:${fleet.independentSystemId}`
+        : `cm:${fleet.color ?? 'gray'}`;
+      if (!sideIds.has(factionId)) continue;
+      const factionLabel = fleet.name;
+      const factionColor = fleet.color ?? '#9ca3af';
+      for (const unit of fleet.units) {
+        const state = scenario.unitStates[unit.id];
+        if (!state || state.side !== side) continue;
+        const template = indieTemplateMap.get(unit.unitTemplateId);
+        if (!template) continue;
+        result.push({ unit, state, template, player: undefined, factionId, factionLabel, factionColor });
+      }
     }
   }
 
@@ -198,19 +222,22 @@ export function getFlagshipEmpire(
 }
 
 /**
- * Build the initial unitStates Record for a scenario from the players at the scenario's system.
- * Units belonging to attacker-force players are on side 'attacker'; defender-force on 'defender'.
+ * Build the initial unitStates Record for a scenario.
+ * Units belonging to attacker-force factions are on side 'attacker'; defender-force on 'defender'.
  * Only units currently at the scenario's system are included.
+ * Pass cmFleets + indieTemplates to include CM/independent fleet units.
  */
 export function initScenarioUnitStates(
   scenario: CombatScenario,
   players: CampaignPlayer[],
+  cmFleets?: CMFleet[],
+  indieTemplates?: EmpireUnit[],
 ): Record<string, CombatUnitState> {
-  const attackerPlayerIds = new Set([
+  const attackerIds = new Set([
     scenario.attackerForce.primaryPlayerId,
     ...scenario.attackerForce.alliedPlayerIds,
   ]);
-  const defenderPlayerIds = new Set([
+  const defenderIds = new Set([
     scenario.defenderForce.primaryPlayerId,
     ...scenario.defenderForce.alliedPlayerIds,
   ]);
@@ -218,8 +245,8 @@ export function initScenarioUnitStates(
   const states: Record<string, CombatUnitState> = {};
 
   for (const player of players) {
-    const isAttacker = attackerPlayerIds.has(player.id);
-    const isDefender = defenderPlayerIds.has(player.id);
+    const isAttacker = attackerIds.has(player.id);
+    const isDefender = defenderIds.has(player.id);
     if (!isAttacker && !isDefender) continue;
     const side: 'attacker' | 'defender' = isAttacker ? 'attacker' : 'defender';
 
@@ -231,13 +258,10 @@ export function initScenarioUnitStates(
         ?? player.stolenUnits?.find(s => s.unit.id === unit.unitTemplateId)?.unit
         ?? players.flatMap(p => p.id !== player.id ? p.empire.units : []).find(t => t.id === unit.unitTemplateId);
       if (scenario.scenarioType === 'ground_combat') {
-        // Ground Combat: ONLY Troops participate
         if (template?.category !== 'Troops') continue;
       } else {
-        // Space Combat: exclude Troops
         if (template?.category === 'Troops') continue;
       }
-      // On-Planet = Troop assigned to the 'On-Planet' system fleet key (auto-joins Task Force)
       const isOnPlanet = scenario.scenarioType === 'ground_combat' && unit.fleetId === 'On-Planet';
       states[unit.id] = {
         unitId: unit.id,
@@ -257,18 +281,62 @@ export function initScenarioUnitStates(
     }
   }
 
+  // CM / independent fleet units
+  if (cmFleets?.length && indieTemplates?.length) {
+    const indieTemplateMap = new Map(indieTemplates.map(t => [t.id, t]));
+    for (const fleet of cmFleets) {
+      if (fleet.systemId !== scenario.systemId) continue;
+      const factionId = fleet.independentSystemId
+        ? `independent:${fleet.independentSystemId}`
+        : `cm:${fleet.color ?? 'gray'}`;
+      const isAttacker = attackerIds.has(factionId);
+      const isDefender = defenderIds.has(factionId);
+      if (!isAttacker && !isDefender) continue;
+      const side: 'attacker' | 'defender' = isAttacker ? 'attacker' : 'defender';
+      for (const unit of fleet.units) {
+        if (unit.mothballed) continue;
+        const template = indieTemplateMap.get(unit.unitTemplateId);
+        if (scenario.scenarioType === 'ground_combat') {
+          if (template?.category !== 'Troops') continue;
+        } else {
+          if (template?.category === 'Troops') continue;
+        }
+        const isOnPlanet = scenario.scenarioType === 'ground_combat' && unit.fleetId === 'On-Planet';
+        states[unit.id] = {
+          unitId: unit.id,
+          playerId: factionId,
+          side,
+          isFlagship: false,
+          formationBonus: false,
+          disrupted: false,
+          jammed: false,
+          inTaskForce: isOnPlanet,
+          fighterAssignment: null,
+          destroyed: false,
+          capturedBySide: null,
+          exitedScenario: false,
+          effectiveCarriedById: unit.carriedById ?? null,
+        };
+      }
+    }
+  }
+
   return states;
 }
 
 /**
- * Build a template lookup Map from a list of players.
- * Merges all empire unit templates across all provided players.
+ * Build a template lookup Map from a list of players, optionally including indie templates.
  */
-export function buildTemplateMap(players: CampaignPlayer[]): Map<string, EmpireUnit> {
+export function buildTemplateMap(players: CampaignPlayer[], indieTemplates?: EmpireUnit[]): Map<string, EmpireUnit> {
   const map = new Map<string, EmpireUnit>();
   for (const player of players) {
     for (const unit of player.empire.units) {
       map.set(unit.id, unit);
+    }
+  }
+  if (indieTemplates) {
+    for (const tmpl of indieTemplates) {
+      if (!map.has(tmpl.id)) map.set(tmpl.id, tmpl);
     }
   }
   return map;

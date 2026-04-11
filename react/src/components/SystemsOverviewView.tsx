@@ -1,6 +1,101 @@
 import { useState, useMemo } from 'react';
 import type { GameMap, CampaignPlayer, SystemCampaignStatus, SystemAttributes, System } from '../types';
 
+function CopyButton({ getText, title = 'Copy to clipboard' }: { getText: () => string; title?: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      navigator.clipboard.writeText(getText());
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch { /* ignore */ }
+  };
+  return (
+    <div className="relative flex-shrink-0">
+      {copied && (
+        <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1 -translate-x-1/2 whitespace-nowrap rounded bg-gray-800 px-1.5 py-0.5 text-[10px] text-white dark:bg-gray-200 dark:text-gray-900">
+          Copied!
+        </div>
+      )}
+      <button
+        onClick={handleClick}
+        title={title}
+        className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+      >
+        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <rect x="5" y="5" width="9" height="9" rx="1" />
+          <path d="M11 5V3a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h2" />
+        </svg>
+      </button>
+    </div>
+  );
+}
+
+function formatSystemsText(
+  title: string,
+  systems: System[],
+  systemStatuses: Record<string, SystemCampaignStatus>,
+): string {
+  if (systems.length === 0) return title;
+
+  const SEP = '  ';
+  const rows = systems.map(sys => {
+    const attrs = sys.attributes;
+    const statuses = getActiveStatuses(systemStatuses[sys.id]).map(s => s.label);
+    return {
+      name: sys.name || sys.id,
+      type: sys.planetType ? sys.planetType.charAt(0).toUpperCase() + sys.planetType.slice(1) : '—',
+      cap: String(attrs?.capacity ?? '—'),
+      raw: String(attrs?.raw ?? '—'),
+      pop: String(attrs?.population ?? '—'),
+      mor: String(attrs?.morale ?? '—'),
+      int: String(attrs?.intel ?? '—'),
+      fort: String(attrs?.fortification ?? '—'),
+      status: statuses.join(', '),
+    };
+  });
+
+  const w = (header: string, vals: string[]) =>
+    Math.max(header.length, ...vals.map(v => v.length));
+
+  const nameW  = w('Name',   rows.map(r => r.name));
+  const typeW  = w('Type',   rows.map(r => r.type));
+  const capW   = w('CAP',   rows.map(r => r.cap));
+  const rawW   = w('RAW',   rows.map(r => r.raw));
+  const popW   = w('POP',   rows.map(r => r.pop));
+  const morW   = w('MOR',   rows.map(r => r.mor));
+  const intW   = w('INT',   rows.map(r => r.int));
+  const fortW  = w('FOR',   rows.map(r => r.fort));
+
+  const header =
+    'Name'.padEnd(nameW) + SEP +
+    'Type'.padEnd(typeW) + SEP +
+    'CAP'.padStart(capW) + SEP +
+    'RAW'.padStart(rawW) + SEP +
+    'POP'.padStart(popW) + SEP +
+    'MOR'.padStart(morW) + SEP +
+    'INT'.padStart(intW) + SEP +
+    'FOR'.padStart(fortW) + SEP +
+    'Status';
+
+  const lines: string[] = [title, header];
+  for (const r of rows) {
+    lines.push(
+      r.name.padEnd(nameW) + SEP +
+      r.type.padEnd(typeW) + SEP +
+      r.cap.padStart(capW) + SEP +
+      r.raw.padStart(rawW) + SEP +
+      r.pop.padStart(popW) + SEP +
+      r.mor.padStart(morW) + SEP +
+      r.int.padStart(intW) + SEP +
+      r.fort.padStart(fortW) + SEP +
+      r.status,
+    );
+  }
+  return lines.join('\n');
+}
+
 interface SystemsOverviewViewProps {
   map: GameMap;
   players: CampaignPlayer[];
@@ -216,6 +311,7 @@ export function SystemsOverviewView({
                   <col key={c.key} className="w-[58px]" />
                 ))}
                 <col /> {/* Status: takes remaining space */}
+                <col className="w-[32px]" />
               </colgroup>
               <thead className="sticky top-0 z-10 bg-white dark:bg-gray-900">
                 <tr className="border-b-2 border-gray-200 text-xs font-medium uppercase tracking-wider text-gray-500 dark:border-gray-700 dark:text-gray-400">
@@ -232,6 +328,15 @@ export function SystemsOverviewView({
                   ))}
                   <th className={headerClass('status')} onClick={() => handleSort('status')}>
                     Status{sortKey === 'status' && <SortChevron dir={sortDir} />}
+                  </th>
+                  <th className="px-1 py-2 text-center">
+                    <CopyButton
+                      title="Copy full table"
+                      getText={() => {
+                        const tabLabel = isUnowned ? 'Unowned' : (players[activeTab]?.name ?? 'Systems');
+                        return formatSystemsText(`${tabLabel} — Systems`, activeSystems, systemStatuses);
+                      }}
+                    />
                   </th>
                 </tr>
               </thead>
@@ -270,6 +375,12 @@ export function SystemsOverviewView({
                         ) : (
                           <span className="text-xs text-gray-300 dark:text-gray-600">—</span>
                         )}
+                      </td>
+                      <td className="px-0.5 py-1 text-center" onClick={e => e.stopPropagation()}>
+                        <CopyButton
+                          title="Copy system"
+                          getText={() => formatSystemsText(sys.name || sys.id, [sys], systemStatuses)}
+                        />
                       </td>
                     </tr>
                   );

@@ -318,46 +318,42 @@ export function computeRaiderChecks(
     ...independentOwnerIds,
   ];
 
+  const isConvoyUnit = (templateId: string, player: CampaignPlayer) => {
+    const t = player.empire.units.find(eu => eu.id === templateId)
+      ?? player.stolenUnits?.find(s => s.unit.id === templateId)?.unit;
+    return t?.category === 'Civilian' && t?.name === 'Convoy';
+  };
+
   const results: RaiderCheckResult[] = [];
 
   for (const sys of map.systems) {
     const ownerId = systemOwnership[sys.id];
 
-    // Filter by player/CM
-    if (playerId === 'CM') {
-      if (!ownerId?.startsWith('independent:')) continue;
-    } else {
-      if (ownerId !== playerId) continue;
-    }
-
-    // Must have a status entry (guard — no fields are read from it, but absence means
-    // the system has never been initialized and should be skipped entirely)
+    // Must have a status entry
     if (!systemStatuses[sys.id]) continue;
 
-    // Determine convoy presence: Convoy unit physically at this system (player or CM fleet)
-    const isConvoyUnit = (templateId: string, player?: CampaignPlayer) => {
-      if (player) {
-        const t = player.empire.units.find(eu => eu.id === templateId)
-          ?? player.stolenUnits?.find(s => s.unit.id === templateId)?.unit;
-        return t?.category === 'Civilian' && t?.name === 'Convoy';
-      }
-      return false;
-    };
-    const hasConvoy =
-      players.some(p =>
-        p.units.some(u => u.systemId === sys.id && isConvoyUnit(u.unitTemplateId, p)),
-      ) ||
-      (cmFleets ?? []).some(f =>
-        f.units.some(u => {
-          if (u.systemId !== sys.id) return false;
-          // CM fleet units: resolve template from independentLists not available here,
-          // so match by name on the unit itself (CMFleet units carry a .name field)
-          return u.name === 'Convoy';
-        }),
-      );
+    let hasConvoy: boolean;
+    let hasTradeRoute: boolean;
 
-    // Determine trade route presence
-    const hasTradeRoute = tradeRoutes.some(r => r.systemIds.includes(sys.id));
+    if (playerId === 'CM') {
+      // CM mode: only independent-owned systems
+      if (!ownerId?.startsWith('independent:')) continue;
+      hasConvoy =
+        players.some(p =>
+          p.units.some(u => u.systemId === sys.id && isConvoyUnit(u.unitTemplateId, p)),
+        ) ||
+        (cmFleets ?? []).some(f =>
+          f.units.some(u => u.systemId === sys.id && u.name === 'Convoy'),
+        );
+      hasTradeRoute = tradeRoutes.some(r => r.systemIds.includes(sys.id));
+    } else {
+      // Player mode: include any system where this player has a convoy or trade route,
+      // regardless of who owns the system.
+      const player = players.find(p => p.id === playerId);
+      if (!player) continue;
+      hasConvoy = player.units.some(u => u.systemId === sys.id && isConvoyUnit(u.unitTemplateId, player));
+      hasTradeRoute = (player.tradeRoutes ?? []).some(r => r.systemIds.includes(sys.id));
+    }
 
     if (!hasConvoy && !hasTradeRoute) continue;
 

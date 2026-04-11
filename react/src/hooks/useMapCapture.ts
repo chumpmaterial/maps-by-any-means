@@ -96,6 +96,13 @@ export function useMapCapture() {
         if (fowData.intel[sys.id]) visible.add(sys.id);
         else if (!fowData.blindExploration && fowData.initialIntel[sys.id]) visible.add(sys.id);
       }
+      // Include unknown-but-adjacent "?" systems in the bounding box
+      if (fowData.blindExploration) {
+        for (const lane of map.jumpLanes) {
+          if (visible.has(lane.from) && !visible.has(lane.to)) visible.add(lane.to);
+          if (visible.has(lane.to) && !visible.has(lane.from)) visible.add(lane.from);
+        }
+      }
       systems = map.systems.filter(s => visible.has(s.id));
     }
 

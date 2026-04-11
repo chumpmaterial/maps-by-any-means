@@ -287,6 +287,7 @@ export interface CampaignUnit {
   fleetId?: string;
   carriedById?: string;  // ID of the CampaignUnit carrying this unit
   mothballed?: boolean;  // mothballed units cost 0 maintenance
+  addedOnTurn?: number;  // turn number when this unit was added via Add Units
   // Strategic statuses (persist across turns)
   crippled?: boolean;
   outOfSupply?: boolean;
@@ -502,6 +503,8 @@ export interface CombatScenario {
   resultsApplied?: boolean;
   // Captured at Begin Scenario — players involved, before any combat; used to restore on Restart
   scenarioStartPlayersSnapshot?: Record<string, CampaignPlayer>;
+  // Captured at Begin Scenario — all CM fleet units involved, before any combat; used for Resolution tally after Apply Results removes destroyed units
+  scenarioStartCMUnits?: CampaignUnit[];
 }
 
 /**
@@ -534,6 +537,13 @@ export interface Campaign {
     raiderChecked: Record<string, boolean>;
   };
   independentSystemColors?: Record<string, string>;  // systemId → hex color
+  turnOrderChecks?: {
+    intel:        Record<string, Array<{ checked: boolean; xed: boolean }>>;
+    movement:     Record<string, Array<{ checked: boolean; xed: boolean }>>;
+    construction: Record<string, Array<{ checked: boolean; xed: boolean }>>;
+    investment:   Record<string, Array<{ checked: boolean; xed: boolean }>>;
+    diplomacy:    Record<string, Array<{ checked: boolean; xed: boolean }>>;
+  };
 }
 
 // ─── Campaign History ─────────────────────────────────────────────────────────
@@ -561,6 +571,7 @@ export interface PhaseHistoryEntry {
   turnPhase?: TurnPhase;    // only when phase === 'in_progress'
   timestamp: string;
   snapshot: CampaignSnapshot;
+  cmNote?: string;          // optional CM annotation for this phase boundary
 }
 
 export interface CampaignHistory {
@@ -617,6 +628,14 @@ export interface SystemStatusDiff {
   newValue: unknown;
 }
 
+export interface SystemStatsDiff {
+  systemId: string;
+  systemName: string;
+  attribute: keyof SystemAttributes;
+  before: number;
+  after: number;
+}
+
 export interface FleetDiff {
   type: DiffChangeType;
   ownerName: string;
@@ -645,6 +664,7 @@ export interface PhaseDiff {
   ownership: OwnershipDiff[];
   diplomacy: DiplomacyDiff[];
   systemStatuses: SystemStatusDiff[];
+  systemStats: SystemStatsDiff[];
   fleets: FleetDiff[];
   tradeRoutes: TradeRouteDiff[];
   tech: TechDiff[];

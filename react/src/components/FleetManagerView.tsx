@@ -83,6 +83,155 @@ function GripIcon({ className }: { className?: string }) {
 }
 
 // ---------------------------------------------------------------------------
+// CopyButton
+// ---------------------------------------------------------------------------
+
+function CopyButton({ getText }: { getText: () => string }) {
+  const [copied, setCopied] = useState(false);
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      navigator.clipboard.writeText(getText());
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch { /* ignore */ }
+  };
+  return (
+    <div className="relative flex-shrink-0">
+      {copied && (
+        <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1 -translate-x-1/2 whitespace-nowrap rounded bg-gray-800 px-1.5 py-0.5 text-[10px] text-white dark:bg-gray-200 dark:text-gray-900">
+          Copied!
+        </div>
+      )}
+      <button
+        onClick={handleClick}
+        title="Copy to clipboard"
+        className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+      >
+        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <rect x="5" y="5" width="9" height="9" rx="1" />
+          <path d="M11 5V3a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h2" />
+        </svg>
+      </button>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// formatFleetUnitsText — condensed copy-to-clipboard helper
+// ---------------------------------------------------------------------------
+
+/** Apply strategic status modifiers (crippled/OOS/captured) to base stats for display. */
+function applyStrategicModifiers(
+  unit: CampaignUnit,
+  template: EmpireUnit,
+): { dv: number; as: number | '-'; af: number | '-' } {
+  let dv = template.dv as number;
+  let as = template.as === '-' ? null : (template.as as number);
+  let af = template.af === '-' ? null : (template.af as number);
+
+  const hasArmored   = template.traits.some(t => t.name === 'Armored');
+  const hasGunship   = template.traits.some(t => t.name === 'Gunship');
+  const hasCarronade = template.traits.some(t => t.name === 'Carronade');
+
+  // DV: crippled (no Armored) or OOS — don't stack
+  if ((unit.crippled && !hasArmored) || unit.outOfSupply) {
+    dv = Math.ceil(dv * 0.5);
+  }
+  // AS: crippled and OOS stack
+  if (as !== null) {
+    if (unit.crippled && !hasGunship) as = Math.ceil(as * 0.5);
+    if (unit.outOfSupply)             as = Math.ceil(as * 0.5);
+  }
+  // AF: crippled and OOS stack
+  if (af !== null) {
+    if (unit.crippled && !hasCarronade) af = Math.ceil(af * 0.5);
+    if (unit.outOfSupply)               af = Math.ceil(af * 0.5);
+  }
+  // Captured: AS and AF non-functional
+  if (unit.captured) { as = as !== null ? 0 : null; af = af !== null ? 0 : null; }
+
+  return {
+    dv,
+    as: as === null ? '-' : as,
+    af: af === null ? '-' : af,
+  };
+}
+
+function formatFleetUnitsText(
+  fleetName: string,
+  units: CampaignUnit[],
+  getTemplate: (id: string) => EmpireUnit | undefined,
+): string {
+  const rowMap = new Map<string, { template: EmpireUnit; unit: CampaignUnit; statusKey: string; count: number }>();
+  for (const u of units) {
+    const t = getTemplate(u.unitTemplateId);
+    if (!t) continue;
+    const sk = unitStatusKey(u);
+    const key = `${t.id}|${sk}`;
+    if (!rowMap.has(key)) rowMap.set(key, { template: t, unit: u, statusKey: sk, count: 0 });
+    rowMap.get(key)!.count++;
+  }
+  const crNum = (t: EmpireUnit) => (t.cr === '-' ? -1 : Number(t.cr));
+  const rows = [...rowMap.values()].sort((a, b) => {
+    const d = crNum(b.template) - crNum(a.template);
+    if (d !== 0) return d;
+    return a.template.name.localeCompare(b.template.name) || a.statusKey.localeCompare(b.statusKey);
+  });
+  if (rows.length === 0) return fleetName;
+
+  const sv = (v: number | '-') => (v === '-' ? '-' : String(v));
+  const traitStr = (t: EmpireUnit) =>
+    t.traits.map(tr => tr.name + (tr.factor ? ` ${tr.factor}` : '')).join(', ');
+  const nameWithStatus = (r: { template: EmpireUnit; statusKey: string }) =>
+    r.statusKey ? `${r.template.name} [${r.statusKey.replace(/,/g, ' ')}]` : r.template.name;
+
+  // Pre-compute effective stats per row
+  const effectiveStats = rows.map(r => applyStrategicModifiers(r.unit, r.template));
+
+  // Column widths
+  const nameW   = Math.max(5, ...rows.map(r => nameWithStatus(r).length));
+  const hcW     = Math.max(2, ...rows.map(r => r.template.hullCode.length));
+  const countW  = Math.max(1, ...rows.map(r => r.count.toString().length));
+  const dvW     = Math.max(2, ...effectiveStats.map(s => sv(s.dv).length));
+  const asW     = Math.max(2, ...effectiveStats.map(s => sv(s.as).length));
+  const afW     = Math.max(2, ...effectiveStats.map(s => sv(s.af).length));
+  const crW     = Math.max(2, ...rows.map(r => sv(r.template.cr).length));
+  const ccW     = Math.max(2, ...rows.map(r => sv(r.template.cc).length));
+
+  const SEP = '  ';
+  const header =
+    '  ' + 'Class'.padEnd(nameW) + SEP +
+    'HC'.padEnd(hcW) + SEP +
+    '×'.padStart(countW) + SEP +
+    'DV'.padStart(dvW) + SEP +
+    'AS'.padStart(asW) + SEP +
+    'AF'.padStart(afW) + SEP +
+    'CR'.padStart(crW) + SEP +
+    'CC'.padStart(ccW) + SEP +
+    'Traits';
+
+  const lines: string[] = [fleetName, header];
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
+    const { template: t, count } = r;
+    const eff = effectiveStats[i];
+    lines.push(
+      '  ' + nameWithStatus(r).padEnd(nameW) + SEP +
+      t.hullCode.padEnd(hcW) + SEP +
+      String(count).padStart(countW) + SEP +
+      sv(eff.dv).padStart(dvW) + SEP +
+      sv(eff.as).padStart(asW) + SEP +
+      sv(eff.af).padStart(afW) + SEP +
+      sv(t.cr).padStart(crW) + SEP +
+      sv(t.cc).padStart(ccW) + SEP +
+      traitStr(t),
+    );
+  }
+  return lines.join('\n');
+}
+
+// ---------------------------------------------------------------------------
 // Rule activity badge
 // ---------------------------------------------------------------------------
 
@@ -156,6 +305,7 @@ function FMUnitRow({
   onAttachDropdown,
   onDetach,
   onDetachCarried,
+  onToggleCarriedStatus,
   onDragStart,
   onDragEnd,
   onSetDragOverCarrier,
@@ -178,6 +328,7 @@ function FMUnitRow({
   onAttachDropdown: (carrierId: string) => void;
   onDetach: () => void;
   onDetachCarried: (depId: string) => void;
+  onToggleCarriedStatus?: (unitId: string, status: StrategicStatus) => void;
   onDragStart: () => void;
   onDragEnd: () => void;
   onSetDragOverCarrier: (id: string | null) => void;
@@ -377,13 +528,41 @@ function FMUnitRow({
       )}
 
       {carriedUnits.length > 0 && (
-        <div className="ml-6 mt-1 space-y-0.5 border-l border-gray-200 pl-2 dark:border-gray-700">
+        <div className="ml-6 mt-1 space-y-1 border-l border-gray-200 pl-2 dark:border-gray-700">
           {carriedUnits.map(({ unit: cu, template: ct }) => (
-            <div key={cu.id} className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300">
-              <span className="flex-1">↳ {ct.name}{ct.hullCode !== 'N/A' ? ` (${ct.hullCode})` : ''}</span>
+            <div key={cu.id} className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-gray-600 dark:text-gray-300">
+              <span className="min-w-0 shrink-0">↳ {ct.name}{ct.hullCode !== 'N/A' ? ` (${ct.hullCode})` : ''}</span>
+              {(cu.crippled || cu.outOfSupply || cu.captured || cu.exhausted || cu.mothballed || onToggleCarriedStatus) && (
+                <span className="flex flex-wrap gap-1">
+                  {UNIT_STATUS_CONFIG.map(({ key, label, title, activeCls }) => {
+                    if (key === 'exhausted' && !ct.traits.some(tr => tr.name === 'Supply')) return null;
+                    if (key === 'mothballed' && ct.category !== 'Ships' && ct.category !== 'Fighters') return null;
+                    const active = !!cu[key];
+                    if (!onToggleCarriedStatus && !active) return null;
+                    return onToggleCarriedStatus ? (
+                      <button
+                        key={key}
+                        onClick={() => onToggleCarriedStatus(cu.id, key)}
+                        title={active ? `Remove ${title}` : `Mark ${title}`}
+                        className={`whitespace-nowrap rounded px-1.5 py-0.5 text-[10px] font-medium ${
+                          active
+                            ? `${activeCls} hover:opacity-75`
+                            : 'bg-gray-50 text-gray-400 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-600 dark:hover:bg-gray-700'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ) : (
+                      <span key={key} className={`whitespace-nowrap rounded px-1.5 py-0.5 text-[10px] font-medium ${activeCls}`}>
+                        {label}
+                      </span>
+                    );
+                  })}
+                </span>
+              )}
               <button
                 onClick={() => onDetachCarried(cu.id)}
-                className="rounded px-1 py-0.5 text-blue-400 hover:text-blue-600 dark:text-blue-500"
+                className="ml-auto rounded px-1 py-0.5 text-blue-400 hover:text-blue-600 dark:text-blue-500"
               >
                 detach ×
               </button>
@@ -457,6 +636,7 @@ function FMFleetSection({
   onDropOnFleet,
   onDropTemplateOnFleet,
   onToggleUnitStatus,
+  onGetCopyText,
 }: {
   fleetKey: string;
   fleetName: string;
@@ -489,6 +669,7 @@ function FMFleetSection({
   onDropOnFleet: (fleetKey: string) => void;
   onDropTemplateOnFleet: (templateId: string, templateName: string, fromFleetKey: string, count: number) => void;
   onToggleUnitStatus?: (playerId: string, unitId: string, status: StrategicStatus) => void;
+  onGetCopyText?: () => string;
 }) {
   const [expanded, setExpanded] = useState(true);
   const [draggingTemplateId, setDraggingTemplateId] = useState<string | null>(null);
@@ -765,6 +946,8 @@ function FMFleetSection({
             )}
           </button>
 
+          {onGetCopyText && <CopyButton getText={onGetCopyText} />}
+
           {hasActions && (
             <div className="relative" ref={actionsMenuRef}>
               <button
@@ -983,6 +1166,7 @@ function FMFleetSection({
                   onAttachDropdown={(carrierId) => onAttachUnit(u.id, carrierId)}
                   onDetach={() => onAttachUnit(u.id, null)}
                   onDetachCarried={(depId) => onAttachUnit(depId, null)}
+                  onToggleCarriedStatus={onToggleUnitStatus && player ? (unitId, status) => onToggleUnitStatus(player.id, unitId, status) : undefined}
                   onDragStart={() => onDragStartUnit(u.id)}
                   onDragEnd={onDragEndUnit}
                   onSetDragOverCarrier={onSetDragOverCarrier}
@@ -1046,14 +1230,12 @@ export function FleetManagerView({
   const [selectedPlayerId, setSelectedPlayerId] = useState(() => initialPlayerId ?? players[0]?.id ?? '');
   const [expandedSystems, setExpandedSystems] = useState<Set<string>>(() => {
     const keys = new Set<string>();
-    // Pre-expand the focused system (player or CM)
+    // Only pre-expand the system currently selected on the map
     if (initialSystemId) {
       keys.add(initialPlayerId === CM_TAB_ID ? `cm:${initialSystemId}` : initialSystemId);
-    }
-    // Always pre-expand all CM system groups so On-Planet and independent fleets are visible without extra clicks
-    for (const f of cmFleets ?? []) {
-      const sysId = f.systemId || f.independentSystemId || '';
-      if (sysId) keys.add(`cm:${sysId}`);
+      // Also pre-expand the same system in the CM tab when opening from a player tab, and vice versa
+      keys.add(`cm:${initialSystemId}`);
+      keys.add(initialSystemId);
     }
     return keys;
   });
@@ -1183,6 +1365,7 @@ export function FleetManagerView({
 
   const handleScrollAreaDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     if (!dragState) return;
+    e.preventDefault(); // Keep drag alive over gaps between fleet cards (esp. in CM grid layout)
     const container = scrollContainerRef.current;
     if (!container) return;
     const rect = container.getBoundingClientRect();
@@ -1350,14 +1533,15 @@ export function FleetManagerView({
     }
 
     const systemId = fleet.systemId || fleet.independentSystemId || '';
+    const isTroop = template.category === 'Troops';
     const validFleetKeys = new Set<string>();
     for (const f of cmFleets) {
       const fSysId = f.systemId || f.independentSystemId || '';
       if (fSysId !== systemId) continue;
       // Mobile section of every other fleet is a valid target
       if (f.id !== fromFleetId) validFleetKeys.add(f.id);
-      // On-Planet section of every fleet (including own) is a valid target
-      validFleetKeys.add(cmOnPlanetKey(f.id));
+      // On-Planet section only accepts Troops
+      if (isTroop) validFleetKeys.add(cmOnPlanetKey(f.id));
     }
     // Own mobile section: valid if dragging from On-Planet (to convert to mobile)
     if (fromKey === cmOnPlanetKey(fromFleetId)) validFleetKeys.add(fromFleetId);
@@ -1543,6 +1727,28 @@ export function FleetManagerView({
 
         {/* Player tabs + CM tab */}
         <div className="flex items-center gap-1">
+          <div className={`mr-1 border-r border-gray-200 pr-2 dark:border-gray-700 ${(!isCMTab && player && playerSystems.length > 0) ? '' : 'invisible pointer-events-none'}`}>
+            <CopyButton getText={() => {
+              const getTemplate = (id: string) => resolveUnitTemplate(player, id, players);
+              const parts: string[] = [player.name];
+              for (const sys of playerSystems) {
+                const sysName = map.systems.find(s => s.id === sys.systemId)?.name ?? sys.systemId;
+                const sysLines: string[] = [`[${sysName}]`];
+                for (const f of sys.namedFleets) {
+                  const units = player.units.filter(u => u.fleetId === f.id);
+                  if (units.length === 0) continue;
+                  sysLines.push(formatFleetUnitsText(f.name, units, getTemplate));
+                }
+                for (const fk of sys.systemFleetKeys) {
+                  const units = player.units.filter(u => u.systemId === sys.systemId && (u.fleetId ?? 'Unassigned') === fk);
+                  if (units.length === 0) continue;
+                  sysLines.push(formatFleetUnitsText(fk, units, getTemplate));
+                }
+                if (sysLines.length > 1) parts.push(sysLines.join('\n'));
+              }
+              return parts.join('\n\n');
+            }} />
+          </div>
           {players.map(p => (
             <button
               key={p.id}
@@ -1711,11 +1917,9 @@ export function FleetManagerView({
           /* CM Fleets View — same structure as player tab */
           <div>
             {/* Rule badges — CM tab */}
-            {(settings?.rules.persistentRaiders || settings?.rules.ravagerFleets || settings?.rules.harbingerThreats) && (
+            {settings?.rules.persistentRaiders && (
               <div className="mb-3 flex flex-wrap gap-1.5">
-                {settings?.rules.persistentRaiders && <RuleActivityBadge label="Persistent Raiders" />}
-                {settings?.rules.ravagerFleets && <RuleActivityBadge label="Ravager Fleets" />}
-                {settings?.rules.harbingerThreats && <RuleActivityBadge label="Harbinger Threats" />}
+                <RuleActivityBadge label="Persistent Raiders" />
               </div>
             )}
 
@@ -1765,12 +1969,18 @@ export function FleetManagerView({
                       : (cmFleet.color ?? '#6b7280');
                     const mobileUnits = cmFleet.units.filter(u => u.fleetId !== 'On-Planet');
                     const onPlanetUnits = cmFleet.units.filter(u => u.fleetId === 'On-Planet');
-                    const showOnPlanet = cmFleet.isGarrisonPool || onPlanetUnits.length > 0;
+                    const isVisiting = !!cmFleet.independentSystemId && !!cmFleet.systemId && cmFleet.systemId !== cmFleet.independentSystemId;
+                    // Garrison pools always show On-Planet; regular fleets show On-Planet if unlinked OR visiting a different system
+                    const showOnPlanet = cmFleet.isGarrisonPool
+                      || !cmFleet.independentSystemId
+                      || isVisiting;
+                    // Use plain "On-Planet" label when acting as a garrison (pool or visiting invader)
+                    const onPlanetLabel = (cmFleet.isGarrisonPool || isVisiting) ? 'On-Planet' : `On-Planet (${cmFleet.name})`;
                     const onPlanetFleetKey = cmOnPlanetKey(cmFleet.id);
                     const subtitle = cmFleet.isGarrisonPool ? undefined : 'CM Fleet';
                     return (
                       <>
-                        {mobileUnits.length > 0 && (
+                        {!cmFleet.isGarrisonPool && (
                           <div className="rounded border border-gray-100 p-2 dark:border-gray-800">
                             <FMFleetSection
                               fleetKey={cmFleet.id}
@@ -1803,6 +2013,7 @@ export function FleetManagerView({
                               onDropTemplateOnFleet={(templateId, templateName, fromFleetKey, count) =>
                                 handleDropTemplateOnFleet(templateId, templateName, fromFleetKey, cmFleet.id, cmFleet.name, sysId, count, true)
                               }
+                              onGetCopyText={() => formatFleetUnitsText(cmFleet.name, mobileUnits, id => allIndieUnits.find(et => et.id === id))}
                             />
                           </div>
                         )}
@@ -1810,7 +2021,7 @@ export function FleetManagerView({
                           <div className="rounded border border-gray-100 p-2 dark:border-gray-800">
                             <FMFleetSection
                               fleetKey={onPlanetFleetKey}
-                              fleetName={`${cmFleet.name} On-Planet`}
+                              fleetName={onPlanetLabel}
                               fleet={asCampaignFleet}
                               unitPool={allIndieUnits}
                               fleetColor={fleetColor}
@@ -1832,8 +2043,9 @@ export function FleetManagerView({
                               onSetDragOverFleet={setDragOverFleetKey}
                               onDropOnFleet={handleDropOnFleet}
                               onDropTemplateOnFleet={(templateId, templateName, fromFleetKey, count) =>
-                                handleDropTemplateOnFleet(templateId, templateName, fromFleetKey, onPlanetFleetKey, `${cmFleet.name} On-Planet`, sysId, count, true)
+                                handleDropTemplateOnFleet(templateId, templateName, fromFleetKey, onPlanetFleetKey, onPlanetLabel, sysId, count, true)
                               }
+                              onGetCopyText={onPlanetUnits.length > 0 ? () => formatFleetUnitsText(onPlanetLabel, onPlanetUnits, id => allIndieUnits.find(et => et.id === id)) : undefined}
                             />
                           </div>
                         )}
@@ -1843,16 +2055,34 @@ export function FleetManagerView({
 
                   return (
                     <div key={sysId || '__none__'} className="rounded-lg border border-gray-200 dark:border-gray-700">
-                      <button
-                        onClick={() => toggleSystem('cm:' + sysId)}
-                        className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                      >
-                        <span className="text-xs text-gray-400 dark:text-gray-600">{isExpanded ? '▼' : '▶'}</span>
-                        <span className="flex-1 text-sm font-semibold dark:text-gray-100">{systemName}</span>
-                        <span className="text-xs text-gray-400 dark:text-gray-500">
-                          {fleetsHere.length} Fleet{fleetsHere.length !== 1 ? 's' : ''}
-                        </span>
-                      </button>
+                      <div className="flex items-center rounded-t-lg hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                        <button
+                          onClick={() => toggleSystem('cm:' + sysId)}
+                          className="flex flex-1 items-center gap-3 px-4 py-3 text-left"
+                        >
+                          <span className="text-xs text-gray-400 dark:text-gray-600">{isExpanded ? '▼' : '▶'}</span>
+                          <span className="flex-1 text-sm font-semibold dark:text-gray-100">{systemName}</span>
+                          <span className="text-xs text-gray-400 dark:text-gray-500">
+                            {fleetsHere.length} Fleet{fleetsHere.length !== 1 ? 's' : ''}
+                          </span>
+                        </button>
+                        <div className="pr-2">
+                          <CopyButton getText={() => {
+                            const getTemplate = (id: string) => allIndieUnits.find(et => et.id === id);
+                            const parts: string[] = [`[${systemName}]`];
+                            for (const f of fleetsHere) {
+                              const mobileU = f.units.filter(u => u.fleetId !== 'On-Planet');
+                              const onPlanetU = f.units.filter(u => u.fleetId === 'On-Planet');
+                              const isVisitingF = !!f.independentSystemId && !!f.systemId && f.systemId !== f.independentSystemId;
+                              const showOnPlanetF = f.isGarrisonPool || !f.independentSystemId || isVisitingF;
+                              const opLabel = (f.isGarrisonPool || isVisitingF) ? 'On-Planet' : `On-Planet (${f.name})`;
+                              if (!f.isGarrisonPool && mobileU.length > 0) parts.push(formatFleetUnitsText(f.name, mobileU, getTemplate));
+                              if (showOnPlanetF && onPlanetU.length > 0) parts.push(formatFleetUnitsText(opLabel, onPlanetU, getTemplate));
+                            }
+                            return parts.join('\n');
+                          }} />
+                        </div>
+                      </div>
                       {isExpanded && (
                         <div className="border-t border-gray-200 px-3 py-3 dark:border-gray-700">
                           <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -1872,13 +2102,6 @@ export function FleetManagerView({
           </div>
         ) : (
           <div>
-            {/* Rule badges — player tab */}
-            {settings?.rules.persistentRaiders && (
-              <div className="mb-3 flex flex-wrap gap-1.5">
-                <RuleActivityBadge label="Persistent Raiders" />
-              </div>
-            )}
-
             {/* Raider Checks — player tab */}
             {(() => {
               if (!systemOwnership || !systemStatuses || !diplomacyRelations || !player) return null;
@@ -1928,24 +2151,43 @@ export function FleetManagerView({
               return (
                 <div key={sys.systemId} className="rounded-lg border border-gray-200 dark:border-gray-700">
                   {/* System header */}
-                  <button
-                    onClick={() => toggleSystem(sys.systemId)}
-                    className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                  >
-                    <span className="text-xs text-gray-400 dark:text-gray-600">
-                      {isExpanded ? '▼' : '▶'}
-                    </span>
-                    <span className="flex-1 text-sm font-semibold dark:text-gray-100">{systemName}</span>
-                    {catSummary && (
-                      <span className="text-xs text-gray-500 dark:text-gray-400">{catSummary}</span>
-                    )}
-                    {systemTotalCost > 0 && (
-                      <span className="text-xs text-gray-400 dark:text-gray-500">{systemTotalCost} EP</span>
-                    )}
-                    <span className="text-xs text-gray-400 dark:text-gray-500">
-                      {totalFleetCount} Fleet{totalFleetCount !== 1 ? 's' : ''}
-                    </span>
-                  </button>
+                  <div className="flex items-center rounded-t-lg hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                    <button
+                      onClick={() => toggleSystem(sys.systemId)}
+                      className="flex flex-1 items-center gap-3 px-4 py-3 text-left"
+                    >
+                      <span className="text-xs text-gray-400 dark:text-gray-600">
+                        {isExpanded ? '▼' : '▶'}
+                      </span>
+                      <span className="flex-1 text-sm font-semibold dark:text-gray-100">{systemName}</span>
+                      {catSummary && (
+                        <span className="text-xs text-gray-500 dark:text-gray-400">{catSummary}</span>
+                      )}
+                      {systemTotalCost > 0 && (
+                        <span className="text-xs text-gray-400 dark:text-gray-500">{systemTotalCost} EP</span>
+                      )}
+                      <span className="text-xs text-gray-400 dark:text-gray-500">
+                        {totalFleetCount} Fleet{totalFleetCount !== 1 ? 's' : ''}
+                      </span>
+                    </button>
+                    <div className="pr-2">
+                      <CopyButton getText={() => {
+                        const getTemplate = (id: string) => resolveUnitTemplate(player, id, players);
+                        const parts: string[] = [`[${systemName}]`];
+                        for (const f of sys.namedFleets) {
+                          const units = player.units.filter(u => u.fleetId === f.id);
+                          if (units.length === 0) continue;
+                          parts.push(formatFleetUnitsText(f.name, units, getTemplate));
+                        }
+                        for (const fk of sys.systemFleetKeys) {
+                          const units = player.units.filter(u => u.systemId === sys.systemId && (u.fleetId ?? 'Unassigned') === fk);
+                          if (units.length === 0) continue;
+                          parts.push(formatFleetUnitsText(fk, units, getTemplate));
+                        }
+                        return parts.join('\n');
+                      }} />
+                    </div>
+                  </div>
 
                   {/* Fleet grid */}
                   {isExpanded && (
@@ -2024,6 +2266,7 @@ export function FleetManagerView({
                                   handleDropTemplateOnFleet(templateId, templateName, fromFleetKey, fleet.id, fleet.name, sys.systemId, count)
                                 }
                                 onToggleUnitStatus={onToggleUnitStatus}
+                                onGetCopyText={() => formatFleetUnitsText(fleet.name, fleetUnits, id => resolveUnitTemplate(player, id, players))}
                               />
                             </div>
                           );
@@ -2064,6 +2307,7 @@ export function FleetManagerView({
                                   handleDropTemplateOnFleet(templateId, templateName, fromFleetKey, fleetKey, fleetKey, sys.systemId, count)
                                 }
                                 onToggleUnitStatus={onToggleUnitStatus}
+                                onGetCopyText={fleetUnits.length > 0 ? () => formatFleetUnitsText(fleetKey, fleetUnits, id => resolveUnitTemplate(player, id, players)) : undefined}
                               />
                             </div>
                           );

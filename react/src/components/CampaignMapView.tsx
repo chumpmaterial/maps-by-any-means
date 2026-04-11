@@ -185,6 +185,8 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
   const [activeCombatScenarios, setActiveCombatScenarios] = useState<CombatScenario[]>([]);
   const activeCombatScenariosRef = useRef<CombatScenario[]>([]);
   activeCombatScenariosRef.current = activeCombatScenarios;
+  const cmFleetsRef = useRef<CMFleet[]>([]);
+  cmFleetsRef.current = cmFleets;
   const [openScenarioId, setOpenScenarioId] = useState<string | null>(null);
   // Campaign-level overrides for independent unit lists (tech advances, custom units)
   const [independentUnitListOverrides, setIndependentUnitListOverrides] = useState<IndependentUnitList[]>([]);
@@ -320,27 +322,15 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
       for (const unit of fleet.units) {
         const tmpl = allIndieTemplates.find(t => t.id === unit.unitTemplateId);
         if (tmpl) {
-          addCategory(unitsByCategory, tmpl.category);
+          // Garrison pool units show with (On-Planet) suffix, like player On-Planet troops
+          const catKey = fleet.isGarrisonPool ? `${tmpl.category} (On-Planet)` : tmpl.category;
+          addCategory(unitsByCategory, catKey);
           totalEP += tmpl.cost;
           if (typeof tmpl.cr === 'number') {
             highestCR = highestCR === null ? tmpl.cr : Math.max(highestCR, tmpl.cr);
           }
         }
       }
-
-      const fleetSummary: FleetSummaryInfo = {
-        id: fleet.id,
-        name: fleet.name,
-        isCMFleet: true,
-        unitCount: fleet.units.length,
-        unitsByCategory,
-        totalEP,
-        highestCR,
-        isFast: false,
-        isScout: false,
-        isCivilian: false,
-        movedThisTurn: false,
-      };
 
       if (!result[systemId]) result[systemId] = [];
       let cmOwner = result[systemId].find(o => o.ownerId === cmOwnerId);
@@ -357,8 +347,24 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
         };
         result[systemId].push(cmOwner);
       }
-      cmOwner.fleets.push(fleetSummary);
-      cmOwner.totalFleets++;
+      // Garrison pools don't appear as fleet entries (like player On-Planet units) — only in the unit tally
+      if (!fleet.isGarrisonPool) {
+        const fleetSummary: FleetSummaryInfo = {
+          id: fleet.id,
+          name: fleet.name,
+          isCMFleet: true,
+          unitCount: fleet.units.length,
+          unitsByCategory,
+          totalEP,
+          highestCR,
+          isFast: false,
+          isScout: false,
+          isCivilian: false,
+          movedThisTurn: false,
+        };
+        cmOwner.fleets.push(fleetSummary);
+        cmOwner.totalFleets++;
+      }
       cmOwner.totalUnits += fleet.units.length;
       for (const [cat, count] of Object.entries(unitsByCategory)) {
         cmOwner.unitsByCategory[cat] = (cmOwner.unitsByCategory[cat] ?? 0) + (count ?? 0);
@@ -396,15 +402,45 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
       if (savedCampaign.currentPlayerIndex != null) setCurrentPlayerIndex(savedCampaign.currentPlayerIndex);
       if (savedCampaign.systemStatuses) setSystemStatuses(savedCampaign.systemStatuses);
       if (savedCampaign.cmFleets) {
-        // Migrate legacy isOnPlanet CMFleets: stamp fleetId = 'On-Planet' on all units
-        const migrated = savedCampaign.cmFleets.map(f => {
-          if (!(f as { isOnPlanet?: boolean }).isOnPlanet) return f;
+        // Migrate legacy isOnPlanet CMFleets → convert to garrison pools or drop them
+        let migrated = savedCampaign.cmFleets.flatMap(f => {
+          if (!(f as { isOnPlanet?: boolean }).isOnPlanet) return [f];
           const { isOnPlanet: _removed, ...rest } = f as typeof f & { isOnPlanet?: boolean };
-          return { ...rest, units: f.units.map(u => ({ ...u, fleetId: 'On-Planet' as string })) };
+          const migratedUnits = f.units.map(u => ({ ...u, fleetId: 'On-Planet' as string }));
+          if (rest.independentSystemId) {
+            // Convert to garrison pool
+            const campaignMap = savedCampaign.currentMap ?? savedCampaign.settings.map;
+            const sysName = campaignMap?.systems.find((s: { id: string; name: string }) => s.id === rest.independentSystemId)?.name ?? 'Independent System';
+            return [{ ...rest, id: `garrison-${rest.independentSystemId}`, name: sysName, units: migratedUnits, isGarrisonPool: true as const }];
+          }
+          // Plain On-Planet fleet with no independent owner — drop it (superseded)
+          return [];
         });
+        // Deduplicate garrison pools: if two exist for the same system, merge units into the first
+        const garrisonSeen = new Map<string, number>();
+        migrated = migrated.reduce<typeof migrated>((acc, f) => {
+          if (f.isGarrisonPool && f.independentSystemId) {
+            const existing = garrisonSeen.get(f.independentSystemId);
+            if (existing !== undefined) {
+              acc[existing] = { ...acc[existing], units: [...acc[existing].units, ...f.units] };
+              return acc;
+            }
+            garrisonSeen.set(f.independentSystemId, acc.length);
+          }
+          acc.push(f);
+          return acc;
+        }, []);
         setCmFleets(migrated);
       }
       if (savedCampaign.turnOrders) setTurnOrders(savedCampaign.turnOrders);
+      if (savedCampaign.turnOrderChecks) {
+        const c = savedCampaign.turnOrderChecks;
+        if (c.intel)        setIntelChecks(c.intel);
+        if (c.movement)     setMovementChecks(c.movement);
+        if (c.construction) setConstructionChecks(c.construction);
+        if (c.investment)   setInvestmentChecks(c.investment);
+        if (c.diplomacy)    setDiplomacyChecks(c.diplomacy);
+      }
       if (savedCampaign.diplomacyRelations) setDiplomacyRelations(savedCampaign.diplomacyRelations);
       if (savedCampaign.diplomacyCooldowns) setDiplomacyCooldowns(savedCampaign.diplomacyCooldowns);
       if (savedCampaign.activeCombatScenarios) setActiveCombatScenarios(savedCampaign.activeCombatScenarios);
@@ -526,11 +562,19 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
     history: campaignHistory,
     galaxyStateLog: galaxyStateLog ?? undefined,
     independentSystemColors: Object.keys(independentSystemColors).length > 0 ? independentSystemColors : undefined,
+    turnOrderChecks: {
+      intel:        intelChecks,
+      movement:     movementChecks,
+      construction: constructionChecks,
+      investment:   investmentChecks,
+      diplomacy:    diplomacyChecks,
+    },
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [settings, phase, players, currentTurn, currentTurnPhase, currentPlayerIndex,
       systemStatuses, cmFleets, turnOrders, diplomacyRelations,
       diplomacyCooldowns, activeCombatScenarios, systemOwnership, mapState.map, independentUnitListOverrides, campaignHistory,
-      galaxyStateLog, independentSystemColors]);
+      galaxyStateLog, independentSystemColors,
+      intelChecks, movementChecks, constructionChecks, investmentChecks, diplomacyChecks]);
 
   // Autosave campaign state to localStorage whenever key state changes
   useEffect(() => {
@@ -631,6 +675,13 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
     // Pop the current entry from history
     setCampaignHistory(prev => ({ entries: prev.entries.slice(0, -1) }));
   }, [campaignHistory, confirm, mapState]);
+
+  const handleUpdateHistoryNote = useCallback((index: number, note: string) => {
+    setCampaignHistory(prev => {
+      const entries = prev.entries.map((e, i) => i === index ? { ...e, cmNote: note || undefined } : e);
+      return { entries };
+    });
+  }, []);
 
   // Keyboard shortcuts - restrict delete in campaign mode unless map editing
   useKeyboardShortcuts(mapState, confirm, { campaignMode: true, mapEditingMode });
@@ -813,7 +864,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
       setIndependentSystemColors(prev => {
         const next = { ...prev };
         for (const sysId of log.independents) {
-          if (!next[sysId]) next[sysId] = '#60a5fa';
+          if (!next[sysId]) next[sysId] = generateRandomTeamColor();
         }
         return next;
       });
@@ -1148,7 +1199,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
   }, [mapState.selectedSystemId]);
 
   // Add units to the correct untasked fleet at a given system (no EP deduction)
-  const handleAddPlayerUnits = useCallback((playerId: string, systemId: string, units: Array<{ templateId: string; name: string }>) => {
+  const handleAddPlayerUnits = useCallback((playerId: string, systemId: string, units: Array<{ templateId: string; name: string }>, turn: number) => {
     setPlayers(prev => prev.map(p => {
       if (p.id !== playerId) return p;
       const newUnits: CampaignUnit[] = units.map(u => {
@@ -1164,6 +1215,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
           name: u.name,
           systemId,
           fleetId,
+          addedOnTurn: turn,
         };
       });
       return { ...p, units: [...p.units, ...newUnits] };
@@ -1249,12 +1301,16 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
 
   // Move a CM unit from one fleet to another (targetBucket: 'On-Planet' or undefined for mobile)
   const handleMoveCMUnitToFleet = useCallback((fromFleetId: string, unitId: string, toFleetId: string, targetBucket?: string) => {
+    const allIndieTemplates = INDEPENDENT_UNIT_LISTS.flatMap(l => l.units);
     setCmFleets(prev => {
       const fromFleet = prev.find(f => f.id === fromFleetId);
       if (!fromFleet) return prev;
       const unit = fromFleet.units.find(u => u.id === unitId);
       if (!unit) return prev;
-      const updatedFleetId: string | undefined = targetBucket === 'On-Planet' ? 'On-Planet' : undefined;
+      // Only Troops may go to the On-Planet bucket
+      const template = allIndieTemplates.find(t => t.id === unit.unitTemplateId);
+      const isOnPlanetAllowed = targetBucket === 'On-Planet' && template?.category === 'Troops';
+      const updatedFleetId: string | undefined = isOnPlanetAllowed ? 'On-Planet' : undefined;
 
       if (fromFleetId === toFleetId) {
         // Same fleet — only bucket changed (mobile ↔ On-Planet)
@@ -1278,11 +1334,14 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
 
   // Move units of a template type from one CM fleet to another (condensed mode drag)
   const handleMoveCMTemplateToFleet = useCallback((fromFleetId: string, toFleetId: string, templateId: string, _systemId: string, count: number, targetBucket?: string) => {
+    const allIndieTemplates = INDEPENDENT_UNIT_LISTS.flatMap(l => l.units);
     setCmFleets(prev => {
       const fromFleet = prev.find(f => f.id === fromFleetId);
       const toFleet = prev.find(f => f.id === toFleetId);
       if (!fromFleet || !toFleet) return prev;
-      const updatedFleetId: string | undefined = targetBucket === 'On-Planet' ? 'On-Planet' : undefined;
+      const template = allIndieTemplates.find(t => t.id === templateId);
+      const isOnPlanetAllowed = targetBucket === 'On-Planet' && template?.category === 'Troops';
+      const updatedFleetId: string | undefined = isOnPlanetAllowed ? 'On-Planet' : undefined;
       let remaining = count;
       const toMove: typeof fromFleet.units = [];
       const kept: typeof fromFleet.units = [];
@@ -1295,6 +1354,14 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
         }
       }
       if (toMove.length === 0) return prev;
+      if (fromFleetId === toFleetId) {
+        const movedIds = new Set(toMove.map(u => u.id));
+        return prev.map(f =>
+          f.id === fromFleetId
+            ? { ...f, units: f.units.map(u => movedIds.has(u.id) ? { ...u, fleetId: updatedFleetId } : u) }
+            : f
+        );
+      }
       return prev.map(f => {
         if (f.id === fromFleetId) return { ...f, units: kept };
         if (f.id === toFleetId) return { ...f, units: [...f.units, ...toMove] };
@@ -1310,9 +1377,36 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
   }, []);
 
   // Complete CM fleet move — teleport to target system (no movement point restrictions for CM)
-  const handleCMFleetMoveTarget = useCallback((dstSystemId: string) => {
+  const handleCMFleetMoveTarget = useCallback(async (dstSystemId: string) => {
     if (!cmFleetMoveMode) return;
     const fleetId = cmFleetMoveMode;
+
+    // Warn if any mobile troops are not carried by a Convoy or Assault unit
+    const fleet = cmFleets.find(f => f.id === fleetId);
+    if (fleet) {
+      const allIndieTemplates = INDEPENDENT_UNIT_LISTS.flatMap(l => l.units);
+      const unattachedTroops = fleet.units.filter(u => {
+        if (u.fleetId === 'On-Planet') return false;
+        const tmpl = allIndieTemplates.find(t => t.id === u.unitTemplateId);
+        if (tmpl?.category !== 'Troops') return false;
+        if (!u.carriedById) return true;
+        const carrier = fleet.units.find(c => c.id === u.carriedById);
+        const carrierTmpl = carrier ? allIndieTemplates.find(t => t.id === carrier.unitTemplateId) : null;
+        const hasAssault = carrierTmpl?.traits?.some(t => t.name === 'Assault') ?? false;
+        const isConvoy = carrierTmpl?.name === 'Convoy';
+        return !hasAssault && !isConvoy;
+      });
+      if (unattachedTroops.length > 0) {
+        const ok = await confirm({
+          title: 'Unattached Troops',
+          message: `${unattachedTroops.length} troop unit${unattachedTroops.length !== 1 ? 's are' : ' is'} not carried by a Convoy or Assault unit. Move anyway?`,
+          confirmLabel: 'Move Anyway',
+          variant: 'confirm',
+        });
+        if (!ok) return;
+      }
+    }
+
     setCmFleets(prev => prev.map(f => {
       if (f.id !== fleetId) return f;
       return {
@@ -1322,7 +1416,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
       };
     }));
     setCmFleetMoveMode(null);
-  }, [cmFleetMoveMode]);
+  }, [cmFleetMoveMode, cmFleets, confirm]);
 
   // Change or clear campaign ownership of any system
   const handleSetIndependentSystemColor = useCallback((sysId: string, color: string) => {
@@ -1343,7 +1437,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
 
     // Assign a default color when becoming independent (if none set yet)
     if (newPlayerId?.startsWith('independent:')) {
-      setIndependentSystemColors(prev => prev[systemId] ? prev : { ...prev, [systemId]: '#60a5fa' });
+      setIndependentSystemColors(prev => prev[systemId] ? prev : { ...prev, [systemId]: generateRandomTeamColor() });
       // Auto-create garrison pool for this independent system
       setCmFleets(prev => {
         if (prev.some(f => f.isGarrisonPool && f.independentSystemId === systemId)) return prev;
@@ -1529,6 +1623,18 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
     ));
   }, []);
 
+  const handleClearInSupplyStatuses = useCallback((clearByPlayer: { playerId: string; unitIds: string[] }[]) => {
+    setPlayers(prev => prev.map(p => {
+      const entry = clearByPlayer.find(e => e.playerId === p.id);
+      if (!entry) return p;
+      const idSet = new Set(entry.unitIds);
+      return {
+        ...p,
+        units: p.units.map(u => idSet.has(u.id) ? { ...u, outOfSupply: false, exhausted: false } : u),
+      };
+    }));
+  }, []);
+
   // Start a new combat scenario at a system
   const handleStartScenario = useCallback((systemId: string) => {
     const id = crypto.randomUUID();
@@ -1580,25 +1686,54 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
 
         // Transfer captured units from original owner to capturing player
         // Also copies the enemy unit template into the capturing empire so it renders correctly
+        const currentCMFleets = cmFleetsRef.current;
         for (const award of updated.capturedUnits) {
           if (!award.awardedToPlayerId) continue;
           const origIdx = next.findIndex(p => p.id !== award.awardedToPlayerId && p.units.some(u => u.id === award.unitId));
-          if (origIdx < 0) continue; // already transferred (e.g. reapply after Restart where snapshot didn't restore it)
-          const origUnit = next[origIdx].units.find(u => u.id === award.unitId)!;
-          const origTemplate = next[origIdx].empire.units.find(eu => eu.id === origUnit.unitTemplateId);
-          next[origIdx] = { ...next[origIdx], units: next[origIdx].units.filter(u => u.id !== award.unitId) };
-          const newOwnerIdx = next.findIndex(p => p.id === award.awardedToPlayerId);
-          if (newOwnerIdx >= 0) {
-            const newOwner = next[newOwnerIdx];
-            // Copy the captured unit's template into the capturing empire if missing
-            const hasTemplate = newOwner.empire.units.some(eu => eu.id === origUnit.unitTemplateId);
-            if (!hasTemplate && origTemplate) {
-              newOwner.empire = { ...newOwner.empire, units: [...newOwner.empire.units, origTemplate] };
+          let origUnit: CampaignUnit | undefined;
+          let origTemplateId: string | undefined;
+          if (origIdx >= 0) {
+            // Unit belongs to a player
+            origUnit = next[origIdx].units.find(u => u.id === award.unitId)!;
+            const origTemplate = next[origIdx].empire.units.find(eu => eu.id === origUnit!.unitTemplateId);
+            next[origIdx] = { ...next[origIdx], units: next[origIdx].units.filter(u => u.id !== award.unitId) };
+            origTemplateId = origUnit.unitTemplateId;
+            // Resolve template for empire copy (use indie template map as fallback)
+            const indieTmpl = INDEPENDENT_UNIT_LISTS.flatMap(l => l.units).find(t => t.id === origUnit!.unitTemplateId);
+            const resolvedTemplate = origTemplate ?? indieTmpl;
+            const newOwnerIdx = next.findIndex(p => p.id === award.awardedToPlayerId);
+            if (newOwnerIdx >= 0) {
+              const newOwner = next[newOwnerIdx];
+              const hasTemplate = newOwner.empire.units.some(eu => eu.id === origTemplateId);
+              if (!hasTemplate && resolvedTemplate) {
+                newOwner.empire = { ...newOwner.empire, units: [...newOwner.empire.units, resolvedTemplate] };
+              }
+              next[newOwnerIdx] = { ...newOwner, units: [...newOwner.units, {
+                ...origUnit, crippled: true, captured: true,
+                systemId: updated.systemId, fleetId: award.awardedToFleetId ?? undefined,
+              }]};
             }
-            next[newOwnerIdx] = { ...newOwner, units: [...newOwner.units, {
-              ...origUnit, crippled: true, captured: true,
-              systemId: updated.systemId, fleetId: award.awardedToFleetId ?? undefined,
-            }]};
+          } else {
+            // Unit may belong to a CM fleet — look it up there
+            const cmFleet = currentCMFleets.find(f => f.units.some(u => u.id === award.unitId));
+            if (cmFleet) {
+              origUnit = cmFleet.units.find(u => u.id === award.unitId)!;
+              origTemplateId = origUnit.unitTemplateId;
+              const resolvedTemplate = INDEPENDENT_UNIT_LISTS.flatMap(l => l.units).find(t => t.id === origTemplateId);
+              const newOwnerIdx = next.findIndex(p => p.id === award.awardedToPlayerId);
+              if (newOwnerIdx >= 0) {
+                const newOwner = next[newOwnerIdx];
+                const hasTemplate = newOwner.empire.units.some(eu => eu.id === origTemplateId);
+                if (!hasTemplate && resolvedTemplate) {
+                  newOwner.empire = { ...newOwner.empire, units: [...newOwner.empire.units, resolvedTemplate] };
+                }
+                next[newOwnerIdx] = { ...newOwner, units: [...newOwner.units, {
+                  ...origUnit, crippled: true, captured: true,
+                  systemId: updated.systemId, fleetId: award.awardedToFleetId ?? undefined,
+                }]};
+              }
+            }
+            // (if not found in CM fleets either, skip — already transferred in a prior apply)
           }
         }
 
@@ -1616,6 +1751,18 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
           fleets: (p.fleets ?? []).filter(fleet => p.units.filter(u => !destroyedUnitIds.has(u.id)).some(u => u.fleetId === fleet.id)),
         }));
       });
+      // Apply results to CM fleets: remove destroyed/captured units, apply crippled flags
+      const capturedUnitIdsForCM = new Set(updated.capturedUnits.map(c => c.unitId));
+      setCmFleets(prev => prev.map(fleet => ({
+        ...fleet,
+        units: fleet.units
+          .filter(u => !destroyedUnitIds.has(u.id) && !capturedUnitIdsForCM.has(u.id))
+          .map(u => {
+            const state = updated.unitStates[u.id];
+            if (state?.crippledInScenario && !u.crippled) return { ...u, crippled: true };
+            return u;
+          }),
+      })));
       // Append retreat movement notes to turn orders for retreating players
       for (const side of ['attacker', 'defender'] as const) {
         const force = side === 'attacker' ? updated.attackerForce : updated.defenderForce;
@@ -2077,19 +2224,29 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
         }
         return {
           ...unit,
-          id: Math.random().toString(36).substring(2, 11), // new ID to avoid collisions
+          id: crypto.randomUUID(),
           fleetId: undefined,
           systemId: destSystemId,
         };
       });
 
       const transferredSourceIds = new Set(unitsToTransfer.map(u => u.id));
+      const templateIdsNeeded = new Set(unitsToTransfer.map(u => u.unitTemplateId));
+
       return prev.map(p => {
         if (p.id === fromPlayerId) {
           return { ...p, units: p.units.filter(u => !transferredSourceIds.has(u.id)) };
         }
         if (p.id === toPlayerId) {
-          return { ...p, units: [...p.units, ...transferredUnits] };
+          // Copy any missing unit templates from the source empire so the transferred
+          // units render and resolve correctly in the receiving player's context
+          const missingTemplates = fromPlayer.empire.units.filter(
+            eu => templateIdsNeeded.has(eu.id) && !p.empire.units.some(e => e.id === eu.id)
+          );
+          const updatedEmpire = missingTemplates.length > 0
+            ? { ...p.empire, units: [...p.empire.units, ...missingTemplates] }
+            : p.empire;
+          return { ...p, empire: updatedEmpire, units: [...p.units, ...transferredUnits] };
         }
         return p;
       });
@@ -2114,9 +2271,9 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
       if (toTarget.startsWith('independent:')) {
         const sysId = toTarget.replace('independent:', '');
         if (isFullFleet) {
-          // Transfer fleet ownership — just reassign independentSystemId, leave other fleets untouched
+          // Transfer fleet ownership — reassign independentSystemId only, preserve current location
           return prev.map(f =>
-            f.id !== fromFleetId ? f : { ...f, systemId: undefined, independentSystemId: sysId }
+            f.id !== fromFleetId ? f : { ...f, independentSystemId: sysId }
           );
         }
         // Partial transfer: find/create destination CM fleet
@@ -2568,6 +2725,8 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
       setConstructionChecks({});
       setInvestmentChecks({});
       setDiplomacyChecks({});
+      // Clear resolved scenarios — they belong to the turn just ended
+      setActiveCombatScenarios(prev => prev.filter(s => !s.resultsApplied));
       setCurrentTurnPhase('economic');
     } else {
       if (currentTurnPhase === 'diplomacy') {
@@ -2584,7 +2743,10 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
         setDiplomacyCooldownsRaisedThisTurn({});
       }
       const next = getTurnPhaseAfter(currentTurnPhase);
-      if (next) setCurrentTurnPhase(next);
+      if (next) {
+        if (next === 'combat') setActiveCombatScenarios([]);
+        setCurrentTurnPhase(next);
+      }
     }
     setTurnPhaseMapView(false);
   }, [currentTurnPhase, players, turnOrders, mapState.map, currentTurn, confirm, diplomacyCooldownsRaisedThisTurn, checkTradeRouteWarnings, intelChecks, movementChecks, constructionChecks, investmentChecks, diplomacyChecks]);
@@ -2801,6 +2963,13 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
           onRevertPhase={handleRevertToPreviousPhase}
           onViewMap={() => setTurnPhaseMapView(true)}
           canRevert={canRevert}
+          diplomacyRelations={diplomacyRelations}
+          diplomacyCooldowns={diplomacyCooldowns}
+          onSetRelation={handleSetRelation}
+          onSetCooldown={handleSetCooldown}
+          systemOwnership={systemOwnership}
+          independentSystemColors={independentSystemColors}
+          map={mapState.map}
         />
       ) : phase === 'in_progress' && !mapEditingMode && !turnPhaseMapView && currentTurnPhase === 'diplomacy' ? (
         <DiplomacyPhaseView
@@ -2832,6 +3001,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
           onToggleUnitStatus={handleToggleUnitStatus}
           onDeleteUnit={handleDeleteUnit}
           onBulkSetOutOfSupply={handleBulkSetOutOfSupply}
+          onClearInSupplyStatuses={handleClearInSupplyStatuses}
           onViewMap={() => setTurnPhaseMapView(true)}
           onAdvance={handleAdvanceTurnPhase}
           onBack={handleRevertToPreviousPhase}
@@ -2875,7 +3045,14 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
         <div className="relative flex flex-1 overflow-hidden">
           {/* Campaign Phase Panel (left sidebar) */}
           {!mapEditingMode && !unitPurchaseMapView && (
-            phase === 'in_progress' && currentTurnPhase === 'intel' ? (
+            phase === 'in_progress' && currentTurnPhase === 'turn_orders' ? (
+              <TurnOrdersMapPanel
+                players={players}
+                turnOrders={turnOrders}
+                onUpdateOrders={handleUpdateTurnOrders}
+                onSetTechInvestment={handleSetTechInvestment}
+              />
+            ) : phase === 'in_progress' && currentTurnPhase === 'intel' ? (
               <IntelPhasePanel
                 players={players}
                 turnOrders={turnOrders}
@@ -2892,6 +3069,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
                 onUpdateMovementChecks={(key, checks) => setMovementChecks(prev => ({ ...prev, [key]: checks }))}
                 map={mapState.map}
                 systemStatuses={systemStatuses}
+                settings={settings}
               />
             ) : phase === 'in_progress' && currentTurnPhase === 'construction' ? (
               <ConstructionPhasePanel
@@ -2918,6 +3096,10 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
                   if (s) setOpenScenarioId(s.id);
                 }}
                 onReviewScenario={(scenarioId) => setOpenScenarioId(scenarioId)}
+                cmFleets={cmFleets}
+                systemOwnership={systemOwnership}
+                independentSystemColors={independentSystemColors}
+                independentUnitLists={independentUnitListOverrides.length > 0 ? independentUnitListOverrides : INDEPENDENT_UNIT_LISTS}
               />
             ) : phase === 'in_progress' && currentTurnPhase === 'end_of_turn' ? (
               <EndOfTurnPhasePanel
@@ -2988,7 +3170,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
                 : undefined}
               staleSystems={phase === 'in_progress' ? fowStaleSystems ?? undefined : undefined}
               onFleetMove={phase === 'in_progress' ? handleEnterFleetMoveMode : undefined}
-              onCMFleetMove={phase === 'in_progress' ? handleEnterCMFleetMoveMode : undefined}
+              onCMFleetMove={(phase === 'in_progress' || phase === 'galaxy_state_setup') ? handleEnterCMFleetMoveMode : undefined}
               requestCenter={centerRequest}
               systemOwnership={phase !== 'homeworld_selection' ? systemOwnership : undefined}
               campaignPlayers={players}
@@ -3121,7 +3303,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
             cmFleets={cmFleets}
             independentLists={INDEPENDENT_UNIT_LISTS.filter(l => l.id !== 'ravager' || settings.rules.ravagerFleets)}
             onEditCMFleet={phase === 'in_progress' ? (id) => setEditingCMFleet(id) : undefined}
-            onMoveCMFleet={phase === 'in_progress' ? handleEnterCMFleetMoveMode : undefined}
+            onMoveCMFleet={(phase === 'in_progress' || phase === 'galaxy_state_setup') ? handleEnterCMFleetMoveMode : undefined}
             onDeleteCMUnits={phase === 'in_progress' ? handleDeleteCMUnits : undefined}
             onMoveCMTemplateToFleet={phase === 'in_progress' ? (fromId, toId, templateId, count) => handleMoveCMTemplateToFleet(fromId, toId, templateId, '', count) : undefined}
           />
@@ -3346,15 +3528,19 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
           onUpdateOrders={handleUpdateTurnOrders}
           independentLists={INDEPENDENT_UNIT_LISTS.filter(l => l.id !== 'ravager' || settings.rules.ravagerFleets)}
           cmFleets={cmFleets}
+          independentSystemColors={independentSystemColors}
           systemStatuses={systemStatuses}
+          currentTurn={currentTurn}
           selectedSystemId={addUnitsSystemId}
           initialTabIndex={addUnitsInitialTab}
           onSelectOnMap={handleEnterAddUnitsPickMode}
-          onAddPlayerUnits={handleAddPlayerUnits}
+          onAddPlayerUnits={(playerId, systemId, units) => handleAddPlayerUnits(playerId, systemId, units, currentTurn)}
           onAddCMUnits={handleAddCMUnits}
           onCreateCMFleet={(fleet) => setCmFleets(prev => [...prev, fleet])}
           onEditCMFleet={(id, updates) => setCmFleets(prev => prev.map(f => f.id === id ? { ...f, ...updates } : f))}
           onDeleteCMFleet={(id) => setCmFleets(prev => prev.filter(f => f.id !== id))}
+          constructionChecks={constructionChecks}
+          onUpdateConstructionChecks={(key, checks) => setConstructionChecks(prev => ({ ...prev, [key]: checks }))}
           onClose={() => setShowAddUnits(false)}
         />
       )}
@@ -3426,6 +3612,9 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
             map={mapState.map}
             diplomacyRelations={diplomacyRelations}
             systemOwnership={systemOwnership}
+            cmFleets={cmFleets}
+            independentUnitLists={independentUnitListOverrides.length > 0 ? independentUnitListOverrides : INDEPENDENT_UNIT_LISTS}
+            independentSystemColors={independentSystemColors}
             onUpdate={handleUpdateScenario}
             onClose={() => setOpenScenarioId(null)}
           />
@@ -3536,6 +3725,7 @@ export function CampaignMapView({ settings, savedCampaign, onNavigateHome }: Cam
           players={players}
           map={mapState.map}
           onClose={() => setShowHistoryBrowser(false)}
+          onUpdateNote={handleUpdateHistoryNote}
         />
       )}
 
@@ -4055,6 +4245,13 @@ interface TurnOrdersPhaseViewProps {
   onRevertPhase: () => void;
   onViewMap: () => void;
   canRevert: boolean;
+  diplomacyRelations?: Record<string, DiplomacyLevel>;
+  diplomacyCooldowns?: Record<string, number>;
+  onSetRelation?: (id1: string, id2: string, level: DiplomacyLevel) => void;
+  onSetCooldown?: (ownerId: string, targetId: string, value: number) => void;
+  systemOwnership?: Record<string, string>;
+  independentSystemColors?: Record<string, string>;
+  map?: GameMap;
 }
 
 function TurnOrdersPhaseView({
@@ -4067,10 +4264,18 @@ function TurnOrdersPhaseView({
   onRevertPhase,
   onViewMap,
   canRevert,
+  diplomacyRelations,
+  diplomacyCooldowns,
+  onSetRelation,
+  onSetCooldown,
+  systemOwnership,
+  independentSystemColors,
+  map,
 }: TurnOrdersPhaseViewProps) {
   // Tab indices 0..N-1 = players, N = CM
   const [activeTab, setActiveTab] = useState(0);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [selectedRelKey, setSelectedRelKey] = useState<string | null>(null);
   const cmTabIndex = players.length;
   const isCM = activeTab === cmTabIndex;
 
@@ -4155,6 +4360,171 @@ function TurnOrdersPhaseView({
           CM
         </button>
       </div>
+
+      {/* Main body: diplomacy sidebar + orders */}
+      <div className="flex flex-1 overflow-hidden">
+
+      {/* Diplomacy sidebar (left) */}
+      {diplomacyRelations && (
+        <div className="flex w-64 flex-shrink-0 flex-col overflow-hidden border-r border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900">
+          <div className="border-b border-gray-200 px-4 py-2.5 dark:border-gray-700">
+            <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Diplomatic Status</span>
+          </div>
+          <div className="flex-1 overflow-y-auto p-3">
+            {(() => {
+              const DIPLO_LEVELS: DiplomacyLevel[] = ['Unmet','War','Hostilities','Neutral','NonAggression','Trade','MutualDefense','Alliance'];
+              const DIPLO_LABELS: Record<DiplomacyLevel, string> = {
+                Unmet: 'Unmet', War: 'War', Hostilities: 'Hostilities', Neutral: 'Neutral',
+                NonAggression: 'Non-Aggression', Trade: 'Trade', MutualDefense: 'Mutual Defense', Alliance: 'Alliance',
+              };
+              const relColor = (rel: DiplomacyLevel) => {
+                if (rel === 'War') return 'text-red-600 dark:text-red-400';
+                if (rel === 'Hostilities') return 'text-orange-600 dark:text-orange-400';
+                if (rel === 'Alliance' || rel === 'MutualDefense') return 'text-green-600 dark:text-green-400';
+                if (rel === 'Trade' || rel === 'NonAggression') return 'text-blue-600 dark:text-blue-400';
+                if (rel === 'Neutral') return 'text-gray-500 dark:text-gray-400';
+                return 'text-gray-400 dark:text-gray-600';
+              };
+              const getCooldown = (a: string, b: string) => diplomacyCooldowns?.[`${a}:${b}`] ?? 0;
+              const independentIds = map
+                ? [...new Set(Object.values(systemOwnership ?? {}).filter(v => v?.startsWith('independent:')))]
+                : [];
+
+              // Render an expanded editor for a selected relation
+              const renderEditor = (id1: string, id2: string, isIndependent: boolean) => {
+                const rel = diplomacyRelations[diplomacyKey(id1, id2)] ?? 'Unmet';
+                return (
+                  <div className="mt-1 space-y-2 rounded border border-blue-200 bg-blue-50 p-2 dark:border-blue-800/40 dark:bg-blue-900/20">
+                    <div>
+                      <label className="mb-0.5 block text-[10px] font-medium text-gray-500 dark:text-gray-400">Relation</label>
+                      <select
+                        value={rel}
+                        onChange={e => onSetRelation?.(id1, id2, e.target.value as DiplomacyLevel)}
+                        className="w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                      >
+                        {DIPLO_LEVELS.map(l => <option key={l} value={l}>{DIPLO_LABELS[l]}</option>)}
+                      </select>
+                    </div>
+                    {/* Cooldowns — player-directional only (independents don't initiate) */}
+                    <div>
+                      <label className="mb-0.5 block text-[10px] font-medium text-gray-500 dark:text-gray-400">
+                        {isIndependent ? 'Your Cooldown' : `${players.find(p => p.id === id1)?.name ?? id1} → Cooldown`}
+                      </label>
+                      <input
+                        type="number" min={0}
+                        value={getCooldown(id1, id2)}
+                        onChange={e => onSetCooldown?.(id1, id2, Math.max(0, parseInt(e.target.value) || 0))}
+                        className="w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                      />
+                    </div>
+                    {!isIndependent && (
+                      <div>
+                        <label className="mb-0.5 block text-[10px] font-medium text-gray-500 dark:text-gray-400">
+                          {players.find(p => p.id === id2)?.name ?? id2} → Cooldown
+                        </label>
+                        <input
+                          type="number" min={0}
+                          value={getCooldown(id2, id1)}
+                          onChange={e => onSetCooldown?.(id2, id1, Math.max(0, parseInt(e.target.value) || 0))}
+                          className="w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              };
+
+              // Render a clickable relation row
+              const renderRow = (id1: string, id2: string, label: string, dot: React.ReactNode, isIndependent: boolean) => {
+                const rel = diplomacyRelations[diplomacyKey(id1, id2)] ?? 'Unmet';
+                const cd1 = getCooldown(id1, id2);
+                const cd2 = !isIndependent ? getCooldown(id2, id1) : 0;
+                const rowKey = `${id1}::${id2}`;
+                const isOpen = selectedRelKey === rowKey;
+                return (
+                  <div key={rowKey}>
+                    <button
+                      onClick={() => setSelectedRelKey(isOpen ? null : rowKey)}
+                      className="flex w-full cursor-pointer items-center gap-1.5 rounded border border-gray-200 bg-white px-2 py-1.5 text-left transition-colors hover:border-blue-300 hover:bg-blue-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:border-blue-700 dark:hover:bg-blue-900/20"
+                    >
+                      {dot}
+                      <span className="min-w-0 flex-1 truncate text-xs text-gray-700 dark:text-gray-300">{label}</span>
+                      {(cd1 > 0 || cd2 > 0) && (
+                        <span className="text-[10px] text-gray-400 dark:text-gray-500">
+                          {isIndependent ? `cd:${cd1}` : `${cd1}/${cd2}`}
+                        </span>
+                      )}
+                      <span className={`w-20 text-right text-[10px] font-medium ${relColor(rel)}`}>{DIPLO_LABELS[rel]}</span>
+                    </button>
+                    {isOpen && renderEditor(id1, id2, isIndependent)}
+                  </div>
+                );
+              };
+
+              if (isCM) {
+                const pairs: Array<[CampaignPlayer, CampaignPlayer]> = [];
+                for (let i = 0; i < players.length; i++)
+                  for (let j = i + 1; j < players.length; j++)
+                    pairs.push([players[i], players[j]]);
+                return pairs.length === 0
+                  ? <p className="text-xs italic text-gray-400">No players.</p>
+                  : (
+                    <div className="space-y-1">
+                      {pairs.map(([p1, p2]) => renderRow(p1.id, p2.id,
+                        `${p1.name} / ${p2.name}`,
+                        <span className="flex gap-0.5">
+                          {p1.teamColor && <span className="h-2 w-2 flex-shrink-0 rounded-full" style={{ backgroundColor: p1.teamColor }} />}
+                          {p2.teamColor && <span className="h-2 w-2 flex-shrink-0 rounded-full" style={{ backgroundColor: p2.teamColor }} />}
+                        </span>,
+                        false,
+                      ))}
+                    </div>
+                  );
+              }
+
+              const player = players[activeTab];
+              if (!player) return null;
+              const others = players.filter(p => p.id !== player.id);
+              return (
+                <div className="space-y-3">
+                  {others.length > 0 && (
+                    <div>
+                      <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Players</p>
+                      <div className="space-y-1">
+                        {others.map(other => renderRow(player.id, other.id, other.name,
+                          other.teamColor
+                            ? <span className="h-2 w-2 flex-shrink-0 rounded-full" style={{ backgroundColor: other.teamColor }} />
+                            : <span className="h-2 w-2 flex-shrink-0 rounded-full bg-gray-400" />,
+                          false,
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {independentIds.length > 0 && (
+                    <div>
+                      <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Independent Systems</p>
+                      <div className="space-y-1">
+                        {independentIds.map(indId => {
+                          const sysId = indId.replace('independent:', '');
+                          const sysName = map?.systems.find(s => s.id === sysId)?.name ?? 'Independent System';
+                          const dotColor = independentSystemColors?.[sysId] ?? '#60a5fa';
+                          return renderRow(player.id, indId, sysName,
+                            <span className="h-2 w-2 flex-shrink-0 rounded-full" style={{ backgroundColor: dotColor }} />,
+                            true,
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  {others.length === 0 && independentIds.length === 0 && (
+                    <p className="text-xs italic text-gray-400">No diplomatic relations.</p>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      )}
 
       {/* Order / Notes fields */}
       <div className="flex-1 overflow-y-auto p-6">
@@ -4252,6 +4622,8 @@ function TurnOrdersPhaseView({
           })()}
         </div>
       </div>
+
+      </div>{/* end main body */}
     </div>
   );
 }
@@ -4561,7 +4933,7 @@ function EndOfTurnPhasePanel({
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4">
         {isCM ? (
-          // CM tab: Investment Notes + Morale Checks
+          // CM tab: Investment Notes + Independent System Morale Checks only
           <div className="space-y-6">
             <div>
               <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
@@ -4575,48 +4947,45 @@ function EndOfTurnPhasePanel({
               />
             </div>
 
-            {/* Morale Check section */}
-            <div>
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                Morale Checks
-              </label>
-              {moraleCheckSystems.length === 0 ? (
-                <p className="text-sm italic text-gray-400 dark:text-gray-500">No systems require morale checks</p>
-              ) : (
-                <ul className="space-y-1.5">
-                  {moraleCheckSystems.map(sys => {
-                    const ownerId = systemOwnership[sys.id];
-                    const owner = players.find(p => p.id === ownerId);
-                    const resolved = moraleResolved[sys.id] ?? false;
-                    const ownerLabel = isIndependentId(ownerId)
-                      ? `${getIndependentSystemName(ownerId, map)} (Independent System)`
-                      : owner?.name;
-                    return (
-                      <li key={sys.id} className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={resolved}
-                          onChange={() => setMoraleResolved(prev => ({ ...prev, [sys.id]: !prev[sys.id] }))}
-                          className="h-4 w-4 cursor-pointer rounded"
-                        />
-                        <button
-                          onClick={() => onSelectSystem(sys.id)}
-                          className={`text-sm ${resolved ? 'text-gray-400 line-through dark:text-gray-500' : 'cursor-pointer text-blue-600 hover:underline dark:text-blue-400'}`}
-                        >
-                          {sys.name || sys.id}
-                        </button>
-                        {owner?.teamColor && (
-                          <span className="inline-block h-2 w-2 flex-shrink-0 rounded-full" style={{ backgroundColor: owner.teamColor }} title={ownerLabel} />
-                        )}
-                        {isIndependentId(ownerId) && ownerLabel && (
-                          <span className="text-xs text-gray-400 dark:text-gray-500">{ownerLabel}</span>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </div>
+            {/* Independent System Morale Checks */}
+            {(() => {
+              const indieChecks = moraleCheckSystems.filter(sys => isIndependentId(systemOwnership[sys.id]));
+              return (
+                <div>
+                  <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Morale Checks — Independent Systems
+                  </label>
+                  {indieChecks.length === 0 ? (
+                    <p className="text-sm italic text-gray-400 dark:text-gray-500">No independent systems require morale checks</p>
+                  ) : (
+                    <ul className="space-y-1.5">
+                      {indieChecks.map(sys => {
+                        const ownerId = systemOwnership[sys.id];
+                        const resolved = moraleResolved[sys.id] ?? false;
+                        const ownerLabel = `${getIndependentSystemName(ownerId, map)} (Independent System)`;
+                        return (
+                          <li key={sys.id} className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={resolved}
+                              onChange={() => setMoraleResolved(prev => ({ ...prev, [sys.id]: !prev[sys.id] }))}
+                              className="h-4 w-4 cursor-pointer rounded"
+                            />
+                            <button
+                              onClick={() => onSelectSystem(sys.id)}
+                              className={`text-sm ${resolved ? 'text-gray-400 line-through dark:text-gray-500' : 'cursor-pointer text-blue-600 hover:underline dark:text-blue-400'}`}
+                            >
+                              {sys.name || sys.id}
+                            </button>
+                            <span className="text-xs text-gray-400 dark:text-gray-500">{ownerLabel}</span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         ) : (
           // Player tab: Investment Orders checklist or edit mode
@@ -4701,8 +5070,204 @@ function EndOfTurnPhasePanel({
                 })}
               </ul>
             )}
+
+            {/* Player Morale Checks */}
+            {(() => {
+              const activePlayer = players[activeTab];
+              if (!activePlayer) return null;
+              const playerChecks = moraleCheckSystems.filter(sys => systemOwnership[sys.id] === activePlayer.id);
+              if (playerChecks.length === 0) return null;
+              return (
+                <div className="mt-4">
+                  <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Morale Checks
+                  </label>
+                  <ul className="space-y-1.5">
+                    {playerChecks.map(sys => {
+                      const resolved = moraleResolved[sys.id] ?? false;
+                      return (
+                        <li key={sys.id} className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={resolved}
+                            onChange={() => setMoraleResolved(prev => ({ ...prev, [sys.id]: !prev[sys.id] }))}
+                            className="h-4 w-4 cursor-pointer rounded"
+                          />
+                          <button
+                            onClick={() => onSelectSystem(sys.id)}
+                            className={`text-sm ${resolved ? 'text-gray-400 line-through dark:text-gray-500' : 'cursor-pointer text-blue-600 hover:underline dark:text-blue-400'}`}
+                          >
+                            {sys.name || sys.id}
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              );
+            })()}
           </div>
         )}
+      </div>
+    </aside>
+  );
+}
+
+function RuleActivityBadge({ label }: { label: string }) {
+  return (
+    <span className="inline-flex items-center rounded border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 dark:border-blue-800/40 dark:bg-blue-900/20 dark:text-blue-400">
+      {label} Active
+    </span>
+  );
+}
+
+// --- Turn Orders Map Panel (sidebar shown when viewing map during Turn Orders phase) ---
+
+interface TurnOrdersMapPanelProps {
+  players: CampaignPlayer[];
+  turnOrders: Record<string, TurnOrderEntry>;
+  onUpdateOrders: (key: string, entry: TurnOrderEntry) => void;
+  onSetTechInvestment: (playerId: string, amount: number) => void;
+}
+
+function TurnOrdersMapPanel({ players, turnOrders, onUpdateOrders, onSetTechInvestment }: TurnOrdersMapPanelProps) {
+  const cmTabIndex = players.length;
+  const [activeTab, setActiveTab] = useState(0);
+  const { ref: tabBarRef, onMouseDown: tabBarMouseDown, onClickCapture: tabBarClickCapture } = useDragScroll();
+
+  const isCM = activeTab === cmTabIndex;
+  const activeKey = isCM ? 'cm' : (players[activeTab]?.id ?? 'cm');
+  const entry = turnOrders[activeKey] ?? EMPTY_ORDER_ENTRY;
+
+  return (
+    <aside className="flex w-72 flex-col overflow-hidden border-r border-gray-300 bg-white dark:border-gray-700 dark:bg-gray-900">
+      {/* Tab bar */}
+      <div ref={tabBarRef} onMouseDown={tabBarMouseDown} onClickCapture={tabBarClickCapture} className="flex overflow-x-auto border-b border-gray-200 dark:border-gray-700">
+        {players.map((p, i) => (
+          <button
+            key={p.id}
+            onClick={() => setActiveTab(i)}
+            title={`${p.name} (${p.empire.name})`}
+            className={`flex flex-shrink-0 items-center gap-1.5 px-3 py-2 text-xs ${
+              activeTab === i
+                ? 'border-b-2 border-blue-600 font-medium text-blue-600 dark:text-blue-400'
+                : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
+            }`}
+          >
+            {p.teamColor && (
+              <span className="inline-block h-2 w-2 flex-shrink-0 rounded-full" style={{ backgroundColor: p.teamColor }} />
+            )}
+            {p.name}
+          </button>
+        ))}
+        <button
+          onClick={() => setActiveTab(cmTabIndex)}
+          className={`flex flex-shrink-0 items-center gap-1.5 px-3 py-2 text-xs ${
+            isCM
+              ? 'border-b-2 border-blue-600 font-medium text-blue-600 dark:text-blue-400'
+              : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
+          }`}
+        >
+          <span className="inline-block h-2 w-2 flex-shrink-0 rounded-full bg-gray-400" />
+          CM
+        </button>
+      </div>
+
+      {/* Order fields + budget */}
+      <div className="flex-1 overflow-y-auto p-4">
+        <div className="space-y-3">
+          {ORDER_FIELDS.map(field => (
+            <div key={field.key}>
+              <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+                {isCM ? field.cmLabel : field.playerLabel}
+              </label>
+              <textarea
+                className="h-16 w-full resize-y rounded border border-gray-300 p-2 text-xs dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                value={entry[field.key as keyof TurnOrderEntry] as string}
+                onChange={e => onUpdateOrders(activeKey, { ...entry, [field.key]: e.target.value })}
+                placeholder={isCM ? `${field.cmLabel}…` : `${field.playerLabel}…`}
+              />
+            </div>
+          ))}
+
+          {/* Tech Investment + EP Budget (player tabs only) */}
+          {!isCM && (() => {
+            const player = players[activeTab];
+            if (!player) return null;
+            const spent = entry.epSpent ?? 0;
+            const techInvest = player.techInvestment ?? 0;
+            const totalSpent = spent + techInvest;
+            const overBudget = totalSpent > player.ep;
+            const income = player.currentTurnSystemIncome ?? 0;
+            const tac = computeTAC(income, player.empire.advantages as string[], player.empire.disadvantage);
+            const overHalfIncome = techInvest > Math.floor(income / 2);
+            return (
+              <div className="space-y-2 pt-1">
+                {/* Tech Investment */}
+                <div className="rounded border border-blue-200 bg-blue-50 p-2.5 dark:border-blue-800 dark:bg-blue-950/30">
+                  <p className="mb-1.5 text-xs font-semibold text-blue-700 dark:text-blue-300">Tech Investment</p>
+                  <div className="mb-1.5 space-y-0.5 text-xs text-gray-600 dark:text-gray-400">
+                    <div>Tech Pool: <span className="font-semibold text-gray-900 dark:text-gray-100">{player.techPool ?? 0} EP</span></div>
+                    <div>TAC: <span className="font-semibold text-gray-900 dark:text-gray-100">{income > 0 ? tac : '—'} EP</span></div>
+                    {income === 0 && <div className="text-[10px] text-gray-400">Advance Economic Phase first</div>}
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <label className="text-xs text-gray-600 dark:text-gray-400">Invest:</label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={techInvest}
+                      onChange={e => onSetTechInvestment(player.id, parseInt(e.target.value) || 0)}
+                      className="w-16 rounded border border-gray-300 px-1.5 py-0.5 text-xs dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                    />
+                    <span className="text-xs text-gray-400">EP</span>
+                  </div>
+                  {overHalfIncome && income > 0 && (
+                    <p className="mt-1 text-[10px] text-orange-600 dark:text-orange-400">
+                      Exceeds 50% of income ({Math.floor(income / 2)} EP max).
+                    </p>
+                  )}
+                </div>
+
+                {/* EP Budget */}
+                <div className={`rounded border border-gray-200 bg-gray-50 px-2.5 pt-2.5 dark:border-gray-700 dark:bg-gray-800 ${techInvest > 0 ? 'pb-5' : 'pb-2.5'}`}>
+                  <p className="mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300">EP Budget</p>
+                  <div className="mb-1.5 text-xs text-gray-600 dark:text-gray-400">
+                    Available: <span className="font-semibold text-gray-900 dark:text-gray-100">{player.ep} EP</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <label className="text-xs text-gray-600 dark:text-gray-400">Spent:</label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min={0}
+                        value={totalSpent}
+                        onChange={e => {
+                          const total = Math.max(0, parseInt(e.target.value) || 0);
+                          onUpdateOrders(activeKey, { ...entry, epSpent: Math.max(0, total - techInvest) });
+                        }}
+                        className={`w-16 rounded border px-1.5 py-0.5 text-xs ${
+                          overBudget
+                            ? 'border-red-400 bg-red-50 text-red-700 dark:border-red-600 dark:bg-red-900/30 dark:text-red-400'
+                            : 'border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100'
+                        }`}
+                      />
+                      {techInvest > 0 && (
+                        <span className="absolute left-0 top-full mt-0.5 whitespace-nowrap text-[10px] text-blue-600 dark:text-blue-400">
+                          +Tech: {techInvest} EP
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-xs text-gray-400">EP</span>
+                  </div>
+                  {overBudget && (
+                    <p className="mt-1 text-[10px] text-red-600 dark:text-red-400">Exceeds available EP</p>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+        </div>
       </div>
     </aside>
   );
@@ -4718,6 +5283,7 @@ interface MovementPhasePanelProps {
   onUpdateMovementChecks: (key: string, checks: Array<{ checked: boolean; xed: boolean }>) => void;
   map: GameMap;
   systemStatuses: Record<string, SystemCampaignStatus>;
+  settings: CampaignSettings;
 }
 
 function MovementPhasePanel({
@@ -4728,6 +5294,7 @@ function MovementPhasePanel({
   onUpdateMovementChecks,
   map,
   systemStatuses,
+  settings,
 }: MovementPhasePanelProps) {
   const cmTabIndex = players.length;
   const [activeTab, setActiveTab] = useState(0);
@@ -4803,6 +5370,12 @@ function MovementPhasePanel({
       <div className="flex-1 overflow-y-auto p-4">
         {isCM ? (
           <div>
+            {(settings.rules.ravagerFleets || settings.rules.harbingerThreats) && (
+              <div className="mb-3 flex flex-wrap gap-1.5">
+                {settings.rules.ravagerFleets && <RuleActivityBadge label="Ravager Fleets" />}
+                {settings.rules.harbingerThreats && <RuleActivityBadge label="Harbinger Threats" />}
+              </div>
+            )}
             <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
               Movement Notes
             </label>
@@ -4812,72 +5385,7 @@ function MovementPhasePanel({
               onChange={e => onUpdateOrders(activeKey, { ...entry, movement: e.target.value })}
               placeholder="CM movement notes…"
             />
-            {/* Raider checks */}
             <div className="mt-4 space-y-1">
-              {players.map(player => {
-                const atRiskMap = new Map<string, Set<string>>();
-                for (const unit of player.units) {
-                  if (!unit.systemId) continue;
-                  const t = resolveUnitTemplate(player, unit.unitTemplateId, players);
-                  if (t?.category === 'Civilian' && t?.name === 'Convoy') {
-                    if (!atRiskMap.has(unit.systemId)) atRiskMap.set(unit.systemId, new Set());
-                    atRiskMap.get(unit.systemId)!.add('Convoy');
-                  }
-                }
-                for (const route of player.tradeRoutes ?? []) {
-                  for (const sid of route.systemIds) {
-                    if (!atRiskMap.has(sid)) atRiskMap.set(sid, new Set());
-                    atRiskMap.get(sid)!.add('Trade Route');
-                  }
-                }
-                const riskEntries: Array<{ id: string; name: string; reasons: string[] }> = [];
-                for (const [sid, reasons] of atRiskMap) {
-                  const sys = map.systems.find(s => s.id === sid);
-                  if (!sys) continue;
-                  if ((sys.attributes?.population ?? 0) >= 5) continue;
-                  const pop = sys.attributes?.population ?? 0;
-                  const raw = sys.attributes?.raw ?? 0;
-                  let policeTotal = 0;
-                  for (const p of players) {
-                    for (const u of p.units) {
-                      if (u.systemId !== sid) continue;
-                      const t = resolveUnitTemplate(p, u.unitTemplateId, players);
-                      if (t?.traits.some(tr => tr.name === 'Police')) policeTotal += t.cost;
-                    }
-                  }
-                  if (policeTotal >= pop * raw) continue;
-                  riskEntries.push({ id: sid, name: sys.name, reasons: [...reasons] });
-                }
-                return (
-                  <div key={player.id}>
-                    <div className="mt-3 mb-1 flex items-center gap-1.5 text-sm font-semibold dark:text-gray-100">
-                      {player.teamColor && (
-                        <span className="inline-block h-2 w-2 flex-shrink-0 rounded-full" style={{ backgroundColor: player.teamColor }} />
-                      )}
-                      {player.name}
-                    </div>
-                    <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                      Raider Check Required
-                    </div>
-                    {riskEntries.length === 0 ? (
-                      <p className="text-xs italic text-gray-400 dark:text-gray-500">No systems require a raider check.</p>
-                    ) : (
-                      <div className="space-y-1">
-                        {riskEntries.map(riskEntry => (
-                          <div key={riskEntry.id} className="flex flex-wrap items-center gap-1.5">
-                            <span className="text-sm dark:text-gray-200">{riskEntry.name}</span>
-                            {riskEntry.reasons.map(r => (
-                              <span key={r} className="rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
-                                {r}
-                              </span>
-                            ))}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
               <div className="mt-4 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                 Guaranteed Pirate Raid
               </div>
@@ -4974,6 +5482,69 @@ function MovementPhasePanel({
                 })}
               </ul>
             )}
+            {/* Raider checks for this player */}
+            {(() => {
+              const player = players[activeTab];
+              if (!player) return null;
+              const atRiskMap = new Map<string, Set<string>>();
+              for (const unit of player.units) {
+                if (!unit.systemId) continue;
+                const t = resolveUnitTemplate(player, unit.unitTemplateId, players);
+                if (t?.category === 'Civilian' && t?.name === 'Convoy') {
+                  if (!atRiskMap.has(unit.systemId)) atRiskMap.set(unit.systemId, new Set());
+                  atRiskMap.get(unit.systemId)!.add('Convoy');
+                }
+              }
+              for (const route of player.tradeRoutes ?? []) {
+                for (const sid of route.systemIds) {
+                  if (!atRiskMap.has(sid)) atRiskMap.set(sid, new Set());
+                  atRiskMap.get(sid)!.add('Trade Route');
+                }
+              }
+              const riskEntries: Array<{ id: string; name: string; reasons: string[] }> = [];
+              for (const [sid, reasons] of atRiskMap) {
+                const sys = map.systems.find(s => s.id === sid);
+                if (!sys) continue;
+                if ((sys.attributes?.population ?? 0) >= 5) continue;
+                const pop = sys.attributes?.population ?? 0;
+                const raw = sys.attributes?.raw ?? 0;
+                const threshold = pop * raw;
+                let policeTotal = 0;
+                for (const p of players) {
+                  for (const u of p.units) {
+                    if (u.systemId !== sid) continue;
+                    const t = resolveUnitTemplate(p, u.unitTemplateId, players);
+                    if (t?.traits.some(tr => tr.name === 'Police')) policeTotal += t.cost;
+                  }
+                }
+                // When threshold is 0, any police present suppresses; when threshold > 0, must meet it
+                if (threshold === 0 ? policeTotal > 0 : policeTotal >= threshold) continue;
+                riskEntries.push({ id: sid, name: sys.name, reasons: [...reasons] });
+              }
+              return (
+                <div className="mt-4">
+                  <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Raider Check Required
+                  </div>
+                  {riskEntries.length === 0 ? (
+                    <p className="text-xs italic text-gray-400 dark:text-gray-500">No systems require a raider check.</p>
+                  ) : (
+                    <div className="space-y-1">
+                      {riskEntries.map(riskEntry => (
+                        <div key={riskEntry.id} className="flex flex-wrap items-center gap-1.5">
+                          <span className="text-sm dark:text-gray-200">{riskEntry.name}</span>
+                          {riskEntry.reasons.map(r => (
+                            <span key={r} className="rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
+                              {r}
+                            </span>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         )}
       </div>
@@ -5510,8 +6081,10 @@ function DiplomacyPhaseView({
                     <div className="space-y-2">
                       {independentSystems.map(({ independentId, systemName }) => {
                         const rel = getRelation(activePlayer.id, independentId);
+                        const cd = getCooldown(activePlayer.id, independentId);
                         return (
                           <div key={independentId} className="rounded border border-gray-200 px-3 py-2.5 dark:border-gray-700">
+                            {/* Row 1: name + relation selector */}
                             <div className="flex items-center gap-3">
                               <div className="flex min-w-0 flex-1 flex-col">
                                 <span className="text-sm font-medium dark:text-gray-200">{systemName}</span>
@@ -5526,6 +6099,19 @@ function DiplomacyPhaseView({
                                   <option key={lvl} value={lvl}>{DIPLOMACY_LEVEL_LABELS[lvl]}</option>
                                 ))}
                               </select>
+                            </div>
+                            {/* Row 2: player cooldown only (independents have no cooldown of their own) */}
+                            <div className="mt-1.5 flex items-center gap-3">
+                              <label className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                                {activePlayer.name} →
+                                <input
+                                  type="number"
+                                  min={0}
+                                  value={cd}
+                                  onChange={e => onSetCooldown(activePlayer.id, independentId, parseInt(e.target.value) || 0)}
+                                  className="w-14 rounded border border-gray-300 px-1.5 py-0.5 text-center text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                                />
+                              </label>
                             </div>
                           </div>
                         );
@@ -5798,10 +6384,18 @@ interface CombatPhasePanelProps {
   onResumeScenario: (systemId: string) => void;
   onReviewScenario: (scenarioId: string) => void;
   resolvedScenarios: CombatScenario[];
+  cmFleets?: CMFleet[];
+  systemOwnership?: Record<string, string>;
+  independentSystemColors?: Record<string, string>;
+  independentUnitLists?: IndependentUnitList[];
 }
 
 interface EncounterEntry {
-  player: CampaignPlayer;
+  // Unified faction identity
+  id: string;          // player.id | "independent:<sysId>" | "cm:<color>"
+  label: string;       // display name
+  color: string;       // dot color for rendering
+  player?: CampaignPlayer;  // only present for player entries
   asTotal: number;
   dvTotal: number;
   unitCount: number;
@@ -5814,7 +6408,7 @@ interface Encounter {
   type: 'war' | 'neutral' | 'allied';
 }
 
-function CombatPhasePanel({ players, diplomacyRelations, map, onSelectSystem, onStartScenario, activeScenarios, onResumeScenario, onReviewScenario, resolvedScenarios }: CombatPhasePanelProps) {
+function CombatPhasePanel({ players, diplomacyRelations, map, onSelectSystem, onStartScenario, activeScenarios, onResumeScenario, onReviewScenario, resolvedScenarios, cmFleets = [], systemOwnership: _systemOwnership = {}, independentSystemColors = {}, independentUnitLists = [] }: CombatPhasePanelProps) {
   const confirm = useConfirm();
   const [expanded, setExpanded] = useState<Record<'war' | 'neutral' | 'allied', boolean>>({
     war: true,
@@ -5836,19 +6430,43 @@ function CombatPhasePanel({ players, diplomacyRelations, map, onSelectSystem, on
 
   const resolvedSystemIds = useMemo(() => new Set(resolvedScenarios.map(s => s.systemId)), [resolvedScenarios]);
 
+  const allIndieUnits = useMemo(
+    () => independentUnitLists.flatMap(l => l.units),
+    [independentUnitLists],
+  );
+
   const encounters = useMemo((): Encounter[] => {
+    // Determine encounter type for a pair of entries
+    const pairType = (id1: string, id2: string): 'war' | 'neutral' | 'allied' => {
+      const cm1 = id1.startsWith('cm:');
+      const cm2 = id2.startsWith('cm:');
+      // Pure CM vs pure CM: same id = allied (same color group), different id = war
+      if (cm1 && cm2) return id1 === id2 ? 'allied' : 'war';
+      // Pure CM vs anything else = war
+      if (cm1 || cm2) return 'war';
+      // Independent vs independent = allied (they don't fight each other by default)
+      const ind1 = id1.startsWith('independent:');
+      const ind2 = id2.startsWith('independent:');
+      if (ind1 && ind2) return 'allied';
+      // Player/independent pair: use diplomacy
+      const rel = diplomacyRelations[diplomacyKey(id1, id2)] ?? 'Unmet';
+      if (rel === 'War' || rel === 'Hostilities') return 'war';
+      if (rel === 'Alliance' || rel === 'MutualDefense' || rel === 'Trade' || rel === 'NonAggression') return 'allied';
+      return 'neutral'; // Neutral, Unmet
+    };
+
     const result: Encounter[] = [];
     for (const system of map.systems) {
       const presentEntries: EncounterEntry[] = [];
+
+      // --- Player entries ---
       for (const player of players) {
         const fleetsHere = (player.fleets ?? []).filter(f => f.systemId === system.id);
         if (fleetsHere.length === 0) continue;
         const fleetIdSet = new Set(fleetsHere.map(f => f.id));
         const unitsHere = player.units.filter(u => !u.mothballed && u.fleetId && fleetIdSet.has(u.fleetId));
         if (unitsHere.length === 0) continue;
-
-        let asTotal = 0;
-        let dvTotal = 0;
+        let asTotal = 0, dvTotal = 0;
         for (const unit of unitsHere) {
           const tmpl = resolveUnitTemplate(player, unit.unitTemplateId, players);
           if (tmpl && tmpl.category !== 'Troops') {
@@ -5856,31 +6474,77 @@ function CombatPhasePanel({ players, diplomacyRelations, map, onSelectSystem, on
             dvTotal += tmpl.dv;
           }
         }
-        presentEntries.push({ player, asTotal, dvTotal, unitCount: unitsHere.length });
+        presentEntries.push({ id: player.id, label: player.name, color: player.teamColor ?? '#6b7280', player, asTotal, dvTotal, unitCount: unitsHere.length });
+      }
+
+      // --- CM fleet entries ---
+      // Mobile (non-garrison) CM fleets physically at this system
+      const cmHere = cmFleets.filter(f => !f.isGarrisonPool && (f.systemId ?? f.independentSystemId) === system.id);
+
+      // Group by independent system id (or by color for pure CM fleets)
+      const indGroups = new Map<string, { name: string; color: string; asTotal: number; dvTotal: number; unitCount: number }>();
+      const cmColorGroups = new Map<string, { names: string[]; asTotal: number; dvTotal: number; unitCount: number }>();
+
+      for (const fleet of cmHere) {
+        const allUnitsHere = fleet.units.filter(u => !u.mothballed);
+        if (allUnitsHere.length === 0) continue;
+
+        const mobileUnits = allUnitsHere.filter(u => u.fleetId !== 'On-Planet');
+        let asTotal = 0, dvTotal = 0;
+        for (const unit of mobileUnits) {
+          const tmpl = allIndieUnits.find(t => t.id === unit.unitTemplateId);
+          if (tmpl && tmpl.category !== 'Troops') {
+            if (typeof tmpl.as === 'number') asTotal += tmpl.as;
+            dvTotal += tmpl.dv;
+          }
+        }
+
+        if (fleet.independentSystemId) {
+          const sysId = fleet.independentSystemId;
+          const indKey = `independent:${sysId}`;
+          const sysName = map.systems.find(s => s.id === sysId)?.name ?? 'Independent System';
+          const color = independentSystemColors[sysId] ?? '#60a5fa';
+          if (!indGroups.has(indKey)) {
+            indGroups.set(indKey, { name: `${sysName} (Independent)`, color, asTotal: 0, dvTotal: 0, unitCount: 0 });
+          }
+          const g = indGroups.get(indKey)!;
+          g.asTotal += asTotal; g.dvTotal += dvTotal; g.unitCount += allUnitsHere.length;
+        } else {
+          const colorKey = `cm:${fleet.color ?? '#6b7280'}`;
+          if (!cmColorGroups.has(colorKey)) cmColorGroups.set(colorKey, { names: [], asTotal: 0, dvTotal: 0, unitCount: 0 });
+          const g = cmColorGroups.get(colorKey)!;
+          g.names.push(fleet.name);
+          g.asTotal += asTotal; g.dvTotal += dvTotal; g.unitCount += allUnitsHere.length;
+        }
+      }
+
+      for (const [indKey, g] of indGroups) {
+        presentEntries.push({ id: indKey, label: g.name, color: g.color, asTotal: g.asTotal, dvTotal: g.dvTotal, unitCount: g.unitCount });
+      }
+      for (const [colorKey, g] of cmColorGroups) {
+        const color = colorKey.slice(3); // strip "cm:" prefix
+        const label = g.names.length === 1 ? g.names[0] : g.names.join(', ');
+        presentEntries.push({ id: colorKey, label, color, asTotal: g.asTotal, dvTotal: g.dvTotal, unitCount: g.unitCount });
       }
 
       if (presentEntries.length >= 2) {
         presentEntries.sort((a, b) => b.asTotal !== a.asTotal ? b.asTotal - a.asTotal : b.dvTotal - a.dvTotal);
-        const playerIds = presentEntries.map(e => e.player.id);
         let type: 'war' | 'neutral' | 'allied' = 'allied';
-        let isWar = false;
-        let isNeutral = false;
-        outer: for (let i = 0; i < playerIds.length; i++) {
-          for (let j = i + 1; j < playerIds.length; j++) {
-            const rel = diplomacyRelations[diplomacyKey(playerIds[i], playerIds[j])] ?? 'Unmet';
-            if (rel === 'War' || rel === 'Hostilities') { isWar = true; break outer; }
-            if (rel === 'Neutral' || rel === 'Unmet') isNeutral = true;
+        let isWar = false, isNeutral = false;
+        outer: for (let i = 0; i < presentEntries.length; i++) {
+          for (let j = i + 1; j < presentEntries.length; j++) {
+            const t = pairType(presentEntries[i].id, presentEntries[j].id);
+            if (t === 'war') { isWar = true; break outer; }
+            if (t === 'neutral') isNeutral = true;
           }
         }
         if (isWar) type = 'war';
         else if (isNeutral) type = 'neutral';
         result.push({ systemId: system.id, systemName: system.name || system.id, entries: presentEntries, type });
       } else if (resolvedSystemIds.has(system.id) && !result.some(e => e.systemId === system.id)) {
-        // Keep resolved scenarios visible even if fleets are gone
         result.push({ systemId: system.id, systemName: system.name || system.id, entries: [], type: 'war' });
       }
     }
-    // Also catch resolved scenarios for systems not yet iterated (edge case)
     for (const systemId of resolvedSystemIds) {
       if (!result.some(e => e.systemId === systemId)) {
         const system = map.systems.find(s => s.id === systemId);
@@ -5888,10 +6552,10 @@ function CombatPhasePanel({ players, diplomacyRelations, map, onSelectSystem, on
       }
     }
     return result;
-  }, [players, diplomacyRelations, map.systems, resolvedSystemIds]);
+  }, [players, cmFleets, diplomacyRelations, map.systems, resolvedSystemIds, allIndieUnits, independentSystemColors]);
 
   let visibleEncounters = filterPlayerId
-    ? encounters.filter(enc => enc.entries.some(e => e.player.id === filterPlayerId) || resolvedSystemIds.has(enc.systemId))
+    ? encounters.filter(enc => enc.entries.some(e => e.player?.id === filterPlayerId) || resolvedSystemIds.has(enc.systemId))
     : encounters;
   const activeScenarioSystemIds = useMemo(() => new Set(activeScenarios.map(s => s.systemId)), [activeScenarios]);
   if (hideResolved) {
@@ -5940,12 +6604,12 @@ function CombatPhasePanel({ players, diplomacyRelations, map, onSelectSystem, on
                   )}
                 </div>
                 {enc.entries.map(entry => (
-                  <div key={entry.player.id} className="mb-0.5 flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
+                  <div key={entry.id} className="mb-0.5 flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
                     <span
                       className="inline-block h-2 w-2 flex-shrink-0 rounded-full"
-                      style={{ backgroundColor: entry.player.teamColor ?? '#6b7280' }}
+                      style={{ backgroundColor: entry.color }}
                     />
-                    <span className="min-w-0 flex-1 truncate">{entry.player.name}</span>
+                    <span className="min-w-0 flex-1 truncate">{entry.label}</span>
                     <span className="font-mono tabular-nums">AS:{entry.asTotal}</span>
                     <span className="font-mono tabular-nums">DV:{entry.dvTotal}</span>
                     <span className="text-gray-400 dark:text-gray-500">({entry.unitCount})</span>
@@ -5976,8 +6640,17 @@ function CombatPhasePanel({ players, diplomacyRelations, map, onSelectSystem, on
                             {encResolvedScenarios.map(s => {
                               const typeLabel = s.scenarioType === 'defensive' ? 'Defense' : s.scenarioType === 'pursuit' ? 'Pursuit' : s.scenarioType === 'ground_combat' ? 'Ground Combat' : 'Interception';
                               const winLabel = s.winner === 'attacker' ? 'Attacker wins' : s.winner === 'defender' ? 'Defender wins' : s.winner === 'mutual_retreat' ? 'Mutual Retreat' : 'Undetermined';
-                              const atkPlayer = players.find(p => p.id === s.attackerForce.primaryPlayerId);
-                              const defPlayer = players.find(p => p.id === s.defenderForce.primaryPlayerId);
+                              const resolveFaction = (factionId: string) => {
+                                const player = players.find(p => p.id === factionId);
+                                if (player) return { name: player.name, color: player.teamColor ?? '#6b7280' };
+                                const fleet = cmFleets.find(f => {
+                                  const fid = f.independentSystemId ? `independent:${f.independentSystemId}` : `cm:${f.color ?? 'gray'}`;
+                                  return fid === factionId;
+                                });
+                                return { name: fleet?.name ?? '—', color: fleet?.color ?? '#6b7280' };
+                              };
+                              const atk = resolveFaction(s.attackerForce.primaryPlayerId);
+                              const def = resolveFaction(s.defenderForce.primaryPlayerId);
                               return (
                                 <button
                                   key={s.id}
@@ -5987,13 +6660,13 @@ function CombatPhasePanel({ players, diplomacyRelations, map, onSelectSystem, on
                                   <div className="whitespace-nowrap font-semibold text-gray-800 dark:text-gray-100">{typeLabel} · {winLabel}</div>
                                   <div className="mt-0.5 flex items-center gap-2">
                                     <span className={`flex items-center gap-1 font-semibold ${s.winner === 'attacker' ? 'text-green-600 dark:text-green-400' : s.winner === 'defender' ? 'text-red-500 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`}>
-                                      <span className="inline-block h-2 w-2 flex-shrink-0 rounded-full" style={{ backgroundColor: atkPlayer?.teamColor ?? '#6b7280' }} />
-                                      {atkPlayer?.name ?? '—'}
+                                      <span className="inline-block h-2 w-2 flex-shrink-0 rounded-full" style={{ backgroundColor: atk.color }} />
+                                      {atk.name}
                                     </span>
                                     <span className="text-gray-300 dark:text-gray-600">vs</span>
                                     <span className={`flex items-center gap-1 font-semibold ${s.winner === 'defender' ? 'text-green-600 dark:text-green-400' : s.winner === 'attacker' ? 'text-red-500 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`}>
-                                      <span className="inline-block h-2 w-2 flex-shrink-0 rounded-full" style={{ backgroundColor: defPlayer?.teamColor ?? '#6b7280' }} />
-                                      {defPlayer?.name ?? '—'}
+                                      <span className="inline-block h-2 w-2 flex-shrink-0 rounded-full" style={{ backgroundColor: def.color }} />
+                                      {def.name}
                                     </span>
                                   </div>
                                 </button>

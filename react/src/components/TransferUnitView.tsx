@@ -211,6 +211,7 @@ interface TransferUnitViewProps {
   onClose: () => void;
   cmFleets?: CMFleet[];
   systemOwnership?: Record<string, string>;
+  independentSystemColors?: Record<string, string>;
   onCMTransfer?: (unitIds: string[], fromFleetId: string, toTarget: string) => void;
 }
 
@@ -242,7 +243,7 @@ function resolveCMUnitName(unit: CampaignUnit): string {
 
 const CM_SOURCE_ID = '__CM__';
 
-export function TransferUnitView({ players, map, onTransfer, onClose, cmFleets, systemOwnership, onCMTransfer }: TransferUnitViewProps) {
+export function TransferUnitView({ players, map, onTransfer, onClose, cmFleets, systemOwnership, independentSystemColors, onCMTransfer }: TransferUnitViewProps) {
   const [fromId, setFromId] = useState(players[0]?.id ?? '');
   const [toTarget, setToTarget] = useState('');
   const [selectedUnitIds, setSelectedUnitIds] = useState<Set<string>>(new Set());
@@ -383,11 +384,12 @@ export function TransferUnitView({ players, map, onTransfer, onClose, cmFleets, 
         opts.push({
           id: `independent:${sysId}`,
           label: `${sysName} (Independent System)`,
+          color: independentSystemColors?.[sysId],
         });
       }
     }
     return opts;
-  }, [isCMSource, players, systemOwnership, map]);
+  }, [isCMSource, players, systemOwnership, independentSystemColors, map]);
 
   const toggleSystem = (systemId: string) => {
     setExpandedSystems(prev => {

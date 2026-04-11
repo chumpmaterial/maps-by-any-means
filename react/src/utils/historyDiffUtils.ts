@@ -1,8 +1,8 @@
 import type {
   CampaignSnapshot, CampaignPlayer, GameMap, CMFleet,
   PhaseDiff, UnitDiff, EPSPDiff, OwnershipDiff, DiplomacyDiff,
-  SystemStatusDiff, FleetDiff, TradeRouteDiff, TechDiff,
-  SystemCampaignStatus,
+  SystemStatusDiff, SystemStatsDiff, FleetDiff, TradeRouteDiff, TechDiff,
+  SystemCampaignStatus, SystemAttributes,
 } from '../types';
 
 /** Compute all diffs between two snapshots */
@@ -17,8 +17,9 @@ export function computePhaseDiff(
     epSp: diffEPSP(before.players, after.players),
     units: diffUnits(before.players, after.players, sysName),
     ownership: diffOwnership(before.systemOwnership, after.systemOwnership, sysName, before.players, after.players),
-    diplomacy: diffDiplomacy(before.diplomacyRelations, after.diplomacyRelations, after.players),
+    diplomacy: diffDiplomacy(before.diplomacyRelations, after.diplomacyRelations, after.players, map),
     systemStatuses: diffSystemStatuses(before.systemStatuses, after.systemStatuses, sysName),
+    systemStats: diffSystemStats(before, after, sysName),
     fleets: diffFleets(before.players, after.players, before.cmFleets, after.cmFleets, sysName),
     tradeRoutes: diffTradeRoutes(before.players, after.players, sysName),
     tech: diffTech(before.players, after.players),
@@ -178,22 +179,46 @@ function diffOwnership(
   return diffs;
 }
 
+// diplomacyKey sorts two IDs and joins with ':'. Independent IDs ("independent:sysId")
+// contain an extra colon, so a naive split(':') produces 3 segments. This helper
+// reconstructs the original pair by finding the "independent" segment.
+function splitDiplomacyKey(key: string): [string, string] {
+  const parts = key.split(':');
+  if (parts.length === 2) return [parts[0], parts[1]];
+  for (let i = 0; i < parts.length; i++) {
+    if (parts[i] === 'independent') {
+      const indId = `independent:${parts[i + 1]}`;
+      const otherId = [...parts.slice(0, i), ...parts.slice(i + 2)].join(':');
+      return [otherId, indId];
+    }
+  }
+  const idx = key.indexOf(':');
+  return [key.slice(0, idx), key.slice(idx + 1)];
+}
+
 function diffDiplomacy(
   before: Record<string, string>,
   after: Record<string, string>,
   players: CampaignPlayer[],
+  map: GameMap,
 ): DiplomacyDiff[] {
   const diffs: DiplomacyDiff[] = [];
   const allKeys = new Set([...Object.keys(before), ...Object.keys(after)]);
-  const pName = (id: string) => players.find(p => p.id === id)?.name ?? id;
+  const resolveName = (id: string): string => {
+    if (id.startsWith('independent:')) {
+      const sysId = id.slice('independent:'.length);
+      return map.systems.find(s => s.id === sysId)?.name ?? 'Independent System';
+    }
+    return players.find(p => p.id === id)?.name ?? id;
+  };
   for (const key of allKeys) {
     const bv = before[key] ?? 'Unmet';
     const av = after[key] ?? 'Unmet';
     if (bv !== av) {
-      const [id1, id2] = key.split(':');
+      const [id1, id2] = splitDiplomacyKey(key);
       diffs.push({
-        player1Name: pName(id1),
-        player2Name: pName(id2),
+        player1Name: resolveName(id1),
+        player2Name: resolveName(id2),
         previousLevel: bv as DiplomacyDiff['previousLevel'],
         newLevel: av as DiplomacyDiff['newLevel'],
       });
@@ -344,9 +369,33 @@ function diffTech(before: CampaignPlayer[], after: CampaignPlayer[]): TechDiff[]
   return diffs;
 }
 
+const TRACKED_ATTRIBUTES: (keyof SystemAttributes)[] = [
+  'population', 'morale', 'capacity', 'raw', 'intel', 'fortification',
+];
+
+function diffSystemStats(
+  before: CampaignSnapshot,
+  after: CampaignSnapshot,
+  sysName: (id: string) => string,
+): SystemStatsDiff[] {
+  const diffs: SystemStatsDiff[] = [];
+  for (const bSys of before.map.systems) {
+    const aSys = after.map.systems.find(s => s.id === bSys.id);
+    if (!aSys || !bSys.attributes || !aSys.attributes) continue;
+    for (const attr of TRACKED_ATTRIBUTES) {
+      const bv = bSys.attributes[attr];
+      const av = aSys.attributes[attr];
+      if (bv !== av) {
+        diffs.push({ systemId: bSys.id, systemName: sysName(bSys.id), attribute: attr, before: bv, after: av });
+      }
+    }
+  }
+  return diffs;
+}
+
 /** Check if a PhaseDiff has any changes at all */
 export function isDiffEmpty(diff: PhaseDiff): boolean {
   return diff.epSp.length === 0 && diff.units.length === 0 && diff.ownership.length === 0 &&
-    diff.diplomacy.length === 0 && diff.systemStatuses.length === 0 && diff.fleets.length === 0 &&
-    diff.tradeRoutes.length === 0 && diff.tech.length === 0;
+    diff.diplomacy.length === 0 && diff.systemStatuses.length === 0 && diff.systemStats.length === 0 &&
+    diff.fleets.length === 0 && diff.tradeRoutes.length === 0 && diff.tech.length === 0;
 }

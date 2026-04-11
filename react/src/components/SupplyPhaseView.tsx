@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { CampaignPlayer, CampaignUnit, EmpireUnit, GameMap, SystemCampaignStatus, DiplomacyLevel } from '../types';
 import { computeSupplyResults } from '../utils/supplyUtils';
 import type { SupplyFleetResult, SupplyResult } from '../utils/supplyUtils';
@@ -18,6 +18,7 @@ interface SupplyPhaseViewProps {
   onToggleUnitStatus: (playerId: string, unitId: string, status: StrategicStatus) => void;
   onDeleteUnit: (playerId: string, unitId: string) => void;
   onBulkSetOutOfSupply: (playerId: string, unitIds: string[], value: boolean) => void;
+  onClearInSupplyStatuses: (clearByPlayer: { playerId: string; unitIds: string[] }[]) => void;
   onViewMap: () => void;
   onAdvance: () => void;
   onBack: () => void;
@@ -40,7 +41,6 @@ const UNIT_STATUS_CONFIG: Array<{
   { key: 'outOfSupply', label: 'OOS',  title: 'Out of Supply', activeCls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
   { key: 'captured',    label: 'CAP',  title: 'Captured',      activeCls: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' },
   { key: 'exhausted',   label: 'EX',   title: 'Exhausted',     activeCls: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' },
-  { key: 'mothballed',  label: 'MOTH', title: 'Mothballed',    activeCls: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -155,11 +155,17 @@ function OOSFleetCard({
 
   const totalSupply = computeFactorTotal(liveUnits, templateMap, 'Supply');
 
+  const [collapsed, setCollapsed] = useState(false);
+
   return (
     <div className="rounded-lg border border-red-200 bg-red-50 dark:border-red-900/40 dark:bg-red-950/20">
-      {/* Fleet header */}
-      <div className="flex items-center justify-between border-b border-red-200 px-3 py-2 dark:border-red-900/40">
+      {/* Fleet header — click to collapse */}
+      <div
+        className="flex cursor-pointer items-center justify-between px-3 py-2 select-none"
+        onClick={() => setCollapsed(c => !c)}
+      >
         <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-400 dark:text-gray-500">{collapsed ? '▶' : '▼'}</span>
           <span className="font-medium text-sm dark:text-gray-200">{fleet.fleetName}</span>
           <span className="text-xs text-gray-500 dark:text-gray-400">@ {fleet.systemName}</span>
           {fleet.systemPopulation !== undefined && (
@@ -179,9 +185,9 @@ function OOSFleetCard({
             </span>
           )}
         </div>
-        {unitIds.length > 0 && (
+        {!collapsed && unitIds.length > 0 && (
           <button
-            onClick={() => onMarkAllOOS(unitIds)}
+            onClick={e => { e.stopPropagation(); onMarkAllOOS(unitIds); }}
             className="rounded border border-amber-400 px-2 py-0.5 text-xs text-amber-700 hover:bg-amber-100 dark:border-amber-600 dark:text-amber-400 dark:hover:bg-amber-900/30"
           >
             Mark All OOS
@@ -190,21 +196,23 @@ function OOSFleetCard({
       </div>
 
       {/* Unit list */}
-      <div className="space-y-1 p-2">
-        {liveUnits.length === 0 ? (
-          <p className="px-1 text-xs text-gray-400 dark:text-gray-500">No units</p>
-        ) : (
-          liveUnits.map(unit => (
-            <UnitRow
-              key={unit.id}
-              unit={unit}
-              template={templateMap.get(unit.unitTemplateId)}
-              onToggleStatus={onToggleStatus}
-              onDelete={onDelete}
-            />
-          ))
-        )}
-      </div>
+      {!collapsed && (
+        <div className="space-y-1 border-t border-red-200 p-2 dark:border-red-900/40">
+          {liveUnits.length === 0 ? (
+            <p className="px-1 text-xs text-gray-400 dark:text-gray-500">No units</p>
+          ) : (
+            liveUnits.map(unit => (
+              <UnitRow
+                key={unit.id}
+                unit={unit}
+                template={templateMap.get(unit.unitTemplateId)}
+                onToggleStatus={onToggleStatus}
+                onDelete={onDelete}
+              />
+            ))
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -306,6 +314,7 @@ export function SupplyPhaseView({
   onToggleUnitStatus,
   onDeleteUnit,
   onBulkSetOutOfSupply,
+  onClearInSupplyStatuses,
   onViewMap,
   onAdvance,
   onBack,
@@ -320,6 +329,18 @@ export function SupplyPhaseView({
     [], // intentionally run only on mount
   );
   const [supplyResult, setSupplyResult] = useState<SupplyResult>(initialResult);
+
+  // On mount: clear OOS and EX from every unit in an in-supply fleet
+  useEffect(() => {
+    const clearByPlayer = initialResult.byPlayer
+      .map(r => ({
+        playerId: r.playerId,
+        unitIds: r.inSupplyFleets.flatMap(f => f.units.map(u => u.id)),
+      }))
+      .filter(r => r.unitIds.length > 0);
+    if (clearByPlayer.length > 0) onClearInSupplyStatuses(clearByPlayer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleRecompute = () => {
     setSupplyResult(

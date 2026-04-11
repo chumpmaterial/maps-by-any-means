@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import type { CampaignHistory, CampaignSnapshot, CampaignPlayer, GameMap, PhaseHistoryEntry, PhaseDiff, CampaignPhase, TurnPhase } from '../types';
+import type { CampaignHistory, CampaignSnapshot, CampaignPlayer, GameMap, PhaseHistoryEntry, PhaseDiff, CampaignPhase, TurnPhase, SystemAttributes } from '../types';
 import { computePhaseDiff, isDiffEmpty } from '../utils/historyDiffUtils';
 
 interface TurnHistoryBrowserProps {
@@ -8,6 +8,7 @@ interface TurnHistoryBrowserProps {
   players: CampaignPlayer[];
   map: GameMap;
   onClose: () => void;
+  onUpdateNote?: (index: number, note: string) => void;
 }
 
 const PHASE_LABELS: Record<CampaignPhase, string> = {
@@ -207,6 +208,23 @@ function buildDiffSections(diff: PhaseDiff): DiffSection[] {
     });
   }
 
+  if (diff.systemStats.length > 0) {
+    const ATTR_LABELS: Record<keyof SystemAttributes, string> = {
+      population: 'Population', morale: 'Morale', capacity: 'Capacity',
+      raw: 'RAW', intel: 'Intel', fortification: 'Fortification',
+    };
+    sections.push({
+      title: 'System Stats',
+      items: diff.systemStats.map(d => {
+        const change = d.after - d.before;
+        return {
+          text: `${d.systemName}: ${ATTR_LABELS[d.attribute]} ${d.before} → ${d.after} (${change > 0 ? '+' : ''}${change})`,
+          color: change > 0 ? 'green' as const : 'red' as const,
+        };
+      }),
+    });
+  }
+
   if (diff.tradeRoutes.length > 0) {
     sections.push({
       title: 'Trade Routes',
@@ -249,7 +267,7 @@ const DOT_CLASSES = {
   amber: 'bg-amber-500',
 } as const;
 
-export function TurnHistoryBrowser({ history, currentSnapshot, players: _players, map, onClose }: TurnHistoryBrowserProps) {
+export function TurnHistoryBrowser({ history, currentSnapshot, players: _players, map, onClose, onUpdateNote }: TurnHistoryBrowserProps) {
   const [selectedIndex, setSelectedIndex] = useState<number>(history.entries.length - 1);
 
   // Group entries by turn number
@@ -342,7 +360,12 @@ export function TurnHistoryBrowser({ history, currentSnapshot, players: _players
                           : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
                       }`}
                     >
-                      <div className="font-medium">{formatPhaseLabel(entry)}</div>
+                      <div className="flex items-center gap-1">
+                        <span className="font-medium">{formatPhaseLabel(entry)}</span>
+                        {entry.cmNote && (
+                          <span className="text-[9px] text-blue-500 dark:text-blue-400" title="Has CM note">✎</span>
+                        )}
+                      </div>
                       <div className="text-[10px] text-gray-500 dark:text-gray-400">{formatTimestamp(entry.timestamp)}</div>
                     </button>
                   );
@@ -410,6 +433,20 @@ export function TurnHistoryBrowser({ history, currentSnapshot, players: _players
                   })}
                 </div>
               )}
+
+              {/* CM Notes */}
+              <div className="mt-5 border-t border-gray-100 pt-4 dark:border-gray-700/60">
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+                  CM Notes
+                </label>
+                <textarea
+                  value={selectedEntry.cmNote ?? ''}
+                  onChange={e => onUpdateNote?.(selectedIndex, e.target.value)}
+                  placeholder="Add a note for this phase…"
+                  rows={3}
+                  className="w-full resize-none rounded border border-gray-200 bg-gray-50 px-2.5 py-2 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-300 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-200 dark:placeholder-gray-500"
+                />
+              </div>
             </>
           )}
         </div>

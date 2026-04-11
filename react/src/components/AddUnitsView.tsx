@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useDragScroll } from '../hooks/useDragScroll';
 import type { CampaignPlayer, CampaignSettings, CampaignUnit, CMFleet, DiplomacyLevel, EmpireUnit, GameMap, IndependentUnitList, System, SystemCampaignStatus, TurnOrderEntry } from '../types';
 import { diplomacyKey } from '../utils/supplyUtils';
-import { resolveUnitTemplate, getFleetForUnit } from '../utils/fleetUtils';
+import { resolveUnitTemplate } from '../utils/fleetUtils';
 
 interface CartItem {
   templateId: string;
@@ -22,9 +22,11 @@ interface AddUnitsViewProps {
   onUpdateOrders: (key: string, entry: TurnOrderEntry) => void;
   independentLists: IndependentUnitList[];
   cmFleets: CMFleet[];
+  independentSystemColors: Record<string, string>;
   systemStatuses: Record<string, SystemCampaignStatus>;
   selectedSystemId: string;
   initialTabIndex?: number;
+  currentTurn: number;
   onSelectOnMap: () => void;
   onAddPlayerUnits: (playerId: string, systemId: string, units: Array<{ templateId: string; name: string }>) => void;
   onAddCMUnits: (fleetId: string, units: CampaignUnit[]) => void;
@@ -32,6 +34,8 @@ interface AddUnitsViewProps {
   onEditCMFleet: (id: string, updates: Partial<CMFleet>) => void;
   onDeleteCMFleet: (id: string) => void;
   onClose: () => void;
+  constructionChecks: Record<string, Array<{ checked: boolean; xed: boolean }>>;
+  onUpdateConstructionChecks: (key: string, checks: Array<{ checked: boolean; xed: boolean }>) => void;
 }
 
 const EMPTY_ORDER_ENTRY: TurnOrderEntry = {
@@ -155,20 +159,23 @@ export function AddUnitsView({
   onUpdateOrders,
   independentLists,
   cmFleets,
+  independentSystemColors,
   systemStatuses,
   selectedSystemId,
   initialTabIndex,
+  currentTurn,
   onSelectOnMap,
   onAddPlayerUnits,
   onAddCMUnits,
   onCreateCMFleet,
   onClose,
+  constructionChecks,
+  onUpdateConstructionChecks,
 }: AddUnitsViewProps) {
   const cmTabIndex = players.length;
 
-  // Sidebar state
-  const [sidebarTab, setSidebarTab] = useState(0);
-  const [constructionChecks, setConstructionChecks] = useState<Record<string, Array<{ checked: boolean; xed: boolean }>>>({});
+  // Sidebar state — start on the same tab as the main unit tab
+  const [sidebarTab, setSidebarTab] = useState(initialTabIndex ?? 0);
   const [sidebarEditMode, setSidebarEditMode] = useState<Record<string, boolean>>({});
   const { ref: sidebarTabBarRef, onMouseDown: sidebarTabBarMouseDown, onClickCapture: sidebarTabBarClickCapture } = useDragScroll();
 
@@ -222,7 +229,7 @@ export function AddUnitsView({
 
   const handleDoneEditing = () => {
     setSidebarEditMode(prev => ({ ...prev, [sidebarKey]: false }));
-    setConstructionChecks(prev => ({ ...prev, [sidebarKey]: [] }));
+    onUpdateConstructionChecks(sidebarKey, []);
   };
 
   const toggleCheck = (lineIdx: number) => {
@@ -230,7 +237,7 @@ export function AddUnitsView({
     const updated = [...sidebarChecks];
     while (updated.length <= lineIdx) updated.push({ checked: false, xed: false });
     updated[lineIdx] = { checked: !current.checked, xed: false };
-    setConstructionChecks(prev => ({ ...prev, [sidebarKey]: updated }));
+    onUpdateConstructionChecks(sidebarKey, updated);
   };
 
   const toggleXed = (lineIdx: number) => {
@@ -238,7 +245,7 @@ export function AddUnitsView({
     const updated = [...sidebarChecks];
     while (updated.length <= lineIdx) updated.push({ checked: false, xed: false });
     updated[lineIdx] = { xed: !current.xed, checked: false };
-    setConstructionChecks(prev => ({ ...prev, [sidebarKey]: updated }));
+    onUpdateConstructionChecks(sidebarKey, updated);
   };
 
   // Selected system info
@@ -312,19 +319,14 @@ export function AddUnitsView({
       onAddPlayerUnits(activePlayer.id, selectedSystemId, units);
       setCart([]);
     } else if (isCMTab && selectedCMFleetId) {
-      const allIndieUnits = independentLists.flatMap(l => l.units);
-      const newUnits: CampaignUnit[] = cart.flatMap(c => {
-        const template = allIndieUnits.find(u => u.id === c.templateId);
-        const bucket = template ? getFleetForUnit(template.category, template.name) : undefined;
-        const fleetId: string | undefined = bucket === 'On-Planet' ? 'On-Planet' : undefined;
-        return Array.from({ length: c.count }, () => ({
-          id: crypto.randomUUID(),
-          unitTemplateId: c.templateId,
-          name: c.name,
-          systemId: selectedSystemId,
-          fleetId,
-        }));
-      });
+      const newUnits: CampaignUnit[] = cart.flatMap(c => Array.from({ length: c.count }, () => ({
+        id: crypto.randomUUID(),
+        unitTemplateId: c.templateId,
+        name: c.name,
+        systemId: selectedSystemId,
+        fleetId: undefined, // CM fleet units are always mobile when added; On-Planet is set via drag-drop
+        addedOnTurn: currentTurn,
+      })));
       onAddCMUnits(selectedCMFleetId, newUnits);
       setCart([]);
     }
@@ -338,6 +340,18 @@ export function AddUnitsView({
   const constructionLimits: ConstructionLimits | null = (!isCMTab && activePlayer && selectedSystem)
     ? computeConstructionLimits(activePlayer, selectedSystem, cart, allPlayers)
     : null;
+
+  // Units added this turn at the selected system for the active faction, collapsed to name+count
+  const addedItems: Array<{ name: string; count: number }> = (() => {
+    if (!selectedSystemId) return [];
+    const rawUnits: CampaignUnit[] = isCMTab
+      ? cmFleets.filter(f => f.systemId === selectedSystemId).flatMap(f => f.units)
+      : (activePlayer?.units ?? []);
+    const filtered = rawUnits.filter(u => u.systemId === selectedSystemId && u.addedOnTurn === currentTurn);
+    const counts = new Map<string, number>();
+    for (const u of filtered) counts.set(u.name, (counts.get(u.name) ?? 0) + 1);
+    return Array.from(counts.entries()).map(([name, count]) => ({ name, count }));
+  })();
 
   // Group units by category
   const groupByCategory = (units: EmpireUnit[]) => {
@@ -596,21 +610,36 @@ export function AddUnitsView({
 
           {/* System selector row */}
           <div className="shrink-0 border-b border-gray-200 px-6 py-3 dark:border-gray-700">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">System:</span>
               {selectedSystem ? (
                 <>
                   <div className="flex items-center gap-2 rounded border border-gray-200 bg-gray-50 px-3 py-1.5 dark:border-gray-700 dark:bg-gray-800">
-                    {systemOwner?.teamColor && (
-                      <span className="inline-block h-2.5 w-2.5 flex-shrink-0 rounded-full" style={{ backgroundColor: systemOwner.teamColor }} />
-                    )}
-                    <span className="text-sm font-semibold dark:text-gray-100">{selectedSystem.name}</span>
-                    {systemOwner && (
-                      <span className="text-xs text-gray-500 dark:text-gray-400">· {systemOwner.name}</span>
-                    )}
-                    {!systemOwner && (
-                      <span className="text-xs text-gray-400 dark:text-gray-500">· Unowned</span>
-                    )}
+                    {(() => {
+                      const ownershipId = systemOwnership[selectedSystemId];
+                      const isIndependent = ownershipId?.startsWith('independent:');
+                      const indieColor = isIndependent ? (independentSystemColors[selectedSystemId] ?? '#60a5fa') : null;
+                      return (
+                        <>
+                          {systemOwner?.teamColor && (
+                            <span className="inline-block h-2.5 w-2.5 flex-shrink-0 rounded-full" style={{ backgroundColor: systemOwner.teamColor }} />
+                          )}
+                          {indieColor && (
+                            <span className="inline-block h-2.5 w-2.5 flex-shrink-0 rounded-full" style={{ backgroundColor: indieColor }} />
+                          )}
+                          <span className="text-sm font-semibold dark:text-gray-100">{selectedSystem.name}</span>
+                          {systemOwner && (
+                            <span className="text-xs text-gray-500 dark:text-gray-400">· {systemOwner.name}</span>
+                          )}
+                          {isIndependent && (
+                            <span className="text-xs text-gray-500 dark:text-gray-400">· Independent</span>
+                          )}
+                          {!systemOwner && !isIndependent && (
+                            <span className="text-xs text-gray-400 dark:text-gray-500">· Unowned</span>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                   <button
                     onClick={onSelectOnMap}
@@ -618,6 +647,24 @@ export function AddUnitsView({
                   >
                     Change…
                   </button>
+                  {selectedSystem.attributes && (() => {
+                    const a = selectedSystem.attributes;
+                    const stats: [string, number | undefined][] = [
+                      ['Cap', a.capacity], ['RAW', a.raw], ['Pop', a.population],
+                      ['Mor', a.morale], ['Int', a.intel], ['Fort', a.fortification],
+                      [`EP Output (${a.population}×${a.raw})`, a.population * a.raw],
+                    ];
+                    return (
+                      <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                        {stats.map(([label, val]) => val !== undefined && (
+                          <span key={label} className="flex items-center gap-0.5">
+                            <span className="font-medium text-gray-400 dark:text-gray-500">{label}</span>
+                            <span className="font-semibold text-gray-700 dark:text-gray-200">{val}</span>
+                          </span>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </>
               ) : (
                 <button
@@ -1115,6 +1162,21 @@ export function AddUnitsView({
                   <div className="mb-3 flex items-center justify-between text-sm">
                     <span className="text-gray-600 dark:text-gray-400">{cartTotalCount} unit{cartTotalCount !== 1 ? 's' : ''}</span>
                     <span className="font-semibold dark:text-gray-100">{cartTotal} EP</span>
+                  </div>
+                )}
+                {addedItems.length > 0 && (
+                  <div className="mb-2 rounded border border-green-200 p-2 dark:border-green-900/40">
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-green-700 dark:text-green-400">
+                      Added This Turn
+                    </p>
+                    <div className="space-y-0.5">
+                      {addedItems.map(item => (
+                        <div key={item.name} className="flex items-center justify-between text-xs">
+                          <span className="text-gray-700 dark:text-gray-300">{item.name}</span>
+                          <span className="font-semibold text-green-700 dark:text-green-400">×{item.count}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
                 {constructionLimits && (

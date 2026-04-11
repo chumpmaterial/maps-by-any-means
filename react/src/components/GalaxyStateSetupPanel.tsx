@@ -10,9 +10,14 @@ interface GalaxyStateSetupPanelProps {
   onSetLog: (patch: Partial<NonNullable<Campaign['galaxyStateLog']>>) => void;
   onFinish: () => void;
   onOpenAddUnits: () => void;
+  onCenterOnSystem?: (systemId: string) => void;
 }
 
 function roll1d10(): number { return Math.ceil(Math.random() * 10); }
+
+function formatType(type: string): string {
+  return type.charAt(0).toUpperCase() + type.slice(1);
+}
 
 export function GalaxyStateSetupPanel({
   map,
@@ -22,6 +27,7 @@ export function GalaxyStateSetupPanel({
   onSetLog,
   onFinish,
   onOpenAddUnits,
+  onCenterOnSystem,
 }: GalaxyStateSetupPanelProps) {
   const [indLog, setIndLog] = useState<string[]>([]);
   const [raiderLog, setRaiderLog] = useState<string[]>([]);
@@ -97,7 +103,7 @@ export function GalaxyStateSetupPanel({
   };
 
   return (
-    <div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
+    <div className="space-y-4">
       <h2 className="text-lg font-semibold dark:text-gray-100">Galaxy State Setup</h2>
       <p className="text-sm text-gray-500 dark:text-gray-400">
         Roll to determine which unowned systems become Independent or Raider Systems before the game begins.
@@ -125,24 +131,43 @@ export function GalaxyStateSetupPanel({
             </div>
           )}
           {log.independents.length > 0 && (
-            <div className="space-y-1">
-              <p className="text-xs font-medium text-blue-700 dark:text-blue-400">Independents List:</p>
-              {log.independents.map(sysId => {
-                const sys = map.systems.find(s => s.id === sysId);
-                return (
-                  <label key={sysId} className="flex cursor-pointer items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={!!log.independentChecked[sysId]}
-                      onChange={() => toggleIndChecked(sysId)}
-                      className="h-3.5 w-3.5"
-                    />
-                    <span className={log.independentChecked[sysId] ? 'text-gray-400 line-through' : 'dark:text-gray-100'}>
-                      {sys?.name ?? sysId}
-                    </span>
-                  </label>
-                );
-              })}
+            <div>
+              <p className="mb-1 text-xs font-medium text-blue-700 dark:text-blue-400">Independents List:</p>
+              <div className="max-h-40 overflow-y-auto space-y-1">
+                {[...log.independents].sort((a, b) => {
+                  const na = map.systems.find(s => s.id === a)?.name ?? a;
+                  const nb = map.systems.find(s => s.id === b)?.name ?? b;
+                  return na.localeCompare(nb);
+                }).map(sysId => {
+                  const sys = map.systems.find(s => s.id === sysId);
+                  const checked = !!log.independentChecked[sysId];
+                  return (
+                    <div
+                      key={sysId}
+                      className="flex cursor-pointer items-center gap-2 rounded border border-blue-200 bg-white px-2 py-1.5 dark:border-blue-700/50 dark:bg-gray-800"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleIndChecked(sysId)}
+                        onClick={e => e.stopPropagation()}
+                        className="h-3.5 w-3.5 flex-shrink-0 cursor-pointer"
+                      />
+                      <button
+                        onClick={() => onCenterOnSystem?.(sysId)}
+                        className="flex min-w-0 flex-1 cursor-pointer flex-col text-left"
+                      >
+                        <span className={`text-sm font-medium leading-tight ${checked ? 'text-gray-400 line-through' : 'dark:text-gray-100'}`}>
+                          {sys?.name ?? sysId}
+                        </span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {sys ? formatType(sys.type) : '—'}
+                        </span>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
@@ -170,31 +195,50 @@ export function GalaxyStateSetupPanel({
             </div>
           )}
           {log.raiderSystems.length > 0 && (
-            <div className="space-y-1">
-              <p className="text-xs font-medium text-red-700 dark:text-red-400">Raider Systems List:</p>
-              {log.raiderSystems.map(sysId => {
-                const sys = map.systems.find(s => s.id === sysId);
-                return (
-                  <label key={sysId} className="flex cursor-pointer items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={!!log.raiderChecked[sysId]}
-                      onChange={() => toggleRaiderChecked(sysId)}
-                      className="h-3.5 w-3.5"
-                    />
-                    <span className={log.raiderChecked[sysId] ? 'text-gray-400 line-through' : 'dark:text-gray-100'}>
-                      {sys?.name ?? sysId}
-                    </span>
-                  </label>
-                );
-              })}
+            <div>
+              <p className="mb-1 text-xs font-medium text-red-700 dark:text-red-400">Raider Systems List:</p>
+              <div className="max-h-40 overflow-y-auto space-y-1">
+                {[...log.raiderSystems].sort((a, b) => {
+                  const na = map.systems.find(s => s.id === a)?.name ?? a;
+                  const nb = map.systems.find(s => s.id === b)?.name ?? b;
+                  return na.localeCompare(nb);
+                }).map(sysId => {
+                  const sys = map.systems.find(s => s.id === sysId);
+                  const checked = !!log.raiderChecked[sysId];
+                  return (
+                    <div
+                      key={sysId}
+                      className="flex cursor-pointer items-center gap-2 rounded border border-red-200 bg-white px-2 py-1.5 dark:border-red-700/50 dark:bg-gray-800"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleRaiderChecked(sysId)}
+                        onClick={e => e.stopPropagation()}
+                        className="h-3.5 w-3.5 flex-shrink-0 cursor-pointer"
+                      />
+                      <button
+                        onClick={() => onCenterOnSystem?.(sysId)}
+                        className="flex min-w-0 flex-1 cursor-pointer flex-col text-left"
+                      >
+                        <span className={`text-sm font-medium leading-tight ${checked ? 'text-gray-400 line-through' : 'dark:text-gray-100'}`}>
+                          {sys?.name ?? sysId}
+                        </span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {sys ? formatType(sys.type) : '—'}
+                        </span>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
       )}
 
-      {/* Actions */}
-      <div className="mt-auto flex gap-2 border-t border-gray-200 pt-3 dark:border-gray-700">
+      {/* Actions — sticky so they stay visible when lists are long */}
+      <div className="sticky -bottom-4 -mx-4 -mb-4 flex gap-2 border-t border-gray-200 bg-white px-4 pb-4 pt-3 dark:border-gray-700 dark:bg-gray-900">
         <button
           onClick={onOpenAddUnits}
           className="rounded border border-gray-300 px-3 py-1.5 text-sm dark:border-gray-600 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"

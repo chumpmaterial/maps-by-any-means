@@ -13,6 +13,8 @@ import type {
   EmpireUnit,
   GameMap,
   DiplomacyLevel,
+  CMFleet,
+  IndependentUnitList,
 } from '../types';
 import { READINESS_LABELS } from '../types';
 import {
@@ -40,6 +42,23 @@ interface CombatScenarioViewProps {
   systemOwnership: Record<string, string>;
   onUpdate: (updated: CombatScenario) => void;
   onClose: () => void;
+  cmFleets?: CMFleet[];
+  independentUnitLists?: IndependentUnitList[];
+  independentSystemColors?: Record<string, string>;
+}
+
+/** A CM or independent faction that can participate in combat as a primary force. */
+interface CMFaction {
+  id: string;     // "independent:sysId" | "cm:color"
+  label: string;  // system name or fleet name
+  color: string;  // hex color
+}
+
+/** Generic selectable faction option used in FactionSelect */
+interface FactionOption {
+  id: string;
+  label: string;
+  color?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -64,7 +83,7 @@ function getRelation(
 }
 
 function isAllied(level: DiplomacyLevel): boolean {
-  return ['NonAggression', 'Trade', 'MutualDefense', 'Alliance'].includes(level);
+  return level === 'MutualDefense' || level === 'Alliance';
 }
 
 function isAtWar(level: DiplomacyLevel): boolean {
@@ -185,22 +204,26 @@ function ForceLineup({
   scenario,
   side,
   players,
+  cmFleets,
+  indieTemplates,
 }: {
   label: string;
   scenario: CombatScenario;
   side: 'attacker' | 'defender';
   players: CampaignPlayer[];
+  cmFleets?: CMFleet[];
+  indieTemplates?: EmpireUnit[];
 }) {
   // unitStates is empty during setup phase (initialized only when Begin Scenario is clicked).
-  // In that case build a preview directly from player units at the system.
-  type DisplayUnit = { unit: CampaignUnit; template: EmpireUnit; state?: CombatUnitState; player: CampaignPlayer };
+  // In that case build a preview directly from player/CM units at the system.
+  type DisplayUnit = { unit: CampaignUnit; template: EmpireUnit; state?: CombatUnitState; player?: CampaignPlayer; factionColor?: string };
   let displayUnits: DisplayUnit[];
   if (Object.keys(scenario.unitStates).length === 0) {
     const force = side === 'attacker' ? scenario.attackerForce : scenario.defenderForce;
-    const sidePlayerIds = new Set([force.primaryPlayerId, ...force.alliedPlayerIds].filter(Boolean));
+    const sideIds = new Set([force.primaryPlayerId, ...force.alliedPlayerIds].filter(Boolean));
     displayUnits = [];
     for (const player of players) {
-      if (!sidePlayerIds.has(player.id)) continue;
+      if (!sideIds.has(player.id)) continue;
       const templateMap = new Map(player.empire.units.map(u => [u.id, u]));
       for (const unit of player.units) {
         if (unit.systemId !== scenario.systemId || unit.mothballed) continue;
@@ -211,12 +234,31 @@ function ForceLineup({
         displayUnits.push({ unit, template, player });
       }
     }
+    // CM / indie fleet units (preview)
+    if (cmFleets?.length && indieTemplates?.length) {
+      const indieMap = new Map(indieTemplates.map(t => [t.id, t]));
+      for (const fleet of cmFleets) {
+        if (fleet.systemId !== scenario.systemId) continue;
+        const factionId = fleet.independentSystemId
+          ? `independent:${fleet.independentSystemId}`
+          : `cm:${fleet.color ?? 'gray'}`;
+        if (!sideIds.has(factionId)) continue;
+        for (const unit of fleet.units) {
+          if (unit.mothballed) continue;
+          const template = indieMap.get(unit.unitTemplateId);
+          if (!template) continue;
+          const isGroundCombat = scenario.scenarioType === 'ground_combat';
+          if (isGroundCombat ? template.category !== 'Troops' : template.category === 'Troops') continue;
+          displayUnits.push({ unit, template, factionColor: fleet.color ?? '#9ca3af' });
+        }
+      }
+    }
   } else {
-    displayUnits = getSideUnits(scenario, side, players);
+    displayUnits = getSideUnits(scenario, side, players, cmFleets, indieTemplates);
   }
 
   const flagEmpire = getFlagshipEmpire(scenario, side, players);
-  const tmap = buildTemplateMap(players);
+  const tmap = buildTemplateMap(players, indieTemplates);
 
   let totalDV = 0, totalAS = 0, totalAF = 0;
   const factorMap: Record<string, number> = {};
@@ -379,17 +421,19 @@ function ForceLineup({
 }
 
 // ---------------------------------------------------------------------------
-// PlayerSelect — custom dropdown showing team color dot + name
+// FactionSelect — custom dropdown showing color dot + label for players or CM factions
 // ---------------------------------------------------------------------------
 
-function PlayerSelect({
+function FactionSelect({
   value,
   options,
   onChange,
+  placeholder = '— Select —',
 }: {
   value: string;
-  options: CampaignPlayer[];
+  options: FactionOption[];
   onChange: (id: string) => void;
+  placeholder?: string;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -403,7 +447,7 @@ function PlayerSelect({
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
-  const selected = options.find(p => p.id === value);
+  const selected = options.find(o => o.id === value);
 
   return (
     <div className="relative" ref={ref}>
@@ -414,14 +458,14 @@ function PlayerSelect({
       >
         {selected ? (
           <>
-            {selected.teamColor
-              ? <span className="h-2.5 w-2.5 flex-shrink-0 rounded-full" style={{ backgroundColor: selected.teamColor }} />
+            {selected.color
+              ? <span className="h-2.5 w-2.5 flex-shrink-0 rounded-full" style={{ backgroundColor: selected.color }} />
               : <span className="h-2.5 w-2.5 flex-shrink-0" />
             }
-            <span className="flex-1 truncate">{selected.name}</span>
+            <span className="flex-1 truncate">{selected.label}</span>
           </>
         ) : (
-          <span className="flex-1 text-gray-400 dark:text-gray-500">— Select player —</span>
+          <span className="flex-1 text-gray-400 dark:text-gray-500">{placeholder}</span>
         )}
         <svg className="h-3.5 w-3.5 flex-shrink-0 text-gray-400" viewBox="0 0 16 16" fill="currentColor">
           <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
@@ -434,24 +478,24 @@ function PlayerSelect({
             onClick={() => { onChange(''); setOpen(false); }}
             className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-gray-400 hover:bg-gray-50 dark:text-gray-500 dark:hover:bg-gray-800"
           >
-            — Select player —
+            {placeholder}
           </button>
-          {options.map(p => (
+          {options.map(opt => (
             <button
-              key={p.id}
+              key={opt.id}
               type="button"
-              onClick={() => { onChange(p.id); setOpen(false); }}
+              onClick={() => { onChange(opt.id); setOpen(false); }}
               className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition-colors ${
-                p.id === value
+                opt.id === value
                   ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300'
                   : 'text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800'
               }`}
             >
-              {p.teamColor
-                ? <span className="h-2.5 w-2.5 flex-shrink-0 rounded-full" style={{ backgroundColor: p.teamColor }} />
+              {opt.color
+                ? <span className="h-2.5 w-2.5 flex-shrink-0 rounded-full" style={{ backgroundColor: opt.color }} />
                 : <span className="h-2.5 w-2.5 flex-shrink-0" />
               }
-              <span>{p.name}</span>
+              <span>{opt.label}</span>
             </button>
           ))}
         </div>
@@ -469,19 +513,28 @@ function SetupPhaseView({
   players,
   diplomacyRelations,
   systemOwnership,
+  cmFactions,
+  cmFleets,
+  indieTemplates,
   onUpdate,
 }: {
   scenario: CombatScenario;
   players: CampaignPlayer[];
   diplomacyRelations: Record<string, DiplomacyLevel>;
   systemOwnership: Record<string, string>;
+  cmFactions: CMFaction[];
+  cmFleets: CMFleet[];
+  indieTemplates: EmpireUnit[];
   onUpdate: (s: CombatScenario) => void;
 }) {
-  const systemPlayers = useMemo(() => {
-    return players.filter(p =>
-      p.units.some(u => u.systemId === scenario.systemId && !u.mothballed)
-    );
-  }, [players, scenario.systemId]);
+  // Build selectable faction list: players with units at the system + CM factions
+  const systemFactions = useMemo((): FactionOption[] => {
+    const playerOptions = players
+      .filter(p => p.units.some(u => u.systemId === scenario.systemId && !u.mothballed))
+      .map(p => ({ id: p.id, label: p.name, color: p.teamColor }));
+    const cmOptions = cmFactions.map(f => ({ id: f.id, label: f.label, color: f.color }));
+    return [...playerOptions, ...cmOptions];
+  }, [players, scenario.systemId, cmFactions]);
 
   const attackerId = scenario.attackerForce.primaryPlayerId;
   const defenderId = scenario.defenderForce.primaryPlayerId;
@@ -491,15 +544,19 @@ function SetupPhaseView({
     onUpdate({ ...scenario, [forceKey]: { ...scenario[forceKey], ...patch } });
   }, [scenario, onUpdate]);
 
-  const getEligibleAllies = useCallback((primaryId: string, opposingId: string) => {
+  // Only player-to-player allies are supported; CM factions cannot have allied task forces
+  const getEligibleAllies = useCallback((primaryId: string, opposingId: string): FactionOption[] => {
     if (!primaryId || !opposingId) return [];
-    return systemPlayers.filter(p => {
-      if (p.id === primaryId || p.id === opposingId) return false;
+    const primaryPlayer = players.find(p => p.id === primaryId);
+    if (!primaryPlayer) return []; // CM faction can't have allies
+    return systemFactions.filter(f => {
+      const p = players.find(p => p.id === f.id);
+      if (!p || p.id === primaryId || p.id === opposingId) return false;
       const relWithPrimary = getRelation(diplomacyRelations, p.id, primaryId);
       const relWithOpposing = getRelation(diplomacyRelations, p.id, opposingId);
       return isAllied(relWithPrimary) && isAtWar(relWithOpposing);
     });
-  }, [systemPlayers, diplomacyRelations]);
+  }, [players, systemFactions, diplomacyRelations]);
 
   const attackerAllies = useMemo(() => getEligibleAllies(attackerId, defenderId), [getEligibleAllies, attackerId, defenderId]);
   const defenderAllies = useMemo(() => getEligibleAllies(defenderId, attackerId), [getEligibleAllies, defenderId, attackerId]);
@@ -507,15 +564,18 @@ function SetupPhaseView({
   const canBegin = attackerId && defenderId && attackerId !== defenderId;
 
   const handleBegin = () => {
-    const unitStates = initScenarioUnitStates(scenario, players);
+    const unitStates = initScenarioUnitStates(scenario, players, cmFleets, indieTemplates);
     // Snapshot each unit's strategic cripple status at scenario start (for Resolution tally)
     const initialUnitSnapshot: Record<string, { wasStrategicallyCrippled: boolean }> = {};
-    const allUnits = players.flatMap(p => p.units);
+    const allPlayerUnits = players.flatMap(p => p.units);
+    const allCMUnits = cmFleets.flatMap(f => f.units);
     for (const unitId of Object.keys(unitStates)) {
-      const unit = allUnits.find(u => u.id === unitId);
+      const unit = allPlayerUnits.find(u => u.id === unitId) ?? allCMUnits.find(u => u.id === unitId);
       initialUnitSnapshot[unitId] = { wasStrategicallyCrippled: unit?.crippled ?? false };
     }
-    // Snapshot involved players' full state for Restart undo
+    // Snapshot CM units before any combat damage (mirrors scenarioStartPlayersSnapshot for player units)
+    const scenarioStartCMUnits: CampaignUnit[] = allCMUnits.filter(u => unitStates[u.id]);
+    // Snapshot involved players' full state for Restart undo (players only, not CM factions)
     const involvedIds = new Set([
       scenario.attackerForce.primaryPlayerId,
       ...scenario.attackerForce.alliedPlayerIds,
@@ -529,15 +589,15 @@ function SetupPhaseView({
     }
     const nextPhase: CombatScenarioPhase =
       scenario.scenarioType === 'ground_combat' ? 'task_force' : 'flagship';
-    onUpdate({ ...scenario, unitStates, initialUnitSnapshot, scenarioStartPlayersSnapshot, phase: nextPhase });
+    onUpdate({ ...scenario, unitStates, initialUnitSnapshot, scenarioStartPlayersSnapshot, scenarioStartCMUnits, phase: nextPhase });
   };
 
-  const toggleAlly = (side: 'attacker' | 'defender', playerId: string) => {
+  const toggleAlly = (side: 'attacker' | 'defender', factionId: string) => {
     const force = side === 'attacker' ? scenario.attackerForce : scenario.defenderForce;
     const current = force.alliedPlayerIds;
-    const next = current.includes(playerId)
-      ? current.filter(id => id !== playerId)
-      : [...current, playerId];
+    const next = current.includes(factionId)
+      ? current.filter(id => id !== factionId)
+      : [...current, factionId];
     updateForce(side, { alliedPlayerIds: next });
   };
 
@@ -578,11 +638,12 @@ function SetupPhaseView({
           <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Attacker</h3>
           <div className="space-y-3">
             <div>
-              <label className="mb-1 block text-xs text-gray-500 dark:text-gray-400">Primary Player</label>
-              <PlayerSelect
+              <label className="mb-1 block text-xs text-gray-500 dark:text-gray-400">Primary</label>
+              <FactionSelect
                 value={attackerId}
-                options={systemPlayers.filter(p => p.id !== defenderId)}
+                options={systemFactions.filter(f => f.id !== defenderId)}
                 onChange={id => updateForce('attacker', { primaryPlayerId: id, alliedPlayerIds: [] })}
+                placeholder="— Select attacker —"
               />
             </div>
             {scenario.scenarioType !== 'ground_combat' && (
@@ -603,16 +664,16 @@ function SetupPhaseView({
               <div>
                 <label className="mb-1 block text-xs text-gray-500 dark:text-gray-400">Allied Task Forces</label>
                 <div className="space-y-1">
-                  {attackerAllies.map(p => (
-                    <label key={p.id} className="flex items-center gap-2 text-sm dark:text-gray-200">
+                  {attackerAllies.map(f => (
+                    <label key={f.id} className="flex items-center gap-2 text-sm dark:text-gray-200">
                       <input
                         type="checkbox"
-                        checked={scenario.attackerForce.alliedPlayerIds.includes(p.id)}
-                        onChange={() => toggleAlly('attacker', p.id)}
+                        checked={scenario.attackerForce.alliedPlayerIds.includes(f.id)}
+                        onChange={() => toggleAlly('attacker', f.id)}
                         className="h-3.5 w-3.5"
                       />
-                      {p.teamColor && <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: p.teamColor }} />}
-                      {p.name}
+                      {f.color && <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: f.color }} />}
+                      {f.label}
                     </label>
                   ))}
                 </div>
@@ -620,7 +681,7 @@ function SetupPhaseView({
             )}
             {attackerId && (
               <div className="rounded border border-gray-200 p-3 dark:border-gray-700">
-                <ForceLineup label="Attacker Units" scenario={scenario} side="attacker" players={players} />
+                <ForceLineup label="Attacker Units" scenario={scenario} side="attacker" players={players} cmFleets={cmFleets} indieTemplates={indieTemplates} />
               </div>
             )}
           </div>
@@ -631,11 +692,12 @@ function SetupPhaseView({
           <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Defender</h3>
           <div className="space-y-3">
             <div>
-              <label className="mb-1 block text-xs text-gray-500 dark:text-gray-400">Primary Player</label>
-              <PlayerSelect
+              <label className="mb-1 block text-xs text-gray-500 dark:text-gray-400">Primary</label>
+              <FactionSelect
                 value={defenderId}
-                options={systemPlayers.filter(p => p.id !== attackerId)}
+                options={systemFactions.filter(f => f.id !== attackerId)}
                 onChange={id => updateForce('defender', { primaryPlayerId: id, alliedPlayerIds: [] })}
+                placeholder="— Select defender —"
               />
             </div>
             {scenario.scenarioType !== 'ground_combat' && (
@@ -656,16 +718,16 @@ function SetupPhaseView({
               <div>
                 <label className="mb-1 block text-xs text-gray-500 dark:text-gray-400">Allied Task Forces</label>
                 <div className="space-y-1">
-                  {defenderAllies.map(p => (
-                    <label key={p.id} className="flex items-center gap-2 text-sm dark:text-gray-200">
+                  {defenderAllies.map(f => (
+                    <label key={f.id} className="flex items-center gap-2 text-sm dark:text-gray-200">
                       <input
                         type="checkbox"
-                        checked={scenario.defenderForce.alliedPlayerIds.includes(p.id)}
-                        onChange={() => toggleAlly('defender', p.id)}
+                        checked={scenario.defenderForce.alliedPlayerIds.includes(f.id)}
+                        onChange={() => toggleAlly('defender', f.id)}
                         className="h-3.5 w-3.5"
                       />
-                      {p.teamColor && <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: p.teamColor }} />}
-                      {p.name}
+                      {f.color && <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: f.color }} />}
+                      {f.label}
                     </label>
                   ))}
                 </div>
@@ -673,7 +735,7 @@ function SetupPhaseView({
             )}
             {defenderId && (
               <div className="rounded border border-gray-200 p-3 dark:border-gray-700">
-                <ForceLineup label="Defender Units" scenario={scenario} side="defender" players={players} />
+                <ForceLineup label="Defender Units" scenario={scenario} side="defender" players={players} cmFleets={cmFleets} indieTemplates={indieTemplates} />
               </div>
             )}
           </div>
@@ -700,10 +762,14 @@ function SetupPhaseView({
 function FlagshipSelectionView({
   scenario,
   players,
+  cmFleets,
+  indieTemplates,
   onUpdate,
 }: {
   scenario: CombatScenario;
   players: CampaignPlayer[];
+  cmFleets: CMFleet[];
+  indieTemplates: EmpireUnit[];
   onUpdate: (s: CombatScenario) => void;
 }) {
   const setFlagship = (side: 'attacker' | 'defender', unitId: string | null) => {
@@ -747,7 +813,7 @@ function FlagshipSelectionView({
     <div className="flex h-full flex-col">
       <div className="flex flex-1 gap-6 overflow-auto p-6">
         {(['attacker', 'defender'] as const).map(side => {
-          const sideUnits = getSideUnits(scenario, side, players).filter(x => !x.state.destroyed && !x.state.exitedScenario);
+          const sideUnits = getSideUnits(scenario, side, players, cmFleets, indieTemplates).filter(x => !x.state.destroyed && !x.state.exitedScenario);
           const flagEmpire = getFlagshipEmpire(scenario, side, players);
           const currentFlagshipId = Object.values(scenario.unitStates).find(s => s.side === side && s.isFlagship)?.unitId ?? null;
           const prevFsId = side === 'attacker' ? scenario.prevAttackerFlagshipId : scenario.prevDefenderFlagshipId;
@@ -908,10 +974,14 @@ function FlagshipSelectionView({
 function GroundCombatTFView({
   scenario,
   players,
+  cmFleets,
+  indieTemplates,
   onUpdate,
 }: {
   scenario: CombatScenario;
   players: CampaignPlayer[];
+  cmFleets: CMFleet[];
+  indieTemplates: EmpireUnit[];
   onUpdate: (s: CombatScenario) => void;
 }) {
   const toggleInTF = (unitId: string, inTF: boolean) => {
@@ -937,7 +1007,7 @@ function GroundCombatTFView({
     <div className="flex h-full flex-col">
       <div className="flex flex-1 gap-6 overflow-auto p-6">
         {(['attacker', 'defender'] as const).map(side => {
-          const sideUnits = getSideUnits(scenario, side, players);
+          const sideUnits = getSideUnits(scenario, side, players, cmFleets, indieTemplates);
           const inTF   = sideUnits.filter(x => x.state.inTaskForce  && !x.state.destroyed && !x.state.exitedScenario);
           const inPool = sideUnits.filter(x => !x.state.inTaskForce && !x.state.destroyed && !x.state.exitedScenario);
 
@@ -971,13 +1041,13 @@ function GroundCombatTFView({
                   </div>
                 )}
                 <div className="h-64 space-y-0.5 overflow-y-auto">
-                  {inTF.map(({ unit, template, state, player }) => {
+                  {inTF.map(({ unit, template, state, factionColor }) => {
                     const isOnPlanet = unit.fleetId === 'On-Planet';
                     const isCrippled = unit.crippled || !!state.crippledInScenario;
                     return (
                       <div key={unit.id}
                         className="grid items-center gap-x-2 rounded border border-gray-200 px-2 py-1 text-xs dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-default"
-                        style={{ gridTemplateColumns: tfCols, borderLeftColor: player.teamColor ?? '#9ca3af', borderLeftWidth: '4px' }}
+                        style={{ gridTemplateColumns: tfCols, borderLeftColor: factionColor, borderLeftWidth: '4px' }}
                       >
                         <span className="truncate dark:text-gray-200">
                           {unit.name || template.name}
@@ -1025,7 +1095,7 @@ function GroundCombatTFView({
                           <div key={`${template.id}|${sk}|${sc}`}>
                             <div
                               className="grid items-center gap-x-2 rounded border border-dashed border-gray-200 px-2 py-1 text-xs dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-default"
-                              style={{ gridTemplateColumns: poolCols, borderLeftColor: firstUnit.player.teamColor ?? '#9ca3af', borderLeftWidth: '4px', borderLeftStyle: 'solid' }}
+                              style={{ gridTemplateColumns: poolCols, borderLeftColor: firstUnit.factionColor, borderLeftWidth: '4px', borderLeftStyle: 'solid' }}
                             >
                               <span className="truncate dark:text-gray-200">
                                 {template.name}
@@ -1096,17 +1166,21 @@ function GroundCombatTFView({
 function GroundCombatPhaseView({
   scenario,
   players,
+  cmFleets,
+  indieTemplates,
   onUpdate,
 }: {
   scenario: CombatScenario;
   players: CampaignPlayer[];
+  cmFleets: CMFleet[];
+  indieTemplates: EmpireUnit[];
   onUpdate: (s: CombatScenario) => void;
 }) {
   const [actionDialog, setActionDialog] = useState<ActionDialog | null>(null);
   const [confirmingAdvance, setConfirmingAdvance] = useState(false);
 
   const getUnits = (side: 'attacker' | 'defender') =>
-    getSideUnits(scenario, side, players).filter(x => x.state.inTaskForce && !x.state.destroyed && !x.state.exitedScenario);
+    getSideUnits(scenario, side, players, cmFleets, indieTemplates).filter(x => x.state.inTaskForce && !x.state.destroyed && !x.state.exitedScenario);
 
   const setHits = (side: 'attacker' | 'defender', val: number) => {
     onUpdate({ ...scenario, subPhaseHits: { ...scenario.subPhaseHits, [side]: val } });
@@ -1210,7 +1284,7 @@ function GroundCombatPhaseView({
                       <span className="text-right">CR</span>
                       <span className="pl-3">Traits</span>
                     </div>
-                    {firingUnits.map(({ unit, template, state, player }) => {
+                    {firingUnits.map(({ unit, template, state, factionColor }) => {
                       const isCrippled = unit.crippled || !!state.crippledInScenario;
                       const stateForATK = state.pendingCripple ? { ...state, crippledInScenario: true } : state;
                       const atk = computeGroundATK(unit, template, stateForATK);
@@ -1218,7 +1292,7 @@ function GroundCombatPhaseView({
                       return (
                         <div key={unit.id}
                           className="grid items-center gap-x-2 rounded border border-gray-200 px-1 py-0.5 text-xs dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-default"
-                          style={{ gridTemplateColumns: fireCols, borderLeftColor: player.teamColor ?? '#9ca3af', borderLeftWidth: '4px' }}
+                          style={{ gridTemplateColumns: fireCols, borderLeftColor: factionColor, borderLeftWidth: '4px' }}
                         >
                           <span className="min-w-0 truncate dark:text-gray-200">
                             {unit.name || template.name}
@@ -1260,7 +1334,7 @@ function GroundCombatPhaseView({
         <div className="grid grid-cols-2 gap-4 flex-1 min-h-0">
           {(['attacker', 'defender'] as const).map(firingSide => {
             const targetSide: 'attacker' | 'defender' = firingSide === 'attacker' ? 'defender' : 'attacker';
-            const targets = getSideUnits(scenario, targetSide, players)
+            const targets = getSideUnits(scenario, targetSide, players, cmFleets, indieTemplates)
               .filter(x => x.state.inTaskForce && !x.state.exitedScenario)
               .sort((a, b) => {
                 const aCR = a.template.cr === '-' ? -1 : Number(a.template.cr);
@@ -1291,7 +1365,7 @@ function GroundCombatPhaseView({
                       <span />
                     </div>
                     <div className="space-y-0.5">
-                      {targets.map(({ unit, template, state, player }) => {
+                      {targets.map(({ unit, template, state, factionColor }) => {
                         const isCrippled = unit.crippled || !!state.crippledInScenario;
                         const isCrippledAnywhere = isCrippled || !!state.pendingCripple;
                         const hasPendingCripple = !!state.pendingCripple;
@@ -1305,7 +1379,7 @@ function GroundCombatPhaseView({
                         return (
                           <div key={unit.id}
                             className={`grid items-center gap-x-2 rounded border border-gray-200 px-2 py-1 text-xs dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-default ${state.destroyed ? 'opacity-40' : ''}`}
-                            style={{ gridTemplateColumns: hitsCols, borderLeftColor: player.teamColor ?? '#9ca3af', borderLeftWidth: '4px' }}
+                            style={{ gridTemplateColumns: hitsCols, borderLeftColor: factionColor, borderLeftWidth: '4px' }}
                           >
                             <span className="min-w-0 truncate dark:text-gray-200">
                               {unit.name || template.name}
@@ -1428,15 +1502,19 @@ function TaskForceSetupView({
   scenario,
   players,
   map,
+  cmFleets,
+  indieTemplates,
   onUpdate,
 }: {
   scenario: CombatScenario;
   players: CampaignPlayer[];
   map: GameMap;
+  cmFleets: CMFleet[];
+  indieTemplates: EmpireUnit[];
   onUpdate: (s: CombatScenario) => void;
 }) {
   if (scenario.scenarioType === 'ground_combat') {
-    return <GroundCombatTFView scenario={scenario} players={players} onUpdate={onUpdate} />;
+    return <GroundCombatTFView scenario={scenario} players={players} cmFleets={cmFleets} indieTemplates={indieTemplates} onUpdate={onUpdate} />;
   }
 
   const isAtmospheric = (t: EmpireUnit) => t.traits.some(tr => tr.name === 'Atmospheric');
@@ -1483,7 +1561,7 @@ function TaskForceSetupView({
     <div className="relative flex h-full flex-col">
       <div className="flex flex-1 gap-6 overflow-auto p-6">
         {(['attacker', 'defender'] as const).map(side => {
-          const sideUnits = getSideUnits(scenario, side, players);
+          const sideUnits = getSideUnits(scenario, side, players, cmFleets, indieTemplates);
           const flagEmpire = getFlagshipEmpire(scenario, side, players);
 
           const flagshipUnit = sideUnits.find(({ state }) => state.isFlagship);
@@ -1627,11 +1705,11 @@ function TaskForceSetupView({
                         </div>
                       )}
                       <div className="h-64 space-y-0.5 overflow-y-auto">
-                        {inTF.map(({ unit, template, state, player }) => {
+                        {inTF.map(({ unit, template, state, factionColor }) => {
                           const eff = computeEffectiveStats(unit, template, state, flagEmpire);
                           const tfUnitCrippled = unit.crippled || !!state.crippledInScenario;
                           return (
-                            <div key={unit.id} className="grid items-center gap-x-2 rounded border border-gray-200 px-2 py-1 text-xs dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-default" style={{ gridTemplateColumns: tfCols, borderLeftColor: player.teamColor ?? '#9ca3af', borderLeftWidth: '4px' }}>
+                            <div key={unit.id} className="grid items-center gap-x-2 rounded border border-gray-200 px-2 py-1 text-xs dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-default" style={{ gridTemplateColumns: tfCols, borderLeftColor: factionColor, borderLeftWidth: '4px' }}>
                               <span className="truncate dark:text-gray-200">
                                 {unit.name || template.name}
                                 {template.hullCode !== 'N/A' && <span className="ml-1 text-gray-400">({template.hullCode})</span>}
@@ -1699,7 +1777,7 @@ function TaskForceSetupView({
                             {poolGroups.map(({ template, statusKey: sk, scenarioCrippled: sc, count, firstUnit }) => {
                               const eff = computeEffectiveStats(firstUnit.unit, template, firstUnit.state, flagEmpire);
                               return (
-                                <div key={`${template.id}|${sk}|${sc}`} className="grid items-center gap-x-2 rounded border border-dashed border-gray-200 px-2 py-1 text-xs dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-default" style={{ gridTemplateColumns: poolCols, borderLeftColor: firstUnit.player.teamColor ?? '#9ca3af', borderLeftWidth: '4px', borderLeftStyle: 'solid' }}>
+                                <div key={`${template.id}|${sk}|${sc}`} className="grid items-center gap-x-2 rounded border border-dashed border-gray-200 px-2 py-1 text-xs dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-default" style={{ gridTemplateColumns: poolCols, borderLeftColor: firstUnit.factionColor, borderLeftWidth: '4px', borderLeftStyle: 'solid' }}>
                                   <span className="truncate dark:text-gray-200">
                                     {template.name}
                                     {template.hullCode !== 'N/A' && <span className="ml-1 text-gray-400">({template.hullCode})</span>}
@@ -1795,10 +1873,14 @@ function TaskForceSetupView({
 function AssignmentsPhaseView({
   scenario,
   players,
+  cmFleets,
+  indieTemplates,
   onUpdate,
 }: {
   scenario: CombatScenario;
   players: CampaignPlayer[];
+  cmFleets: CMFleet[];
+  indieTemplates: EmpireUnit[];
   onUpdate: (s: CombatScenario) => void;
 }) {
   const updateState = (unitId: string, patch: Partial<CombatUnitState>) => {
@@ -1831,7 +1913,7 @@ function AssignmentsPhaseView({
   };
 
   const unassignedFighterCount = (['attacker', 'defender'] as const).reduce((n, side) => {
-    const tfUnits = getSideUnits(scenario, side, players).filter(
+    const tfUnits = getSideUnits(scenario, side, players, cmFleets, indieTemplates).filter(
       x => x.state.inTaskForce && !x.state.destroyed && !x.state.exitedScenario,
     );
     return n + tfUnits.filter(x => isFighter(x.template) && !x.state.fighterAssignment).length;
@@ -1849,7 +1931,7 @@ function AssignmentsPhaseView({
 
         <div className="grid grid-cols-2 gap-6">
           {(['attacker', 'defender'] as const).map(side => {
-            const sideUnits = getSideUnits(scenario, side, players);
+            const sideUnits = getSideUnits(scenario, side, players, cmFleets, indieTemplates);
             const tfUnits = sideUnits.filter(x => x.state.inTaskForce && !x.state.destroyed && !x.state.exitedScenario);
             const flagEmpire = getFlagshipEmpire(scenario, side, players);
 
@@ -1869,7 +1951,7 @@ function AssignmentsPhaseView({
             // Guardian factors → free Formation Bonus slots
             const guardianTotal = computeFactorTotal(
               tfUnits.map(x => x.unit),
-              buildTemplateMap(players),
+              buildTemplateMap(players, indieTemplates),
               'Guardian',
             );
             const fbSlots = 1 + guardianTotal;
@@ -1878,25 +1960,25 @@ function AssignmentsPhaseView({
             // Jammer/Disruptor factors for THIS side (applied to opposite side)
             const jammerTotal = computeFactorTotal(
               tfUnits.map(x => x.unit),
-              buildTemplateMap(players),
+              buildTemplateMap(players, indieTemplates),
               'Jammer',
             );
             const disruptorTotal = computeFactorTotal(
               tfUnits.map(x => x.unit),
-              buildTemplateMap(players),
+              buildTemplateMap(players, indieTemplates),
               'Disruptor',
             );
 
             const oppSide: 'attacker' | 'defender' = side === 'attacker' ? 'defender' : 'attacker';
-            const oppSideUnits = getSideUnits(scenario, oppSide, players);
+            const oppSideUnits = getSideUnits(scenario, oppSide, players, cmFleets, indieTemplates);
             const oppTFUnits = oppSideUnits.filter(x => x.state.inTaskForce && !x.state.destroyed && !x.state.exitedScenario);
 
             const jammedCount = oppTFUnits.filter(x => x.state.jammed).length;
             const disruptedCount = oppTFUnits.filter(x => x.state.disrupted).length;
 
             // EW notes
-            const scoutSelf = computeFactorTotal(tfUnits.map(x => x.unit), buildTemplateMap(players), 'Scout');
-            const scoutOpp = computeFactorTotal(oppTFUnits.map(x => x.unit), buildTemplateMap(players), 'Scout');
+            const scoutSelf = computeFactorTotal(tfUnits.map(x => x.unit), buildTemplateMap(players, indieTemplates), 'Scout');
+            const scoutOpp = computeFactorTotal(oppTFUnits.map(x => x.unit), buildTemplateMap(players, indieTemplates), 'Scout');
             const stealthSelf = tfUnits.filter(x => !x.unit.crippled && x.template.traits.some(t => t.name === 'Stealth')).length;
             const stealthOpp = oppTFUnits.filter(x => !x.unit.crippled && x.template.traits.some(t => t.name === 'Stealth')).length;
             const ewPrevFsId = side === 'attacker' ? scenario.prevAttackerFlagshipId : scenario.prevDefenderFlagshipId;
@@ -2169,10 +2251,14 @@ type ActionDialog = {
 function FirePhaseView({
   scenario,
   players,
+  cmFleets,
+  indieTemplates,
   onUpdate,
 }: {
   scenario: CombatScenario;
   players: CampaignPlayer[];
+  cmFleets: CMFleet[];
+  indieTemplates: EmpireUnit[];
   onUpdate: (s: CombatScenario) => void;
 }) {
   const subPhase = scenario.phase as 'fire_ff' | 'fire_sf' | 'fire_ss';
@@ -2192,7 +2278,7 @@ function FirePhaseView({
   const flagEmpireA = getFlagshipEmpire(scenario, 'attacker', players);
   const flagEmpireD = getFlagshipEmpire(scenario, 'defender', players);
 
-  const getUnitsForSide = (side: 'attacker' | 'defender') => getSideUnits(scenario, side, players);
+  const getUnitsForSide = (side: 'attacker' | 'defender') => getSideUnits(scenario, side, players, cmFleets, indieTemplates);
 
   // Eligible targets per sub-phase
   const getEligibleTargets = (
@@ -2358,7 +2444,7 @@ function FirePhaseView({
 
             // EW
             const oppSide: 'attacker' | 'defender' = side === 'attacker' ? 'defender' : 'attacker';
-            const tmap = buildTemplateMap(players);
+            const tmap = buildTemplateMap(players, indieTemplates);
             const tfSide = getUnitsForSide(side).filter(x => x.state.inTaskForce && !x.state.destroyed && !x.state.exitedScenario);
             const tfOpp  = getUnitsForSide(oppSide).filter(x => x.state.inTaskForce && !x.state.destroyed && !x.state.exitedScenario);
             const scoutSelf   = computeFactorTotal(tfSide.map(x => x.unit), tmap, 'Scout');
@@ -2421,7 +2507,7 @@ function FirePhaseView({
                           <span className="text-right">CR</span>
                           <span className="pl-3">Traits</span>
                         </div>
-                        {firingUnits.map(({ unit, template, state, player }) => {
+                        {firingUnits.map(({ unit, template, state, factionColor }) => {
                           const eff = computeEffectiveStats(unit, template, state, flagEmpire);
                           const isCrippled = unit.crippled || !!state.crippledInScenario;
                           const hasGunship   = template.traits.some(t => t.name === 'Gunship');
@@ -2431,7 +2517,7 @@ function FirePhaseView({
                           const statEffective = isStatSubPhase ? eff.as : eff.af;
                           const statBlockedByTrait = isCrippled && (isStatSubPhase ? hasGunship : hasCarronade);
                           return (
-                            <div key={unit.id} className="grid items-center gap-x-2 rounded border border-gray-200 px-1 py-0.5 text-xs dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-default" style={{ gridTemplateColumns: fireCols, borderLeftColor: player.teamColor ?? '#9ca3af', borderLeftWidth: '4px' }}>
+                            <div key={unit.id} className="grid items-center gap-x-2 rounded border border-gray-200 px-1 py-0.5 text-xs dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-default" style={{ gridTemplateColumns: fireCols, borderLeftColor: factionColor, borderLeftWidth: '4px' }}>
                               <span className="min-w-0 truncate dark:text-gray-200">
                                 {unit.name || template.name}
                                 {template.hullCode !== 'N/A' && <span className="ml-1 text-gray-400">({template.hullCode})</span>}
@@ -2513,7 +2599,7 @@ function FirePhaseView({
                       <span />
                     </div>
                     <div className="space-y-0.5">
-                      {targets.map(({ unit, template, state, player }) => {
+                      {targets.map(({ unit, template, state, factionColor }) => {
                         const eff = computeEffectiveStats(unit, template, state, targetFlagEmpire);
                         const isCiv = isCivilian(template);
                         const isCrippledAnywhere = unit.crippled || !!state.crippledInScenario || !!state.pendingCripple;
@@ -2533,7 +2619,7 @@ function FirePhaseView({
                         const asBlockedByTrait = isCrippledAnywhere && hasGunship;
                         const afBlockedByTrait = isCrippledAnywhere && hasCarronade;
                         return (
-                          <div key={unit.id} className={`grid items-center gap-x-2 rounded border border-gray-200 px-2 py-1 text-xs dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-default ${state.destroyed ? 'opacity-40' : ''}`} style={{ gridTemplateColumns: hitsCols, borderLeftColor: player.teamColor ?? '#9ca3af', borderLeftWidth: '4px' }}>
+                          <div key={unit.id} className={`grid items-center gap-x-2 rounded border border-gray-200 px-2 py-1 text-xs dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-default ${state.destroyed ? 'opacity-40' : ''}`} style={{ gridTemplateColumns: hitsCols, borderLeftColor: factionColor, borderLeftWidth: '4px' }}>
                             <span className="min-w-0 truncate dark:text-gray-200">
                               {unit.name || template.name}
                               {template.hullCode !== 'N/A' && <span className="ml-1 text-gray-400">({template.hullCode})</span>}
@@ -2689,24 +2775,28 @@ const TF_COLS = '1fr 2.5rem 2.5rem 2.5rem 2.5rem 1fr';
 function TFUnitList({
   scenario,
   players,
+  cmFleets = [],
+  indieTemplates = [],
   side,
   heightClass = 'h-36',
   showAll = false,
 }: {
   scenario: CombatScenario;
   players: CampaignPlayer[];
+  cmFleets?: CMFleet[];
+  indieTemplates?: EmpireUnit[];
   side: 'attacker' | 'defender';
   heightClass?: string;
   showAll?: boolean;
 }) {
-  const sideUnits = getSideUnits(scenario, side, players);
+  const sideUnits = getSideUnits(scenario, side, players, cmFleets, indieTemplates);
   const tfUnits = sideUnits.filter(x => (showAll ? true : x.state.inTaskForce) && !x.state.destroyed && !x.state.exitedScenario);
   const flagEmpire = getFlagshipEmpire(scenario, side, players);
 
-  const playerGroups: { player: CampaignPlayer; units: typeof tfUnits }[] = [];
+  const factionGroups: { factionId: string; factionLabel: string; units: typeof tfUnits }[] = [];
   for (const item of tfUnits) {
-    const g = playerGroups.find(g => g.player.id === item.player.id);
-    if (g) g.units.push(item); else playerGroups.push({ player: item.player, units: [item] });
+    const g = factionGroups.find(g => g.factionId === item.factionId);
+    if (g) g.units.push(item); else factionGroups.push({ factionId: item.factionId, factionLabel: item.factionLabel, units: [item] });
   }
 
   if (tfUnits.length === 0) return <p className="text-xs italic text-gray-400 dark:text-gray-500">No units in Task Force</p>;
@@ -2722,10 +2812,10 @@ function TFUnitList({
         <span className="pl-3">Traits</span>
       </div>
       <div className="space-y-0.5">
-        {playerGroups.map(({ player, units }) => (
-          <div key={player.id}>
+        {factionGroups.map(({ factionId, factionLabel, units }) => (
+          <div key={factionId}>
             <p className="text-[10px] font-semibold text-gray-400 sticky top-5 z-10 bg-white py-0.5 dark:bg-gray-900 dark:text-gray-500">
-              {player.name} <span className="font-normal">({player.empire.name})</span>
+              {factionLabel}
             </p>
             {units.map(({ unit, template, state }) => {
               const eff = computeEffectiveStats(unit, template, state, flagEmpire);
@@ -2775,10 +2865,14 @@ function TFUnitList({
 function SpecialOpsPhaseView({
   scenario,
   players,
+  cmFleets,
+  indieTemplates,
   onUpdate,
 }: {
   scenario: CombatScenario;
   players: CampaignPlayer[];
+  cmFleets: CMFleet[];
+  indieTemplates: EmpireUnit[];
   onUpdate: (s: CombatScenario) => void;
 }) {
   // captureTarget.unitId: '' = showing list, non-empty = pending confirmation
@@ -2789,10 +2883,10 @@ function SpecialOpsPhaseView({
     awardedToFleetId: string;  // '' = Untasked
   } | null>(null);
 
-  const tmap = buildTemplateMap(players);
+  const tmap = buildTemplateMap(players, indieTemplates);
 
   const getAssaultFactors = (side: 'attacker' | 'defender') => {
-    const sideUnits = getSideUnits(scenario, side, players);
+    const sideUnits = getSideUnits(scenario, side, players, cmFleets, indieTemplates);
     const activeUnits = sideUnits
       .filter(x => x.state.inTaskForce && !x.state.destroyed && !x.state.exitedScenario)
       .filter(x => isShip(x.template) || isBase(x.template))
@@ -2801,7 +2895,7 @@ function SpecialOpsPhaseView({
   };
 
   const getDestroyedTargets = (targetSide: 'attacker' | 'defender') => {
-    const sideUnits = getSideUnits(scenario, targetSide, players);
+    const sideUnits = getSideUnits(scenario, targetSide, players, cmFleets, indieTemplates);
     return sideUnits.filter(x =>
       x.state.destroyed &&
       !x.state.capturedBySide &&
@@ -2883,19 +2977,19 @@ function SpecialOpsPhaseView({
                 {/* Task Force unit list */}
                 <div className="mb-3 rounded border border-gray-200 p-2 dark:border-gray-700">
                   <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Task Force</p>
-                  <TFUnitList scenario={scenario} players={players} side={side} heightClass="h-36" />
+                  <TFUnitList scenario={scenario} players={players} cmFleets={cmFleets} indieTemplates={indieTemplates} side={side} heightClass="h-36" />
                 </div>
 
                 {/* Captured units on this side */}
                 {(() => {
-                  const capturedUnits = getSideUnits(scenario, side, players).filter(x => x.state.capturedBySide === side && !x.state.destroyed && !x.state.exitedScenario);
+                  const capturedUnits = getSideUnits(scenario, side, players, cmFleets, indieTemplates).filter(x => x.state.capturedBySide === side && !x.state.destroyed && !x.state.exitedScenario);
                   if (capturedUnits.length === 0) return null;
                   const capFlagEmpire = getFlagshipEmpire(scenario, side, players);
-                  // Group by player
-                  const capPlayerGroups: { player: CampaignPlayer; units: typeof capturedUnits }[] = [];
+                  // Group by faction
+                  const capFactionGroups: { factionId: string; factionLabel: string; units: typeof capturedUnits }[] = [];
                   for (const item of capturedUnits) {
-                    const g = capPlayerGroups.find(g => g.player.id === item.player.id);
-                    if (g) g.units.push(item); else capPlayerGroups.push({ player: item.player, units: [item] });
+                    const g = capFactionGroups.find(g => g.factionId === item.factionId);
+                    if (g) g.units.push(item); else capFactionGroups.push({ factionId: item.factionId, factionLabel: item.factionLabel, units: [item] });
                   }
                   return (
                     <div className="mb-3 rounded border border-purple-200 p-2 dark:border-purple-800">
@@ -2908,10 +3002,10 @@ function SpecialOpsPhaseView({
                         <span className="text-right">CR</span>
                         <span className="pl-3">Traits</span>
                       </div>
-                      {capPlayerGroups.map(({ player, units }) => (
-                        <div key={player.id}>
+                      {capFactionGroups.map(({ factionId, factionLabel, units }) => (
+                        <div key={factionId}>
                           <p className="pt-0.5 text-[10px] font-semibold text-purple-400 dark:text-purple-500">
-                            {player.name} <span className="font-normal">({player.empire.name})</span>
+                            {factionLabel}
                           </p>
                           {units.map(({ unit, template, state }) => {
                             const eff = computeEffectiveStats(unit, template, state, capFlagEmpire);
@@ -3109,10 +3203,14 @@ function SpecialOpsPhaseView({
 function RetreatPhaseView({
   scenario,
   players,
+  cmFleets,
+  indieTemplates,
   onUpdate,
 }: {
   scenario: CombatScenario;
   players: CampaignPlayer[];
+  cmFleets: CMFleet[];
+  indieTemplates: EmpireUnit[];
   onUpdate: (s: CombatScenario) => void;
 }) {
   const [attackerRetreats, setAttackerRetreats] = useState(false);
@@ -3125,7 +3223,7 @@ function RetreatPhaseView({
 
   const getRetreatLabels = (side: 'attacker' | 'defender') => {
     const labels: string[] = [];
-    const sideUnits = getSideUnits(scenario, side, players);
+    const sideUnits = getSideUnits(scenario, side, players, cmFleets, indieTemplates);
     const tfUnits = sideUnits.filter(x => x.state.inTaskForce && !x.state.destroyed);
 
     const allFast = tfUnits.length > 0 && tfUnits.every(x => !isCivilian(x.template) && x.template.traits.some(t => t.name === 'Fast'));
@@ -3133,8 +3231,8 @@ function RetreatPhaseView({
     const hasFastDriveSystems = !!flagEmpire?.advantages.includes('Fast Drive Systems');
     if (allFast || hasFastDriveSystems) labels.push('Fast (+2)');
 
-    const hasConvoy = tfUnits.some(x => x.template.traits.some(t => t.name === 'Convoy' || x.unit.name.toLowerCase().includes('convoy')));
-    if (hasConvoy) labels.push('Convoy (−2)');
+    const hasConvoy = tfUnits.some(x => x.template.category === 'Civilian' && x.template.name === 'Convoy');
+    if (hasConvoy) labels.push('Convoy in TF -2');
 
     if (scenario.scenarioType === 'pursuit' && side === 'defender') labels.push('Pursuit Defender (+2)');
 
@@ -3151,7 +3249,7 @@ function RetreatPhaseView({
       let anyExited = false;
       for (const state of Object.values(newStates)) {
         if (state.destroyed || state.exitedScenario || state.capturedBySide) continue;
-        const sideUnits = getSideUnits(scenario, state.side, players);
+        const sideUnits = getSideUnits(scenario, state.side, players, cmFleets, indieTemplates);
         const unitInfo = sideUnits.find(x => x.unit.id === state.unitId);
         if (!unitInfo) continue;
         const { template, unit } = unitInfo;
@@ -3224,7 +3322,7 @@ function RetreatPhaseView({
             const labels = isAttacker ? attackerLabels : defenderLabels;
             const retreatMovementNote = isAttacker ? scenario.attackerForce.retreatMovementNote : scenario.defenderForce.retreatMovementNote;
 
-            const sideUnits = getSideUnits(scenario, side, players);
+            const sideUnits = getSideUnits(scenario, side, players, cmFleets, indieTemplates);
             const isWiped = sideUnits.length > 0 && sideUnits.every(x => x.state.destroyed || x.state.exitedScenario || x.state.capturedBySide !== null);
 
             return (
@@ -3239,7 +3337,7 @@ function RetreatPhaseView({
                 {/* All units in battle */}
                 <div className="mb-3 rounded border border-gray-200 p-2 dark:border-gray-700">
                   <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Units</p>
-                  <TFUnitList scenario={scenario} players={players} side={side} heightClass="h-36" showAll />
+                  <TFUnitList scenario={scenario} players={players} cmFleets={cmFleets} indieTemplates={indieTemplates} side={side} heightClass="h-36" showAll />
                 </div>
 
                 {/* Retreat modifier badges */}
@@ -3298,10 +3396,14 @@ function RetreatPhaseView({
 function RecoveryPhaseView({
   scenario,
   players,
+  cmFleets,
+  indieTemplates,
   onUpdate,
 }: {
   scenario: CombatScenario;
   players: CampaignPlayer[];
+  cmFleets: CMFleet[];
+  indieTemplates: EmpireUnit[];
   onUpdate: (s: CombatScenario) => void;
 }) {
   // Scenario view with only living units so ForceLineup counts are accurate
@@ -3362,7 +3464,7 @@ function RecoveryPhaseView({
         {/* Force lineups — same two-column layout as Setup Phase */}
         <div className="flex gap-6">
           {(['attacker', 'defender'] as const).map(side => {
-            const sideUnits = getSideUnits(scenario, side, players);
+            const sideUnits = getSideUnits(scenario, side, players, cmFleets, indieTemplates);
             const livingUnits = sideUnits.filter(x => !x.state.destroyed && !x.state.exitedScenario);
             const allCivilian = livingUnits.length > 0 && livingUnits.every(x => isCivilian(x.template));
             const onlyCaptures = livingUnits.length > 0 && livingUnits.every(x => !!x.unit.captured);
@@ -3375,6 +3477,8 @@ function RecoveryPhaseView({
                     scenario={livingScenario}
                     side={side}
                     players={players}
+                    cmFleets={cmFleets}
+                    indieTemplates={indieTemplates}
                   />
                   {allCivilian && (
                     <p className="mt-2 rounded border border-amber-200 bg-amber-50 px-2 py-1 text-xs text-amber-700 dark:border-amber-700 dark:bg-amber-950/20 dark:text-amber-400">
@@ -3422,11 +3526,15 @@ function RecoveryPhaseView({
 function ResolutionView({
   scenario,
   players,
+  cmFleets = [],
+  indieTemplates = [],
   onClose,
   onApply,
 }: {
   scenario: CombatScenario;
   players: CampaignPlayer[];
+  cmFleets?: CMFleet[];
+  indieTemplates?: EmpireUnit[];
   onClose: () => void;
   onApply: () => void;
 }) {
@@ -3443,9 +3551,23 @@ function ResolutionView({
   const playersForTally: CampaignPlayer[] = scenario.scenarioStartPlayersSnapshot
     ? Object.values(scenario.scenarioStartPlayersSnapshot)
     : players;
-  const tmap = buildTemplateMap(playersForTally);
-  const allUnits = playersForTally.flatMap(p => p.units);
+  const tmap = buildTemplateMap(playersForTally, indieTemplates);
+  // Use the CM units snapshot when available (units may have been removed from cmFleets after Apply Results)
+  const cmUnitsForTally = scenario.scenarioStartCMUnits ?? cmFleets.flatMap(f => f.units);
+  const allUnits = [
+    ...playersForTally.flatMap(p => p.units),
+    ...cmUnitsForTally,
+  ];
   const snapshot = scenario.initialUnitSnapshot ?? {};
+
+  // Build a factionId → label map from cmFleets
+  const cmFactionLabels = new Map<string, string>();
+  for (const fleet of cmFleets) {
+    const factionId = fleet.independentSystemId
+      ? `independent:${fleet.independentSystemId}`
+      : `cm:${fleet.color ?? 'gray'}`;
+    if (!cmFactionLabels.has(factionId)) cmFactionLabels.set(factionId, fleet.name);
+  }
 
   // Build outcome tally per side
   const buildTally = (side: 'attacker' | 'defender') => {
@@ -3466,19 +3588,21 @@ function ResolutionView({
       crippled: number;
       captured: number;
     };
-    // Group by player, then by template within each player
-    const playerGroupMap = new Map<string, { player: CampaignPlayer; groups: Map<string, TallyGroup> }>();
+    // Group by faction, then by template within each faction
+    const factionGroupMap = new Map<string, { factionLabel: string; groups: Map<string, TallyGroup> }>();
     for (const state of sideStates) {
       const unit = allUnits.find(u => u.id === state.unitId);
       if (!unit) continue;
       const template = tmap.get(unit.unitTemplateId);
       if (!template) continue;
-      const player = playersForTally.find(p => p.id === state.playerId);
-      if (!player) continue;
-      if (!playerGroupMap.has(state.playerId)) {
-        playerGroupMap.set(state.playerId, { player, groups: new Map() });
+      const factionId = state.playerId;
+      const factionLabel = playersForTally.find(p => p.id === factionId)?.name
+        ?? cmFactionLabels.get(factionId)
+        ?? factionId;
+      if (!factionGroupMap.has(factionId)) {
+        factionGroupMap.set(factionId, { factionLabel, groups: new Map() });
       }
-      const pg = playerGroupMap.get(state.playerId)!;
+      const pg = factionGroupMap.get(factionId)!;
       const wasCrippled = snapshot[state.unitId]?.wasStrategicallyCrippled ?? unit.crippled;
       const key = `${unit.unitTemplateId}|${wasCrippled}`;
       if (!pg.groups.has(key)) {
@@ -3500,8 +3624,8 @@ function ResolutionView({
         g.crippled++;
       }
     }
-    return [...playerGroupMap.values()].map(pg => ({
-      player: pg.player,
+    return [...factionGroupMap.values()].map(pg => ({
+      factionLabel: pg.factionLabel,
       groups: [...pg.groups.values()].sort((a, b) => a.templateName.localeCompare(b.templateName)),
     }));
   };
@@ -3523,8 +3647,8 @@ function ResolutionView({
   const copyTallySide = (side: 'attacker' | 'defender') => {
     const tally = side === 'attacker' ? attackerTally : defenderTally;
     const lines: string[] = [`=== ${side.charAt(0).toUpperCase() + side.slice(1)} ===`];
-    for (const { player, groups } of tally) {
-      lines.push(`${player.name} (${player.empire.name})`);
+    for (const { factionLabel, groups } of tally) {
+      lines.push(factionLabel);
       for (const g of groups) {
         const tmpl = tmap.get(g.templateId);
         const half = g.wasStrategicallyCrippled;
@@ -3586,10 +3710,10 @@ function ResolutionView({
                     </div>
                     {tally.length === 0 ? (
                       <p className="pt-1 text-xs italic text-gray-400 dark:text-gray-500">No units</p>
-                    ) : tally.map(({ player, groups }) => (
-                      <div key={player.id}>
+                    ) : tally.map(({ factionLabel, groups }) => (
+                      <div key={factionLabel}>
                         <p className="text-[10px] font-semibold text-gray-400 sticky top-5 z-10 bg-white py-0.5 dark:bg-gray-900 dark:text-gray-500">
-                          {player.name} <span className="font-normal">({player.empire.name})</span>
+                          {factionLabel}
                         </p>
                         {groups.map((g, i) => {
                           const outcome = renderTallyOutcome(g);
@@ -3674,10 +3798,34 @@ export function CombatScenarioView({
   map: _map,
   diplomacyRelations,
   systemOwnership,
+  cmFleets: allCMFleets = [],
+  independentUnitLists = [],
   onUpdate,
   onClose,
 }: CombatScenarioViewProps) {
   const systemName = _map.systems.find(s => s.id === scenario.systemId)?.name ?? scenario.systemId;
+
+  // Flatten indie templates once for all sub-components
+  const indieTemplates = useMemo(() => independentUnitLists.flatMap(l => l.units), [independentUnitLists]);
+
+  // CM fleets present at this scenario's system
+  const cmFleets = useMemo(() => allCMFleets.filter(f => f.systemId === scenario.systemId), [allCMFleets, scenario.systemId]);
+
+  // CM factions derived from those fleets (one entry per unique factionId)
+  const cmFactions = useMemo((): CMFaction[] => {
+    const seen = new Set<string>();
+    const result: CMFaction[] = [];
+    for (const fleet of cmFleets) {
+      if (fleet.isGarrisonPool) continue; // garrison pools don't fight as primary
+      const factionId = fleet.independentSystemId
+        ? `independent:${fleet.independentSystemId}`
+        : `cm:${fleet.color ?? 'gray'}`;
+      if (seen.has(factionId)) continue;
+      seen.add(factionId);
+      result.push({ id: factionId, label: fleet.name, color: fleet.color ?? '#9ca3af' });
+    }
+    return result;
+  }, [cmFleets]);
 
   const handleApplyResults = useCallback(() => {
     // Signal parent to apply results. resolvedAt should already be set;
@@ -3697,6 +3845,9 @@ export function CombatScenarioView({
           <SetupPhaseView
             scenario={scenario}
             players={players}
+            cmFleets={cmFleets}
+            cmFactions={cmFactions}
+            indieTemplates={indieTemplates}
             diplomacyRelations={diplomacyRelations}
             systemOwnership={systemOwnership}
             onUpdate={onUpdate}
@@ -3707,6 +3858,8 @@ export function CombatScenarioView({
           <FlagshipSelectionView
             scenario={scenario}
             players={players}
+            cmFleets={cmFleets}
+            indieTemplates={indieTemplates}
             onUpdate={onUpdate}
           />
         );
@@ -3715,6 +3868,8 @@ export function CombatScenarioView({
           <TaskForceSetupView
             scenario={scenario}
             players={players}
+            cmFleets={cmFleets}
+            indieTemplates={indieTemplates}
             map={_map}
             onUpdate={onUpdate}
           />
@@ -3724,6 +3879,8 @@ export function CombatScenarioView({
           <AssignmentsPhaseView
             scenario={scenario}
             players={players}
+            cmFleets={cmFleets}
+            indieTemplates={indieTemplates}
             onUpdate={onUpdate}
           />
         );
@@ -3734,6 +3891,8 @@ export function CombatScenarioView({
           <FirePhaseView
             scenario={scenario}
             players={players}
+            cmFleets={cmFleets}
+            indieTemplates={indieTemplates}
             onUpdate={onUpdate}
           />
         );
@@ -3742,6 +3901,8 @@ export function CombatScenarioView({
           <SpecialOpsPhaseView
             scenario={scenario}
             players={players}
+            cmFleets={cmFleets}
+            indieTemplates={indieTemplates}
             onUpdate={onUpdate}
           />
         );
@@ -3750,6 +3911,8 @@ export function CombatScenarioView({
           <RetreatPhaseView
             scenario={scenario}
             players={players}
+            cmFleets={cmFleets}
+            indieTemplates={indieTemplates}
             onUpdate={onUpdate}
           />
         );
@@ -3758,6 +3921,8 @@ export function CombatScenarioView({
           <RecoveryPhaseView
             scenario={scenario}
             players={players}
+            cmFleets={cmFleets}
+            indieTemplates={indieTemplates}
             onUpdate={onUpdate}
           />
         );
@@ -3766,6 +3931,8 @@ export function CombatScenarioView({
           <GroundCombatPhaseView
             scenario={scenario}
             players={players}
+            cmFleets={cmFleets}
+            indieTemplates={indieTemplates}
             onUpdate={onUpdate}
           />
         );
@@ -3774,6 +3941,8 @@ export function CombatScenarioView({
           <ResolutionView
             scenario={scenario}
             players={players}
+            cmFleets={cmFleets}
+            indieTemplates={indieTemplates}
             onClose={onClose}
             onApply={handleApplyResults}
           />

@@ -64,9 +64,14 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
       const newZoom = Math.min(maxZoom, Math.max(minZoom, prev.zoom * (1 + zoomDelta)));
       const zoomRatio = newZoom / prev.zoom;
 
-      // Zoom towards mouse position
-      const newOffsetX = mouseX - (mouseX - prev.offsetX) * zoomRatio;
-      const newOffsetY = mouseY - (mouseY - prev.offsetY) * zoomRatio;
+      // Zoom towards mouse position, accounting for the SVG center offset
+      // Transform is: translate(offsetX + cx, offsetY + cy) scale(zoom)
+      // World point under mouse: wx = (mouseX - offsetX - cx) / zoom
+      // After zoom: mouseX = wx * newZoom + newOffsetX + cx  →  newOffsetX = mouseX - cx - wx * newZoom
+      const cx = rect.width / 2;
+      const cy = rect.height / 2;
+      const newOffsetX = mouseX - cx - (mouseX - cx - prev.offsetX) * zoomRatio;
+      const newOffsetY = mouseY - cy - (mouseY - cy - prev.offsetY) * zoomRatio;
 
       return {
         offsetX: newOffsetX,

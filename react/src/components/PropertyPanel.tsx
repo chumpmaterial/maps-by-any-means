@@ -687,9 +687,9 @@ function FleetsSection({ players, systemId, systemOwnership, onDeleteUnits, onCr
     }
   }
 
-  // Always show On-Planet for the system owner (even if empty)
+  // Always show On-Planet for the system owner (even if empty) — but not for independent owners
   const ownerPlayerId = systemOwnership?.[systemId];
-  if (ownerPlayerId) {
+  if (ownerPlayerId && !ownerPlayerId.startsWith('independent:')) {
     ensureSysFleetEntry('On-Planet', ownerPlayerId);
   }
   // Also ensure On-Planet for any player who has units at this system
@@ -728,7 +728,7 @@ function FleetsSection({ players, systemId, systemOwnership, onDeleteUnits, onCr
   })();
 
   // CM fleets at this system + unit rows map for unified rendering
-  const cmFleetsHereList = (cmFleets ?? []).filter(f => f.systemId === systemId || f.independentSystemId === systemId);
+  const cmFleetsHereList = (cmFleets ?? []).filter(f => (f.systemId ?? f.independentSystemId) === systemId);
   const allIndie = (independentLists ?? []).flatMap(l => l.units);
   const cmUnitRowsMap = new Map<string, Array<{ template: EmpireUnit; count: number; playerId: string }>>();
   for (const fleet of cmFleetsHereList) {
@@ -962,7 +962,13 @@ function FleetsSection({ players, systemId, systemOwnership, onDeleteUnits, onCr
               : (cmFleet.color ?? '#6b7280');
             const mobileUnits = cmFleet.units.filter(u => u.fleetId !== 'On-Planet');
             const onPlanetUnits = cmFleet.units.filter(u => u.fleetId === 'On-Planet');
-            const showOnPlanet = cmFleet.isGarrisonPool || onPlanetUnits.length > 0;
+            const isVisiting = !!cmFleet.independentSystemId && !!cmFleet.systemId && cmFleet.systemId !== cmFleet.independentSystemId;
+            // Garrison pools always show On-Planet; regular fleets show On-Planet if unlinked OR visiting a different system
+            const showOnPlanet = cmFleet.isGarrisonPool
+              || !cmFleet.independentSystemId
+              || isVisiting;
+            // Use plain "On-Planet" label when acting as a garrison (pool or visiting invader)
+            const onPlanetLabel = (cmFleet.isGarrisonPool || isVisiting) ? 'On-Planet' : `On-Planet (${cmFleet.name})`;
 
             const toUnitRows = (units: typeof cmFleet.units) => {
               const rowMap: Record<string, { template: (typeof allIndie)[0]; count: number; playerId: string }> = {};
@@ -976,7 +982,7 @@ function FleetsSection({ players, systemId, systemOwnership, onDeleteUnits, onCr
             };
 
             const entries = [];
-            if (mobileUnits.length > 0) {
+            if (!cmFleet.isGarrisonPool) {
               entries.push(
                 <FleetEntry
                   key={cmFleet.id}
@@ -1003,7 +1009,7 @@ function FleetsSection({ players, systemId, systemOwnership, onDeleteUnits, onCr
                 <FleetEntry
                   key={onPlanetKey}
                   fleetKey={onPlanetKey}
-                  name={`${cmFleet.name} On-Planet`}
+                  name={onPlanetLabel}
                   unitRows={toUnitRows(onPlanetUnits)}
                   ownerColors={[fleetColor]}
                   subtitleBadges="CM Fleet"

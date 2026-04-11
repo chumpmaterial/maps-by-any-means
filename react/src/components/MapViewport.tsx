@@ -372,9 +372,22 @@ export function MapViewport({ mapState, generationLog = [], onClearLog, campaign
             .map(s => {
               const { x, y } = hexToPixel(s.position);
               const r = DEFAULT_HEX_SIZE * 0.30;
+              const isClipSelected = clipModeActive && clipSelectedSystemIds?.has(s.id);
+              const isClipDimmed = clipModeActive && clipSelectedSystemIds && !clipSelectedSystemIds.has(s.id);
               return (
-                <g key={`unknown-${s.id}`} className="pointer-events-none">
-                  <circle cx={x} cy={y} r={r} fill="#9ca3af" stroke="#6b7280" strokeWidth={2} />
+                <g
+                  key={`unknown-${s.id}`}
+                  data-system-id={s.id}
+                  className={clipModeActive ? 'cursor-pointer' : 'pointer-events-none'}
+                  opacity={isClipDimmed ? 0.35 : 1}
+                  onClick={clipModeActive ? () => onClipToggleSystem?.(s.id) : undefined}
+                >
+                  <circle
+                    cx={x} cy={y} r={r}
+                    fill={isClipSelected ? '#60a5fa' : '#9ca3af'}
+                    stroke={isClipSelected ? '#2563eb' : '#6b7280'}
+                    strokeWidth={isClipSelected ? 3 : 2}
+                  />
                   <text x={x} y={y} textAnchor="middle" dominantBaseline="central"
                     fontSize={r * 1.1} fill="#374151" fontFamily="sans-serif" fontWeight="bold">
                     ?
