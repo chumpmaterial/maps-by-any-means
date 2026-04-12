@@ -41,7 +41,7 @@ Run a complete VBAM campaign from the same app. Each turn steps through a struct
 
 #### Fleet Management
 - Full fleet manager for each player — named fleets with system assignments, move tracking, and unit status badges (crippled, out-of-supply, captured, exhausted, mothballed)
-- **CM (Counter-Measure) fleets** — independent and neutral factions with their own mobile fleets and per-system garrison pools
+- **CM (Campaign Manager) fleets** — independent and neutral factions with their own mobile fleets and per-system garrison pools
 - Drag units between fleets and system buckets
 - **Unit transfer** — move units between players (e.g. captured or gifted units), with automatic template propagation to the receiving empire
 - **Add Units** — add constructed units to any system for any player or CM faction; construction orders sidebar tracks what was ordered
